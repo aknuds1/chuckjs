@@ -1,5 +1,5 @@
 if require?
-  {count, last,  throwSyntaxError} = require './helpers'
+  {count, last,  throwSyntaxError} = require('./helpers')
 else
   {count, last,  throwSyntaxError} = window.chuckJsHelpers
 

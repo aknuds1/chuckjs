@@ -20,11 +20,12 @@ After doing this, you should be able to build ChuckJS, by running grunt:
 
     grunt
 
-At this point, the parser has been built as src/parser.js.
+At this point, the parser has been built as lib/parser.js. CoffeeScript source files (in src/) are also compiled to
+JavaScript beneath lib/.
 
 ## Test
 
-There is currently a single, simple test for ChuckJS, testparse.coffee. Run it as follows:
+There is currently a single, simple test for ChuckJS, testparse.js. Run it as follows (after building with grunt):
 
-    coffee testparse.coffee
+    node testparse.js
 

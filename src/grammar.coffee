@@ -1,4 +1,4 @@
-{Parser} = require 'jison'
+{Parser} = require('jison')
 _ = require('underscore')
 
 # Since we're going to be wrapped in a function by Jison in any case, if our
