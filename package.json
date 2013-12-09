@@ -1,10 +1,12 @@
 {
-  "name": "ChuckJS",
-  "devDependencies": {
-    "grunt": "~0.4.1",
-    "grunt-shell": "~0.2.2",
-    "shelljs": "~0.1.4",
-    "underscore": "1.5.2",
-    "underscore.string": "2.3.0"
-  }
+    "name": "ChuckJS",
+    "dependencies": {
+        "underscore": "~1.5",
+        "underscore.string": "~2.3"
+    },
+    "devDependencies": {
+        "grunt": "~0.4",
+        "grunt-shell": "~0.2",
+        "shelljs": "~0.1"
+    }
 }
