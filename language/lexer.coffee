@@ -207,4 +207,4 @@ CHUCK = ['=>', '<=', '!=>']
 if exports?
   exports.Lexer = Lexer
 else
-  window.Lexer = Lexer
+  ChuckLexer = Lexer
