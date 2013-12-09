@@ -1,13 +1,13 @@
 # Count the number of occurrences of a string in a string.
-exports.count = (string, substr) ->
+count = (string, substr) ->
   num = pos = 0
   return 1/0 unless substr.length
   num++ while pos = 1 + string.indexOf substr, pos
   num
 
-exports.last = last = (array, back) -> array[array.length - (back or 0) - 1]
+last = (array, back) -> array[array.length - (back or 0) - 1]
 
-exports.throwSyntaxError = (message, location) ->
+throwSyntaxError = (message, location) ->
   error = new SyntaxError message
   error.location = location
   error.toString = syntaxErrorToString
@@ -20,3 +20,15 @@ exports.throwSyntaxError = (message, location) ->
   console.log("Throwing error", error)
 
   throw error
+
+if exports?
+  exports.count = count
+  exports.last = last
+  exports.throwSyntaxError = throwSyntaxError
+else
+  window.chuckJsHelpers = {
+    count: count,
+    last: last,
+    throwSyntaxError: throwSyntaxError
+  }
+

@@ -1,6 +1,9 @@
-{count, last,  throwSyntaxError} = require './helpers'
+if require?
+  {count, last,  throwSyntaxError} = require './helpers'
+else
+  {count, last,  throwSyntaxError} = window.chuckJsHelpers
 
-exports.Lexer = class Lexer
+class Lexer
   tokenize: (code) ->
     @ends       = []             # The stack for pairing up tokens.
     @tokens     = []             # Stream of parsed tokens in the form `['TYPE', value, location data]`.
@@ -200,3 +203,8 @@ TRAILING_SPACES = /\s+$/
 
 # Chuck tokens.
 CHUCK = ['=>', '<=', '!=>']
+
+if exports?
+  exports.Lexer = Lexer
+else
+  window.Lexer = Lexer
