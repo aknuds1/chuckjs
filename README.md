@@ -1,13 +1,13 @@
 # ChuckJS
 
-JavaScript (CoffeeScript) parser for the ChucK language.
+JavaScript ([CoffeeScript](http://coffeescript.org/)) parser for the ChucK language.
 
 This project is just in its infancy at this stage, so do not expect working code yet. I've just begun work on
-implementing the parser through the Jison compiler generator, and I could really use some help in defining the grammar.
+implementing the parser through the Jison compiler generator, and could really use some help in defining the grammar.
 
 ## Build
 
-In order to build the ChuckJS, you'll need an installation of [Node](http://nodejs.org/) along with
+In order to build ChuckJS, you'll need an installation of [Node](http://nodejs.org/) along with
 [NPM](https://npmjs.org/). If you haven't already installed [Grunt](http://gruntjs.com), install it system-wide:
 
     npm install -g grunt-cli
@@ -16,7 +16,7 @@ Then, within the ChuckJS project root, install its dependencies (beneath the pro
 
     npm install
 
-After doing this, you should be able to build the parser, by running grunt:
+After doing this, you should be able to build ChuckJS, by running grunt:
 
     grunt
 
