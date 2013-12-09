@@ -1,0 +1,5 @@
+node_modules/
+.idea/workspace.xml
+.idea/*.iws
+.idea/tasks.xml
+src/parser.js
