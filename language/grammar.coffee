@@ -67,7 +67,6 @@ grammar = {
   ],
   ArrowExpression: [
     o('DeclExpression'),
-    o('ArrowExpression ArrowOperator DeclExpression', -> new ExpFromBinary($1, $2, $3))
   ],
   DeclExpression: [
     o('ConditionalExpression'),
@@ -168,15 +167,6 @@ for name, alternatives of grammar
 #  console.log("Result:", grammar[name])
 
 parserConfig = {
-  lex: {
-    rules: [
-      ['\\/\\/.*', ""],
-      ['[A-Za-z_][A-Za-z0-9_]*', "return 'ID'"],
-      ['@', "return 'AT_SYM'"],
-      ['\\s*', ""],
-      [',', "return 'COMMA'"]
-    ]
-  },
   tokens: tokens.join(' '),
   bnf: grammar,
   operators: operators.reverse(),
