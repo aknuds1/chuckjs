@@ -93,7 +93,7 @@ parser.lexer =
   upcomingInput: ->
     ""
 
-sourcecode = "SinOsc sin2 => dac;"
+sourcecode = "SinOsc sin => dac;"
 tokens = lexer.tokenize(sourcecode)
 console.log("Tokens:", tokens)
 parsed = parser.parse(tokens)
