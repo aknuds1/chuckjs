@@ -176,8 +176,6 @@ console.log('Tokens:', parserConfig.tokens)
 console.log('BNF:', parserConfig.bnf)
 console.log('Operators:', parserConfig.operators)
 
-# Initialize the **Parser** with our list of terminal **tokens**, our **grammar**
-# rules, and the name of the root. Reverse the operators because Jison orders
-# precedence from low to high, and we have it high to low
-# (as in [Yacc](http://dinosaur.compilertools.net/yacc/index.html)).
-exports.generate = new Parser(parserConfig).generate
+# Use SLR algorithm as this works for our grammar unlike the default (LALR).
+# LALR should work though, as it does with Bison...
+exports.generate = new Parser(parserConfig, {type: "slr"}).generate

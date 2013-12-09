@@ -34,7 +34,6 @@ exports.Lexer = class Lexer
     if WHITESPACE.test code
       code = "\n#{code}"
       @chunkLine--
-    code = invertLiterate code if @literate
     code
 
   identifierToken: ->
@@ -85,10 +84,7 @@ exports.Lexer = class Lexer
     return 0 unless string
     console.log("stringToken")
     trimmed = @removeNewlines string[1...-1]
-    if quote is '"' and 0 < string.indexOf '#{', 1
-      @interpolateString trimmed, strOffset: 1, lexedLength: string.length
-    else
-      @token 'STRING', quote + @escapeLines(trimmed) + quote, 0, string.length
+    @token 'STRING', quote + @escapeLines(trimmed) + quote, 0, string.length
     string.length
 
   # Matches and consumes comments.
