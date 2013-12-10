@@ -6,8 +6,9 @@ module.exports = function (grunt) {
             compile: {
                 files: {
                     'lib/grammar.js': 'src/grammar.coffee',
-                    'lib/helpers.js': 'src/helpers.coffee',
-                    'lib/lexer.js': 'src/lexer.coffee',
+                    'lib/chuck/helpers.js': 'src/chuck/helpers.coffee',
+                    'lib/chuck/lexer.js': 'src/chuck/lexer.coffee',
+                    'lib/chuck.js': 'src/chuck.coffee',
                     'testparse.js': 'src/testparse.coffee'
                 }
             }

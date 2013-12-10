@@ -1,0 +1,35 @@
+ChucKJS Algorithms
+==================
+Arve Knudsen <arve.knudsen@gmail.com>
+
+Introduction
+------------
+The purpose of this document is to describe the algorithms that ChucKJS implements, oriented around a set of tests.
+That is, we have a set of reference tests for ChucKJS' functionality, and we describe here how ChucKJS functionality
+is implemented in order to satisfy each test.
+
+test1.ck
+--------
+This test consists of a single statement consisting of a declaration of a variable which is chucked to audio output.
+
+1. The program is scanned
+  1. First pass is performed
+  2. Second pass is performed
+    1. It is determined that the statement is a binary expression
+    2. LHS is scanned
+      1. LHS is determined to be a declaration expression
+    3. RHS is scanned
+  3. Third pass is performed
+  4. Fourth pass is performed
+    1. Bytecode is emitted for the binary expression
+      1. Bytecode is emitted for LHS (declaration expression)
+        1. Memory is allocated on local stack
+      2. Bytecode is emitted for RHS (primary expression)
+        1. Bytecode is emitted for DAC
+      3. Bytecode is emitted for chuck operator
+      4. Pop word instruction is emitted
+    5. EOC instruction is emitted
+2. A shred is scheduled to execute the program
+
+
+
