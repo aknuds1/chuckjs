@@ -19,6 +19,7 @@ module.exports = function (grunt) {
         grunt.task.requires('coffee');
         var parserGenerator = require('./lib/grammar').generate;
         var parserCode = parserGenerator();
+        parserCode = parserCode + "\nChuckParser = parser.Parser;\n";
         grunt.file.write('lib/parser.js', parserCode);
     });
 

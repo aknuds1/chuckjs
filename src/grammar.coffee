@@ -63,20 +63,20 @@ grammar = {
   ],
   ChuckExpression: [
     o('ArrowExpression'),
-    o('ChuckExpression CHUCK ArrowExpression', -> new ExpFromBinary($1, $2, $3))
+    o('ChuckExpression CHUCK ArrowExpression', -> new BinaryExpression($1, $2, $3))
   ],
   ArrowExpression: [
     o('DeclExpression'),
   ],
   DeclExpression: [
     o('ConditionalExpression'),
-    o('TypeDecl VarDeclList', -> new DeclExp($1, $2, 0))
+    o('TypeDecl VarDeclList', -> new DeclarationExpression($1, $2, 0))
   ],
   VarDeclList: [
-    o('VarDecl', -> new VarDeclList($1))
+    o('VarDecl', -> new VariableDeclarationList($1))
   ],
   VarDecl: [
-    o('ID', -> new VarDecl($1))
+    o('ID', -> new VariableDeclaration($1))
   ]
   Literal: [
     o('NULL', -> new Null)
@@ -86,12 +86,12 @@ grammar = {
     o('TypeDeclB')
   ],
   TypeDeclA: [
-    o('ID', -> new TypeDecl(new IdList($1), 0)),
-    o('ID AT_SYM', -> new TypeDecl(new IdList($1), 1))
+    o('ID', -> new TypeDeclaration(new IdList($1), 0)),
+    o('ID AT_SYM', -> new TypeDeclaration(new IdList($1), 1))
   ],
   TypeDeclB: [
-    o('LT IdDot GT', -> new TypeDecl($2, 0)),
-    o('LT IdDot GT AT_SYM', -> new TypeDecl($2, 1))
+    o('LT IdDot GT', -> new TypeDeclaration($2, 0)),
+    o('LT IdDot GT AT_SYM', -> new TypeDeclaration($2, 1))
   ],
   ConditionalExpression: [
     o('LogicalOrExpression')
@@ -142,7 +142,7 @@ grammar = {
     o('PrimaryExpression')
   ],
   PrimaryExpression: [
-    o('ID', -> new ExpFromId($1))
+    o('ID', -> new IdExpression($1))
   ]
 }
 

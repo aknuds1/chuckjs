@@ -1,5 +1,5 @@
 (function() {
-  var DeclExpression, ExpFromBinary, ExpFromId, ExpressionStatement, IdList, Lexer, Parser, Program, SectionStatement, StatementList, TypeDecl, VarDecl, VarDeclList, helpers, lexer, parsed, parser, sourcecode, tokens, yy, _;
+  var DeclExpression, ExpFromBinary, ExpFromId, ExpressionStatement, IdList, Lexer, Parser, Program, SectionStatement, StatementList, TypeDecl, VarDecl, VarDeclList, helpers, lexer, parsed, parser, sourcecode, yy, _;
 
   Lexer = require('./lib/lexer').Lexer;
 
@@ -167,8 +167,6 @@
   };
 
   sourcecode = "SinOsc sin => dac;";
-
-  tokens = lexer.tokenize(sourcecode);
 
   console.log("Tokens:", tokens);
 

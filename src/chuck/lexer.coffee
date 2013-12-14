@@ -202,5 +202,8 @@ define("chuck/lexer", ["chuck/helpers"], (helpers) ->
   # Chuck tokens.
   CHUCK = ['=>', '<=', '!=>']
 
-  return { Lexer: Lexer }
+  return {
+    tokenize: (sourceCode) ->
+      return new Lexer().tokenize(sourceCode)
+  }
 )

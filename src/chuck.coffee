@@ -1,4 +1,4 @@
-define("chuck", ["chuck/lexer"], ->
+define("chuck", ["chuck/parserService", "chuck/scanner", "chuck/vm"], (parserService, scanner, vm) ->
   module = {}
 
   module.Chuck = class
@@ -8,9 +8,14 @@ define("chuck", ["chuck/lexer"], ->
       @_gainNode = @_audioContext.createGainNode()
       @_gainNode.connect(@_audioContext.destination)
 
-    execute: (code) =>
+    execute: (sourceCode) =>
       @_gainNode.gain.cancelScheduledValues(0)
       @_gainNode.gain.value = 1
+
+      ast = parserService.parse(sourceCode)
+      byteCode = scanner.scan(ast)
+      vm.execute(byteCode)
+      return undefined
 
     stop: (callback) =>
       now = @_audioContext.currentTime

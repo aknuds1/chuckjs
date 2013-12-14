@@ -94,7 +94,6 @@ parser.lexer =
     ""
 
 sourcecode = "SinOsc sin => dac;"
-tokens = lexer.tokenize(sourcecode)
 console.log("Tokens:", tokens)
 parsed = parser.parse(tokens)
 #console.log(parsed)
