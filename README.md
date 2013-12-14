@@ -2,8 +2,8 @@
 
 JavaScript ([CoffeeScript](http://coffeescript.org/)) parser for the [ChucK](http://chuck.cs.princeton.edu/) music programming language.
 
-This project is just in its infancy at this stage, so do not expect working code yet. I've just begun work on
-implementing the parser through the Jison compiler generator, and could really use some help in defining the grammar.
+This project is just in its infancy at this stage, so do not expect working code yet. I've just implemented parsing of
+a small part of the grammar, and am about to start working on the VM.
 
 ## Build
 
