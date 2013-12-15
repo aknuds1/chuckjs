@@ -76,7 +76,7 @@ grammar = {
     o('VarDecl', -> [$1])
   ],
   VarDecl: [
-    o('ID', -> $1)
+    o('ID', -> new VariableDeclaration($1))
   ]
   Literal: [
     o('NULL', -> new Null)

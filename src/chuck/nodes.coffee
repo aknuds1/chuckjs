@@ -66,9 +66,10 @@ define("chuck/nodes", ["chuck/types"], (types) ->
       @operator.check()
 
     scanPass5: (context) =>
+      debugger
       @exp1.scanPass5(context)
       @exp2.scanPass5(context)
-      @operator.emit()
+      @operator.emit(context, @exp1, @exp2)
 
   class ExpressionBase extends NodeBase
     scanPass4: =>
@@ -76,22 +77,30 @@ define("chuck/nodes", ["chuck/types"], (types) ->
       ++@groupSize
 
   module.DeclarationExpression = class extends ExpressionBase
-    constructor: (typeDecl, varDecl) ->
+    constructor: (typeDecl, varDecls) ->
       @typeDecl = typeDecl
-      @varDecl = varDecl
+      @varDecls = varDecls
+
+    scanPass2: (context) =>
+      @type = context.findType(@typeDecl.type)
+      return undefined
 
     scanPass3: (context) =>
-      for varName in @varDecl
-        varDecl.value = context.addVariable(varName, @typeDecl.type)
+      for varDecl in @varDecls
+        varDecl.value = context.addVariable(varDecl.name, @type.name)
+      return undefined
 
     scanPass4: =>
       super()
-      @varDecl.value.isDeclChecked = true
-      @type = varDecl.value.type
+      for varDecl in @varDecls
+        varDecl.value.isDeclChecked = true
+      return undefined
 
     scanPass5: (context) =>
       super()
-      context.emitAssignment(@type, @varDecl.value)
+      for varDecl in @varDecls
+        context.emitAssignment(@type, varDecl.value)
+      return undefined
 
   module.TypeDeclaration = class extends NodeBase
     constructor: (type) ->
@@ -107,7 +116,7 @@ define("chuck/nodes", ["chuck/types"], (types) ->
 
     scanPass4: =>
       super()
-      switch name
+      switch @name
         when "dac"
           @_meta = "value"
           @type = types.UGen
@@ -115,15 +124,19 @@ define("chuck/nodes", ["chuck/types"], (types) ->
 
     scanPass5: (context) =>
       super()
-      switch name
+      switch @name
         when "dac"
           context.emitSymbol(name)
           break
 
+  module.VariableDeclaration = class extends NodeBase
+    constructor: (name) ->
+      @name = name
+
   module.ChuckOperator = class
     check: (lhs, rhs) =>
 
-    emit: (lhs, rhs) =>
+    emit: (context, lhs, rhs) =>
       if lhs.type.isOfType(types.UGen) && rhs.type.isOfType(types.UGen)
         context.emitUGenLink()
 

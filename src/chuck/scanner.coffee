@@ -12,40 +12,67 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (n
     constructor: ->
       @_scopes = []
       @_commitMap = {}
+      @push()
+
+    push: =>
+      @_scopes.push({})
 
     findType: (name) =>
       i = @_scopes.length-1
       while i >= 0
-        type = scopes[i][name]
+        type = @_scopes[i][name]
         if type?
-          break
+          return type
         --i
 
       return @_commitMap[name]
 
     addVariable: (name, typeName, namespace) =>
       value = new ChuckValue(typeName, name, namespace)
-      lastScope = scopes[scopes.length-1];
+
+      @_addValue(value)
+      return value
+
+    addType: (type) =>
+      @_addValue(type)
+
+    commit: =>
+      scope = @_scopes[0]
+      for own k, v of @_commitMap
+        scope[k] = v
+
+      @_commitMap = []
+
+    _addValue: (value) =>
+      name = value.name
+      lastScope = @_scopes[@_scopes.length-1];
       if @_scopes[0] != lastScope
         lastScope[name] = value
       else
         @_commitMap[name] = value
 
-      return value
-
   class Namespace
-    constructor: ->
+    constructor: (name) ->
+      @name = name
       @_scope = new Scope()
+      @_types = new Scope()
+
+    addType: (type) =>
+      @_types.addType(type)
 
     findType: (name) =>
-      type = @_type.findType(name)
+      type = @_types.findType(name)
       if type?
         return type
 
-      return @_parent.findType(name) if @_parent else undefined
+      return if @_parent then @_parent.findType(name) else undefined
 
     addVariable: (name, typeName) =>
       return @_scope.addVariable(name, typeName, @)
+
+    commit: =>
+      for scope in [@_scope, @_types]
+        scope.commit()
 
   class ChuckLocal
     constructor: (size, offset, name) ->
@@ -60,7 +87,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (n
 
   class ChuckCode
     constructor: ->
-      @_instructions = []
+      @instructions = []
       @frame = new ChuckFrame()
 
       @pushScope()
@@ -69,7 +96,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (n
       @frame.stack.push(undefined)
 
     append: (instruction) =>
-      @_instructions.push(instruction)
+      @instructions.push(instruction)
 
     allocateLocal: (type, value) =>
       local = new ChuckLocal(type.size, @frame.currentOffset, value.name)
@@ -93,6 +120,12 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (n
   class ScanningContext
     constructor: ->
       @code = new ChuckCode()
+      @_globalNamespace = new Namespace("global")
+      for own k, type of types
+        @_globalNamespace.addType(type)
+      @_globalNamespace.commit()
+      @_namespaceStack = [@_globalNamespace]
+      @_currentNamespace = @_globalNamespace
 
     findType: (typeName) =>
       type = @_currentNamespace.findType(typeName)
@@ -102,43 +135,42 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (n
       return @_currentNamespace.addVariable(name, typeName)
 
     instantiateObject: (type) =>
-      @code.append(new instructions.InstantiateObject(type))
+      @code.append(instructions.instantiateObject(type))
       @_emitPreConstructor(type)
 
     allocateLocal: (type, value) =>
       local = @code.allocateLocal(type, value)
-      @code.append(new instructions.AllocWord(local.offset))
+      @code.append(instructions.allocWord(local.offset))
 
     emitAssignment: (type, value) =>
       @instantiateObject(type)
       @allocateLocal(type, value)
-      @code.append(new instructions.AssignObject())
-      @code.append(new instructions.PopWord())
+      @code.append(instructions.assignObject())
+      @code.append(instructions.popWord())
 
     emitSymbol: (name) =>
-      @code.append(new instructions.Symbol(name))
+      @code.append(instructions.symbol(name))
 
     emitUGenLink: =>
-      @code.append(new instructions.UGenLink())
+      @code.append(instructions.uGenLink())
 
     finishScanning: =>
-      locals = code.finish()
+      locals = @code.finish()
       for local in locals
-        @code.append(new instructions.ReleaseObject2(local.offset))
+        @code.append(instructions.releaseObject2(local.offset))
 
-      @code.append(new instructions.Eoc())
+      @code.append(instructions.eoc())
 
-    _emitPreconstructor: (type) =>
+    _emitPreConstructor: (type) =>
       if type.parent?
-        @_emitPreconstructor(type.parent)
+        @_emitPreConstructor(type.parent)
 
       if type.hasConstructor
-        @code.append(new instructions.PreConstructor(type, @code.frame.currentOffset))
+        @code.append(instructions.preConstructor(type, @code.frame.currentOffset))
 
   class Scanner
     constructor: (ast) ->
       @_ast = ast
-      @_byteCode = []
       @_context = new ScanningContext()
 
     pass1: =>
@@ -156,11 +188,11 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (n
     pass5: =>
       @_pass(5)
       @_context.finishScanning()
+      @byteCode = @_context.code.instructions
 
     _pass: (num) =>
-      programs = @_ast
-      for program in programs
-        program["scanPass#{num}"](@_context)
+      program = @_ast
+      program["scanPass#{num}"](@_context)
 
   module.scan = (ast) ->
     scanner = new Scanner(ast)
@@ -168,6 +200,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (n
     scanner.pass2()
     scanner.pass3()
     scanner.pass4()
+    debugger
     scanner.pass5()
 
     return scanner.byteCode
