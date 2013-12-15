@@ -42,20 +42,20 @@ o = (patternString, action, options) ->
 
 grammar = {
   Program: [
-    o('ProgramSection', -> new Program($1))
+    o('ProgramSection', -> new Program([$1]))
   ],
   ProgramSection: [
-    o('StatementList', -> new SectionStatement($1))
+    o('StatementList')
   ],
   StatementList: [
-    o('Statement', -> new StatementList($1))
+    o('Statement', -> [$1])
   ],
   Statement: [
     o('ExpressionStatement')
   ],
   ExpressionStatement: [
     o('SEMICOLON', ->),
-    o('Expression SEMICOLON', -> new ExpressionStatement($1))
+    o('Expression SEMICOLON')
   ],
   Expression: [
     o('ChuckExpression'),
@@ -63,7 +63,7 @@ grammar = {
   ],
   ChuckExpression: [
     o('ArrowExpression'),
-    o('ChuckExpression CHUCK ArrowExpression', -> new BinaryExpression($1, $2, $3))
+    o('ChuckExpression CHUCK ArrowExpression', -> new BinaryExpression($1, new ChuckOperator(), $3))
   ],
   ArrowExpression: [
     o('DeclExpression'),
@@ -73,10 +73,10 @@ grammar = {
     o('TypeDecl VarDeclList', -> new DeclarationExpression($1, $2, 0))
   ],
   VarDeclList: [
-    o('VarDecl', -> new VariableDeclarationList($1))
+    o('VarDecl', -> [$1])
   ],
   VarDecl: [
-    o('ID', -> new VariableDeclaration($1))
+    o('ID', -> $1)
   ]
   Literal: [
     o('NULL', -> new Null)
@@ -86,8 +86,8 @@ grammar = {
     o('TypeDeclB')
   ],
   TypeDeclA: [
-    o('ID', -> new TypeDeclaration(new IdList($1), 0)),
-    o('ID AT_SYM', -> new TypeDeclaration(new IdList($1), 1))
+    o('ID', -> new TypeDeclaration($1, 0)),
+    o('ID AT_SYM', -> new TypeDeclaration($1, 1))
   ],
   TypeDeclB: [
     o('LT IdDot GT', -> new TypeDeclaration($2, 0)),
@@ -142,7 +142,7 @@ grammar = {
     o('PrimaryExpression')
   ],
   PrimaryExpression: [
-    o('ID', -> new IdExpression($1))
+    o('ID', -> new PrimaryExpression($1))
   ]
 }
 

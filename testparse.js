@@ -107,7 +107,7 @@
 
   })();
 
-  yy.SectionStatement = SectionStatement = (function() {
+  yy.StatementSection = SectionStatement = (function() {
     function SectionStatement(section) {
       this.section = section;
       console.log("Section:", this.section);

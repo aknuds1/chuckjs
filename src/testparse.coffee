@@ -56,7 +56,7 @@ yy.StatementList = class StatementList
     @statements = statements
     console.log("Statement list", @statements)
 
-yy.SectionStatement = class SectionStatement
+yy.StatementSection = class SectionStatement
   constructor: (section) ->
     @section = section
     console.log("Section:", @section)
