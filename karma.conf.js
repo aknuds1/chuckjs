@@ -12,13 +12,12 @@ module.exports = function (config) {
         // list of files / patterns to load in the browser
         files: [
             'test-main.coffee',
-
             {pattern: '**/*.coffee', included: false},
             {pattern: '**/*.js', included: false},
             '../lib/parser.js',
             '../node_modules/underscore/underscore.js',
             '../node_modules/underscore.string/lib/underscore.string.js',
-            '../node_modules/q/*.js'
+            '../node_modules/q/q.js'
         ],
 
         // list of files to exclude
