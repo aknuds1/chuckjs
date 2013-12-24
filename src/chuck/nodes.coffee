@@ -2,6 +2,9 @@ define("chuck/nodes", ["chuck/types"], (types) ->
   module = {}
 
   class NodeBase
+    constructor: (nodeType) ->
+      @nodeType = nodeType
+
     scanPass1: =>
 
     scanPass2: =>
@@ -13,8 +16,9 @@ define("chuck/nodes", ["chuck/types"], (types) ->
     scanPass5: =>
 
    class ParentNodeBase
-    constructor: (child) ->
+    constructor: (child, nodeType) ->
       @_child = child
+      @nodeType = nodeType
 
     scanPass1: (context) =>
       @_scanPass(1, context)
@@ -45,9 +49,12 @@ define("chuck/nodes", ["chuck/types"], (types) ->
           c["scanPass#{pass}"](context)
 
   module.Program = class extends ParentNodeBase
+    constructor: (child) ->
+      super(child, "Program")
 
   module.BinaryExpression = class extends NodeBase
     constructor: (exp1, operator, exp2) ->
+      super("BinaryExpression")
       @exp1 = exp1
       @operator = operator
       @exp2 = exp2
@@ -66,18 +73,22 @@ define("chuck/nodes", ["chuck/types"], (types) ->
       @operator.check()
 
     scanPass5: (context) =>
-      debugger
       @exp1.scanPass5(context)
       @exp2.scanPass5(context)
       @operator.emit(context, @exp1, @exp2)
+      context.emitPopWord()
 
   class ExpressionBase extends NodeBase
+    constructor: (nodeType) ->
+      super(nodeType)
+
     scanPass4: =>
       @groupSize = 0
       ++@groupSize
 
   module.DeclarationExpression = class extends ExpressionBase
     constructor: (typeDecl, varDecls) ->
+      super("DeclarationExpression")
       @typeDecl = typeDecl
       @varDecls = varDecls
 
@@ -104,41 +115,108 @@ define("chuck/nodes", ["chuck/types"], (types) ->
 
   module.TypeDeclaration = class extends NodeBase
     constructor: (type) ->
+      super("TypeDeclaration")
       @type = type
 
   module.VariableDeclaration = class extends NodeBase
     constructor: (name) ->
+      super("VariableDeclaration")
       @name = name
 
-  module.PrimaryExpression = class extends ExpressionBase
+  module.PrimaryVariableExpression = class extends ExpressionBase
     constructor: (name) ->
+      super("PrimaryVariableExpression")
       @name = name
+      @_meta = "variable"
 
     scanPass4: =>
       super()
       switch @name
         when "dac"
           @_meta = "value"
-          @type = types.UGen
+          @type = types.Dac
+          break
+        when "second"
+          @type = types.Dur
+          break
+        when "now"
+          @type = types.Time
           break
 
     scanPass5: (context) =>
       super()
       switch @name
         when "dac"
-          context.emitSymbol(name)
+          context.emitDac()
           break
+        when "second"
+          # Push the value corresponding to a second
+          context.emitRegPushImm(1)
+          break
+        when "now"
+          context.emitRegPushNow()
+          break
+
+      return undefined
+
+  module.PrimaryNumberExpression = class extends ExpressionBase
+    constructor: (value) ->
+      super("PrimaryNumberExpression")
+      @value = value
+      @_meta = "value"
+
+    scanPass4: =>
+      super()
+      @type = types.Int
+
+    scanPass5: (context) =>
+      super()
+      context.emitRegPushImm(@value)
+
+  module.DurExpression = class extends ExpressionBase
+    constructor: (base, unit) ->
+      super("DurExpression")
+      @base = base
+      @unit = unit
+
+    scanPass2: =>
+      super()
+      @base.scanPass2()
+      @unit.scanPass2()
+
+    scanPass3: =>
+      super()
+      @base.scanPass3()
+      @unit.scanPass3()
+
+    scanPass4: =>
+      super()
+      @type = types.Dur
+      @base.scanPass4()
+      @unit.scanPass4()
+
+    scanPass5: (context) =>
+      super()
+      @base.scanPass5(context)
+      @unit.scanPass5(context)
+      context.emitTimesNumber()
 
   module.VariableDeclaration = class extends NodeBase
     constructor: (name) ->
+      super("VariableDeclaration")
       @name = name
 
   module.ChuckOperator = class
     check: (lhs, rhs) =>
 
     emit: (context, lhs, rhs) =>
+      # UGen => UGen
       if lhs.type.isOfType(types.UGen) && rhs.type.isOfType(types.UGen)
         context.emitUGenLink()
-
+      # Time advance
+      else if lhs.type.isOfType(types.Dur) && rhs.type.isOfType(types.Time)
+        context.emitAddNumber()
+        if rhs.name == "now"
+          context.emitTimeAdvance()
   return module
 )

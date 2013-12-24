@@ -1,4 +1,5 @@
-define("chuck", ["chuck/parserService", "chuck/scanner", "chuck/vm"], (parserService, scanner, vm) ->
+define("chuck", ["chuck/parserService", "chuck/scanner", "chuck/vm", "chuck/logging"], (parserService, scanner, vm,
+logging) ->
   module = {}
 
   module.Chuck = class
@@ -14,8 +15,7 @@ define("chuck", ["chuck/parserService", "chuck/scanner", "chuck/vm"], (parserSer
 
       ast = parserService.parse(sourceCode)
       byteCode = scanner.scan(ast)
-      vm.execute(byteCode)
-      return undefined
+      return vm.execute(byteCode)
 
     stop: (callback) =>
       now = @_audioContext.currentTime
@@ -31,6 +31,9 @@ define("chuck", ["chuck/parserService", "chuck/scanner", "chuck/vm"], (parserSer
       setTimeout(=>
         callback()
       , stopDuration*1000)
+
+  module.setLogger = (logger) ->
+    logging.setLogger(logger)
 
   return module
 )

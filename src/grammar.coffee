@@ -48,13 +48,14 @@ grammar = {
     o('StatementList')
   ],
   StatementList: [
-    o('Statement', -> [$1])
+    o('Statement', -> [$1]),
+    o('Statement StatementList', -> [$1].concat($2))
   ],
   Statement: [
     o('ExpressionStatement')
   ],
   ExpressionStatement: [
-    o('SEMICOLON', ->),
+    o('SEMICOLON', -> return undefined),
     o('Expression SEMICOLON')
   ],
   Expression: [
@@ -136,13 +137,15 @@ grammar = {
     o('DurExpression')
   ],
   DurExpression: [
-    o('PostfixExpression')
+    o('PostfixExpression'),
+    o('DurExpression COLONCOLON PostfixExpression', -> new DurExpression($1, $3))
   ],
   PostfixExpression: [
     o('PrimaryExpression')
   ],
   PrimaryExpression: [
-    o('ID', -> new PrimaryExpression($1))
+    o('ID', -> new PrimaryVariableExpression($1)),
+    o('NUMBER', -> new PrimaryNumberExpression($1))
   ]
 }
 

@@ -1,4 +1,4 @@
-define("chuck/parserService", ["chuck/lexer", "chuck/nodes"], (lexer, nodes) ->
+define("chuck/parserService", ["chuck/lexer", "chuck/nodes", "chuck/logging"], (lexer, nodes, logging) ->
   yy = _({}).extend(nodes)
 
   yy.addLocationDataFn = (first, last) ->
@@ -26,6 +26,7 @@ define("chuck/parserService", ["chuck/lexer", "chuck/nodes"], (lexer, nodes) ->
           ""
 
       tokens = lexer.tokenize(sourceCode)
+      logging.debug("Parsing tokens:", tokens)
       return parser.parse(tokens)
   }
 )

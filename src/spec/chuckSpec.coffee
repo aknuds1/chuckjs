@@ -1,10 +1,23 @@
 define(['chuck'], (chuckModule) ->
+  class Logger
+    debug: ->
+      console.debug.apply(undefined, arguments)
+    warn: ->
+      console.warn.apply(undefined, arguments)
+    trace: ->
+      console.trace.apply(undefined, arguments)
+    error: ->
+      console.error.apply(undefined, arguments)
+    info: ->
+      console.info.apply(undefined, arguments)
+
   describe("Chuck", ->
     origAudioContext = window.AudioContext || window.webkitAudioContext
     fakeAudioContext = undefined
     fakeGainNode = undefined
     fakeOscillator = undefined
     chuck = undefined
+    chuckModule.setLogger(new Logger())
 
     beforeEach(->
       jasmine.Clock.useMock();
@@ -33,17 +46,30 @@ define(['chuck'], (chuckModule) ->
 
     describe("execute", ->
       it("can execute a program", ->
-        chuck.execute("SinOsc sin => dac;")
+        success = undefined
 
-        expect(fakeAudioContext.createGainNode).toHaveBeenCalled()
-        expect(fakeGainNode.connect).toHaveBeenCalledWith(fakeAudioContext.destination)
-        expect(fakeGainNode.gain.cancelScheduledValues).toHaveBeenCalledWith(0);
-        expect(fakeGainNode.gain.value).toBe(1)
-        expect(fakeOscillator.connect).toHaveBeenCalledWith(fakeGainNode)
-        # Sine
-        expect(fakeOscillator.tyoe).toBe(0)
-        expect(fakeOscillator.frequency.value).toBe(440)
-        expect(fakeOscillator.start).toHaveBeenCalledWith(0)
+        runs(->
+          chuck.execute("""SinOsc sin => dac;
+2::second => now;
+"""
+          )
+          .then(-> success = true)
+          .fail(-> success = false)
+        )
+
+        waitsFor(-> success?)
+
+        runs(->
+          expect(fakeAudioContext.createGainNode).toHaveBeenCalled()
+          expect(fakeGainNode.connect).toHaveBeenCalledWith(fakeAudioContext.destination)
+          expect(fakeGainNode.gain.cancelScheduledValues).toHaveBeenCalledWith(0);
+          expect(fakeGainNode.gain.value).toBe(1)
+          expect(fakeOscillator.connect).toHaveBeenCalledWith(fakeGainNode)
+          # Sine
+          expect(fakeOscillator.tyoe).toBe(0)
+          expect(fakeOscillator.frequency.value).toBe(440)
+          expect(fakeOscillator.start).toHaveBeenCalledWith(0)
+        )
       )
     )
 

@@ -146,13 +146,30 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (n
       @instantiateObject(type)
       @allocateLocal(type, value)
       @code.append(instructions.assignObject())
-      @code.append(instructions.popWord())
 
-    emitSymbol: (name) =>
-      @code.append(instructions.symbol(name))
+    emitDac: =>
+      @code.append(instructions.dac())
 
     emitUGenLink: =>
       @code.append(instructions.uGenLink())
+
+    emitPopWord: =>
+      @code.append(instructions.popWord())
+
+    emitRegPushImm: (value) =>
+      @code.append(instructions.regPushImm(value))
+
+    emitTimesNumber: =>
+      @code.append(instructions.timesNumber())
+
+    emitRegPushNow: =>
+      @code.append(instructions.regPushNow())
+
+    emitAddNumber: =>
+      @code.append(instructions.addNumber())
+
+    emitTimeAdvance: =>
+      @code.append(instructions.timeAdvance())
 
     finishScanning: =>
       locals = @code.finish()
@@ -200,7 +217,6 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (n
     scanner.pass2()
     scanner.pass3()
     scanner.pass4()
-    debugger
     scanner.pass5()
 
     return scanner.byteCode
