@@ -53,13 +53,15 @@ define(['chuck'], (chuckModule) ->
 2::second => now;
 """
           )
-          .then(-> success = true)
-          .fail(-> success = false)
+            .then(-> success = true)
+            .fail(-> success = false)
+          jasmine.Clock.tick(2001)
         )
 
         waitsFor(-> success?)
 
         runs(->
+          expect(success).toBe(true)
           expect(fakeAudioContext.createGainNode).toHaveBeenCalled()
           expect(fakeGainNode.connect).toHaveBeenCalledWith(fakeAudioContext.destination)
           expect(fakeGainNode.gain.cancelScheduledValues).toHaveBeenCalledWith(0);

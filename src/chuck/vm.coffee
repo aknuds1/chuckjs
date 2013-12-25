@@ -1,4 +1,4 @@
-define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types"], (logging, ugen, types) ->
+define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging, ugen, types, q) ->
   module = {}
 
   class Vm
@@ -17,24 +17,31 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types"], (logging, uge
     execute: (byteCode) =>
       @_pc = 0
 
-      deferred = Q.defer()
-      return @_compute(byteCode)
+      deferred = q.defer()
+      @_compute(byteCode, deferred)
+      return deferred.promise
 
-    _compute: (byteCode) =>
-      logging.debug("VM executing")
-      while @_pc < byteCode.length && @_isRunning()
-        instr = byteCode[@_pc]
-        logging.debug("Executing instruction no. #{@_pc}: #{instr.instructionName}")
-        instr.execute(@)
-        ++@_pc
-      if !@_isRunning()
-        logging.debug("Halted VM execution for #{@_wakeTime} seconds")
-        setTimeout(@_compute, @_wakeTime*1000)
-      else
-        logging.debug("VM execution has ended")
-        # TODO: Invoke promise success handler
-
-      # TODO: Return promise
+    _compute: (byteCode, deferred) =>
+      try
+        if @_pc == 0
+          logging.debug("VM executing")
+        else
+          logging.debug("Resuming VM execution")
+        while @_pc < byteCode.length && @_isRunning()
+          instr = byteCode[@_pc]
+          logging.debug("Executing instruction no. #{@_pc}: #{instr.instructionName}")
+          instr.execute(@)
+          ++@_pc
+        if @_wakeTime?
+          logging.debug("Halting VM execution for #{@_wakeTime} seconds")
+          cb = => @_compute(byteCode, deferred)
+          setTimeout(cb, @_wakeTime*1000)
+          @_wakeTime = undefined
+        else
+          logging.debug("VM execution has ended")
+          deferred.resolve()
+      catch err
+        deferred.reject(err)
 
     addUgen: (ugen) =>
       @_ugens.push(ugen)
@@ -75,8 +82,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types"], (logging, uge
 
   module.execute = (byteCode) ->
     vm = new Vm()
-    vm.execute(byteCode)
-    return undefined
+    return vm.execute(byteCode)
 
   return module
 )

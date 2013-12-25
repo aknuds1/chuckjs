@@ -17,7 +17,7 @@ module.exports = function (config) {
             '../lib/parser.js',
             '../node_modules/underscore/underscore.js',
             '../node_modules/underscore.string/lib/underscore.string.js',
-            '../node_modules/q/q.js'
+            {pattern: '../lib/q.js', included: false}
         ],
 
         // list of files to exclude
