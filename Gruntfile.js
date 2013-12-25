@@ -5,7 +5,7 @@ module.exports = function (grunt) {
         coffee: {
             compile: {
                 files: {
-                    'lib/grammar.js': 'src/grammar.coffee',
+                    'lib/grammar.js': 'language/grammar.coffee',
                     'lib/chuck/helpers.js': 'src/chuck/helpers.coffee',
                     'lib/chuck/lexer.js': 'src/chuck/lexer.coffee',
                     'lib/chuck.js': 'src/chuck.coffee',
@@ -19,7 +19,7 @@ module.exports = function (grunt) {
         grunt.task.requires('coffee');
         var parserGenerator = require('./lib/grammar').generate;
         var parserCode = parserGenerator();
-        parserCode = parserCode + "\nChuckParser = parser.Parser;\n";
+        parserCode = parserCode + "\nwindow.ChuckParser = parser.Parser;\n";
         grunt.file.write('lib/parser.js', parserCode);
     });
 
