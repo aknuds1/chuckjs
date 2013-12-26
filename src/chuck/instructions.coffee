@@ -9,13 +9,11 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging"], (ugen, logging) ->
     i = 0
     while i < stackDepth
       args.unshift(vm.popFromReg())
-      --i
-
-    # Copy this from end of arguments to front
-    args.unshift(args[args.length-1])
-    args.pop()
-    --stackDepth
-    func()
+      ++i
+    thisObj = undefined
+    if func.needThis
+      thisObj = args.shift()
+    func.apply(thisObj, args)
 
   class Instruction
     constructor: (name, params, execute) ->
@@ -50,7 +48,12 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging"], (ugen, logging) ->
   module.preConstructor = (type, stackOffset) ->
     return new Instruction("PreConstructor", type: type, stackOffset: stackOffset, (vm) ->
       # Duplicate top of stack, which should be object pointer
+      logging.debug("Calling pre-constructor of #{@type.name}")
+      # Push 'this' reference
       vm.pushToReg(vm.peekReg())
+      # Signal that this function needs a 'this' reference
+      @type.preConstructor.needThis = true
+      @type.preConstructor.stackDepth = 1
       vm.pushToReg(@type.preConstructor)
       vm.pushToReg(@stackOffset)
 

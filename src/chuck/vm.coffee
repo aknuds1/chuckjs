@@ -6,7 +6,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
       @regStack = []
       @memStack = []
       @_ugens = []
-      @_dac = new ugen.UGen(types.Dac)
+      @_dac = new ugen.Dac()
       @_now = 0
       @_wakeTime = undefined
       @_pc = 0
@@ -18,7 +18,9 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
       @_pc = 0
 
       deferred = q.defer()
-      @_compute(byteCode, deferred)
+      setTimeout(=>
+        @_compute(byteCode, deferred)
+      , 0)
       return deferred.promise
 
     _compute: (byteCode, deferred) =>
@@ -39,6 +41,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
           @_wakeTime = undefined
         else
           logging.debug("VM execution has ended")
+          @_terminateProcessing()
           deferred.resolve()
       catch err
         deferred.reject(err)
@@ -79,6 +82,9 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
     suspendUntil: (time) =>
       @_wakeTime = time
       return undefined
+
+    _terminateProcessing: =>
+      @_dac.stop()
 
   module.execute = (byteCode) ->
     vm = new Vm()

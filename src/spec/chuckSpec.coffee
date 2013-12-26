@@ -1,4 +1,4 @@
-define(['chuck'], (chuckModule) ->
+define(['chuck', "q"], (chuckModule, q) ->
   class Logger
     debug: ->
       console.debug.apply(undefined, arguments)
@@ -17,7 +17,10 @@ define(['chuck'], (chuckModule) ->
     fakeGainNode = undefined
     fakeOscillator = undefined
     chuck = undefined
+    err = undefined
     chuckModule.setLogger(new Logger())
+    # Disable too eager logging of supposedly unhandled promise rejections
+    q.stopUnhandledRejectionTracking()
 
     beforeEach(->
       jasmine.Clock.useMock();
@@ -25,7 +28,7 @@ define(['chuck'], (chuckModule) ->
       fakeAudioContext = jasmine.createSpyObj("AudioContext", ["createGainNode", "createOscillator"])
       fakeAudioContext.currentTime = 1
       fakeAudioContext.destination = {name: "destination"}
-      fakeGainNode = jasmine.createSpyObj("gainNode", ["connect"])
+      fakeGainNode = jasmine.createSpyObj("gainNode", ["connect", "disconnect"])
       fakeGainNode.gain = jasmine.createSpyObj("gainNode.gain", ["cancelScheduledValues", "setValueAtTime",
         "linearRampToValueAtTime"])
       fakeAudioContext.createGainNode.andReturn(fakeGainNode)
@@ -42,35 +45,75 @@ define(['chuck'], (chuckModule) ->
 
     afterEach(->
       window.AudioContext = origAudioContext
+      # Reset shared state
+      err = undefined
+      runs(->
+        chuck.stop()
+          .done(->
+            err = false
+          ,
+          (e) ->
+            err = e
+          )
+      )
+      waitsFor(->
+        err?
+      , 10)
+      runs(->
+        if err
+          throw new Error("Failed to stop ChucK: #{err}")
+      )
     )
+
+    executeCode = (code) ->
+      promise = chuck.execute(code)
+      # The execution itself starts asynchronously
+      jasmine.Clock.tick(1)
+      return promise
 
     describe("execute", ->
       it("can execute a program", ->
-        success = undefined
 
         runs(->
-          chuck.execute("""SinOsc sin => dac;
+          executeCode("""SinOsc sin => dac;
 2::second => now;
 """
           )
-            .then(-> success = true)
-            .fail(-> success = false)
-          jasmine.Clock.tick(2001)
-        )
+            .done(->
+              err = false
+              return undefined
+            ,
+            (e) ->
+              err = e
+              return undefined
+            )
 
-        waitsFor(-> success?)
-
-        runs(->
-          expect(success).toBe(true)
+          # Verify the program's execution
           expect(fakeAudioContext.createGainNode).toHaveBeenCalled()
           expect(fakeGainNode.connect).toHaveBeenCalledWith(fakeAudioContext.destination)
           expect(fakeGainNode.gain.cancelScheduledValues).toHaveBeenCalledWith(0);
           expect(fakeGainNode.gain.value).toBe(1)
           expect(fakeOscillator.connect).toHaveBeenCalledWith(fakeGainNode)
           # Sine
-          expect(fakeOscillator.tyoe).toBe(0)
-          expect(fakeOscillator.frequency.value).toBe(440)
+          expect(fakeOscillator.type).toBe(0)
+          expect(fakeOscillator.frequency.value).toBe(220)
           expect(fakeOscillator.start).toHaveBeenCalledWith(0)
+
+          # Let the program advance until its end
+          jasmine.Clock.tick(2000)
+        )
+
+        waitsFor(->
+          err?
+        , "Execution should finish", 10)
+
+        runs(->
+          if err
+            throw new Error("An exception was thrown: #{err}")
+
+          expect(fakeOscillator.stop).toHaveBeenCalledWith(0)
+          expect(fakeOscillator.disconnect).toHaveBeenCalledWith(0)
+          expect(fakeGainNode.disconnect).not.toHaveBeenCalled()
         )
       )
     )
@@ -78,23 +121,36 @@ define(['chuck'], (chuckModule) ->
     describe("stop", ->
       it("can stop a program", ->
         # TODO: Supply a program that doesn't halt on its own
-        chuck.execute("SinOsc sin => dac;")
-        callback = jasmine.createSpy("stopCallback")
-        chuck.stop(callback)
+        err = undefined
+        runs(->
+          executeCode("SinOsc sin => dac;")
+          .then(->
+            chuck.stop()
+            .done(->
+                err = false
+              ,
+              (e) ->
+                err = e
+              )
+            )
+        )
 
-        now = fakeAudioContext.currentTime
-        # This should be defined in test setup
-        expect(now).toBeDefined()
-        expect(fakeGainNode.gain.cancelScheduledValues).toHaveBeenCalledWith(now)
-        expect(fakeGainNode.gain.setValueAtTime).toHaveBeenCalledWith(fakeGainNode.gain.value, now)
-        stopDuration = 0.15
-        stopTime = now + stopDuration
-        expect(fakeGainNode.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, stopTime)
-        expect(callback).not.toHaveBeenCalled()
-        jasmine.Clock.tick(stopDuration*1000 + 1)
-        expect(callback).toHaveBeenCalled()
-        expect(fakeOscillator.stop).toHaveBeenCalledWith(0)
-        expect(fakeOscillator.disconnect).toHaveBeenCalledWith(0)
+        waitsFor(->
+          return err?
+        )
+
+        runs(->
+          if err
+            throw new Error("An exception was thrown: #{err}")
+
+          now = fakeAudioContext.currentTime
+          # This should be defined in test setup
+          expect(now).toBeDefined()
+          expect(fakeGainNode.gain.cancelScheduledValues).toHaveBeenCalledWith(now)
+          expect(fakeOscillator.stop).toHaveBeenCalledWith(0)
+          expect(fakeOscillator.disconnect).toHaveBeenCalledWith(0)
+          expect(fakeGainNode.gain.value).toBe(0)
+        )
       )
     )
   )
