@@ -10,7 +10,7 @@
   },
   "devDependencies": {
     "grunt": "~0.4",
-    "grunt-shell": "~0.2",
+    "grunt-shell": "~0.6.1",
     "shelljs": "~0.1",
     "grunt-contrib-coffee": "~0.7.0",
     "karma-script-launcher": "~0.1.0",
@@ -24,6 +24,8 @@
     "karma-phantomjs-launcher": "~0.1.1",
     "karma": "~0.10.8",
     "karma-growler-reporter": "0.0.1",
-    "jison": "~0.4.13"
+    "jison": "~0.4.13",
+    "almond": "~0.2.7",
+    "grunt-contrib-copy": "~0.5.0"
   }
 }
