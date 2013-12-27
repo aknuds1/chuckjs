@@ -145,7 +145,9 @@ grammar = {
   ],
   PrimaryExpression: [
     o('ID', -> new PrimaryVariableExpression($1)),
-    o('NUMBER', -> new PrimaryNumberExpression($1))
+    o('NUMBER', -> new PrimaryNumberExpression($1)),
+    o('STRING_LIT', -> new PrimaryStringExpression($1))
+    o('L_HACK Expression R_HACK', -> new PrimaryHackExpression($2))
   ]
 }
 

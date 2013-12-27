@@ -1,4 +1,4 @@
-define("chuck/instructions", ["chuck/ugen", "chuck/logging"], (ugen, logging) ->
+define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ugen, logging, typesModule) ->
   module = {}
 
   callMember = (vm) ->
@@ -118,6 +118,18 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging"], (ugen, logging) ->
     time = vm.popFromReg()
     vm.suspendUntil(time)
     vm.pushToReg(time)
+    return undefined
+  )
+
+  module.gack = (types) -> new Instruction("Gack", {}, (vm) ->
+    hack = module.hack(types[0])
+    hack.execute(vm)
+    return undefined
+  )
+
+  module.hack = (type) -> new Instruction("Hack", {}, (vm) ->
+    str = vm.peekReg()
+    console.log("\"#{str}\" : (#{type.name})")
     return undefined
   )
 

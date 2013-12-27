@@ -69,6 +69,7 @@ define("chuck/types", ["chuck/audioContextService"], (audioContextService) ->
   module.Int = new ChuckType("Int", undefined, size: 8, preConstructor: undefined)
   module.Time = new ChuckType("Time", undefined, size: 8, preConstructor: undefined)
   module.Dur = new ChuckType("Dur", undefined, size: 8, preConstructor: undefined)
+  module.String = new ChuckType("String", undefined, size: 8, preConstructor: undefined)
 
   return module
 )

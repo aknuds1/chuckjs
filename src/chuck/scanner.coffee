@@ -171,6 +171,9 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (n
     emitTimeAdvance: =>
       @code.append(instructions.timeAdvance())
 
+    emitGack: (types) =>
+      @code.append(instructions.gack(types))
+
     finishScanning: =>
       locals = @code.finish()
       for local in locals

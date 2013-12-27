@@ -23,6 +23,7 @@ define(['chuck', "q"], (chuckModule, q) ->
     q.stopUnhandledRejectionTracking()
 
     beforeEach(->
+      err = undefined
       jasmine.Clock.useMock();
 
       fakeAudioContext = jasmine.createSpyObj("AudioContext", ["createGainNode", "createOscillator"])
@@ -65,91 +66,92 @@ define(['chuck', "q"], (chuckModule, q) ->
       )
     )
 
+    # Execute code asynchronously; when execution has finished define the 'err' variable
     executeCode = (code) ->
-      promise = chuck.execute(code)
-      # The execution itself starts asynchronously
-      jasmine.Clock.tick(1)
-      return promise
+      runs(->
+        chuck.execute(code)
+        .done(->
+          err = false
+          return undefined
+        ,
+        (e) ->
+          err = e
+          return undefined
+        )
+        # The execution itself starts asynchronously - trigger it
+        jasmine.Clock.tick(1)
+      )
 
-    describe("execute", ->
-      it("can execute a program", ->
+    verify = (verifyCb) ->
+      waitsFor(->
+        err?
+      , "Execution should finish", 10)
 
-        runs(->
-          executeCode("""SinOsc sin => dac;
+      runs(->
+        if err
+          throw new Error("An exception was thrown asynchronously: #{err}")
+
+        verifyCb()
+      )
+
+    it("can execute a program", ->
+      executeCode("""SinOsc sin => dac;
 2::second => now;
 """
-          )
-            .done(->
-              err = false
-              return undefined
-            ,
-            (e) ->
-              err = e
-              return undefined
-            )
+      )
 
-          # Verify the program's execution
-          expect(fakeAudioContext.createGainNode).toHaveBeenCalled()
-          expect(fakeGainNode.connect).toHaveBeenCalledWith(fakeAudioContext.destination)
-          expect(fakeGainNode.gain.cancelScheduledValues).toHaveBeenCalledWith(0);
-          expect(fakeGainNode.gain.value).toBe(1)
-          expect(fakeOscillator.connect).toHaveBeenCalledWith(fakeGainNode)
-          # Sine
-          expect(fakeOscillator.type).toBe(0)
-          expect(fakeOscillator.frequency.value).toBe(220)
-          expect(fakeOscillator.start).toHaveBeenCalledWith(0)
+      runs(->
+        # Verify the program's execution
+        expect(fakeAudioContext.createGainNode).toHaveBeenCalled()
+        expect(fakeGainNode.connect).toHaveBeenCalledWith(fakeAudioContext.destination)
+        expect(fakeGainNode.gain.cancelScheduledValues).toHaveBeenCalledWith(0);
+        expect(fakeGainNode.gain.value).toBe(1)
+        expect(fakeOscillator.connect).toHaveBeenCalledWith(fakeGainNode)
+        # Sine
+        expect(fakeOscillator.type).toBe(0)
+        expect(fakeOscillator.frequency.value).toBe(220)
+        expect(fakeOscillator.start).toHaveBeenCalledWith(0)
 
-          # Let the program advance until its end
-          jasmine.Clock.tick(2000)
-        )
+        # Let the program advance until its end
+        jasmine.Clock.tick(2001)
+      )
 
-        waitsFor(->
-          err?
-        , "Execution should finish", 10)
-
-        runs(->
-          if err
-            throw new Error("An exception was thrown: #{err}")
-
-          expect(fakeOscillator.stop).toHaveBeenCalledWith(0)
-          expect(fakeOscillator.disconnect).toHaveBeenCalledWith(0)
-          expect(fakeGainNode.disconnect).not.toHaveBeenCalled()
-        )
+      verify(->
+        expect(fakeOscillator.stop).toHaveBeenCalledWith(0)
+        expect(fakeOscillator.disconnect).toHaveBeenCalledWith(0)
+        expect(fakeGainNode.disconnect).not.toHaveBeenCalled()
       )
     )
 
-    describe("stop", ->
-      it("can stop a program", ->
-        # TODO: Supply a program that doesn't halt on its own
-        err = undefined
-        runs(->
-          executeCode("SinOsc sin => dac;")
-          .then(->
-            chuck.stop()
-            .done(->
-                err = false
-              ,
-              (e) ->
-                err = e
-              )
-            )
-        )
+    it("can stop a program", ->
+      # TODO: Supply a program that doesn't halt on its own
+      executeCode("SinOsc sin => dac;")
+      runs(->
+        chuck.stop()
+      )
 
-        waitsFor(->
-          return err?
-        )
+      verify(->
+        now = fakeAudioContext.currentTime
+        # This should be defined in test setup
+        expect(now).toBeDefined()
+        expect(fakeGainNode.gain.cancelScheduledValues).toHaveBeenCalledWith(now)
+        expect(fakeOscillator.stop).toHaveBeenCalledWith(0)
+        expect(fakeOscillator.disconnect).toHaveBeenCalledWith(0)
+        expect(fakeGainNode.gain.value).toBe(0)
+      )
+    )
 
-        runs(->
-          if err
-            throw new Error("An exception was thrown: #{err}")
+    describe('Console interaction', ->
+      beforeEach(->
+        spyOn(console, 'log')
+      )
 
-          now = fakeAudioContext.currentTime
-          # This should be defined in test setup
-          expect(now).toBeDefined()
-          expect(fakeGainNode.gain.cancelScheduledValues).toHaveBeenCalledWith(now)
-          expect(fakeOscillator.stop).toHaveBeenCalledWith(0)
-          expect(fakeOscillator.disconnect).toHaveBeenCalledWith(0)
-          expect(fakeGainNode.gain.value).toBe(0)
+      it('can print to the console', ->
+        str = "Hello world!"
+        executeCode("<<<\"#{str}\">>>;")
+
+        verify(->
+          expect(console.log).toHaveBeenCalledWith("\"#{str}\" : (String)")
         )
       )
     )

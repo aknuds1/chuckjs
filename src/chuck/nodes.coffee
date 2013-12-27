@@ -173,6 +173,36 @@ define("chuck/nodes", ["chuck/types"], (types) ->
       super()
       context.emitRegPushImm(@value)
 
+  module.PrimaryHackExpression = class extends ExpressionBase
+    constructor: (expression) ->
+      super("PrimaryHackExpression")
+      @_meta = "value"
+      @expression = expression
+
+    scanPass4: =>
+      super()
+      @expression.scanPass4()
+
+    scanPass5: (context) =>
+      super()
+      @expression.scanPass5(context)
+      types = [@expression.type]
+      context.emitGack(types)
+
+  module.PrimaryStringExpression= class extends ExpressionBase
+    constructor: (value) ->
+      super("PrimaryStringExpression")
+      @_meta = "value"
+      @value = value
+
+    scanPass4: =>
+      super()
+      @type = types.String
+
+    scanPass5: (context) =>
+      super()
+      context.emitRegPushImm(@value)
+
   module.DurExpression = class extends ExpressionBase
     constructor: (base, unit) ->
       super("DurExpression")

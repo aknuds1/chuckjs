@@ -14,10 +14,10 @@ module.exports = function (config) {
             'test-main.coffee',
             {pattern: '**/*.coffee', included: false},
             {pattern: '**/*.js', included: false},
-            '../lib/parser.js',
+            '../lib/chuck/parser.js',
             '../node_modules/underscore/underscore.js',
             '../node_modules/underscore.string/lib/underscore.string.js',
-            {pattern: '../lib/q.js', included: false}
+            {pattern: 'lib/q.js', included: false}
         ],
 
         // list of files to exclude

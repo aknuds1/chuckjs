@@ -16,13 +16,14 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
 
       i = 0
       while @chunk = code[i..]
+        #logging.debug("Consuming chunk #{@chunk} at position #{i}")
         consumed =
           @identifierToken() or
           @commentToken()    or
           @whitespaceToken() or
           @stringToken()     or
           @numberToken()     or
-          @_matchToken() or
+          @_matchToken()     or
           @literalToken()
 
         # Update position
@@ -81,21 +82,18 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
       lexedLength
 
     stringToken: ->
-      switch quote = @chunk.charAt 0
-        when "'" then [string] = SIMPLESTR.exec @chunk
-        when '"' then string = @balancedString @chunk, '"'
-      return 0 unless string
-      logging.debug("stringToken")
-      trimmed = @removeNewlines string[1...-1]
-      @token 'STRING', quote + @escapeLines(trimmed) + quote, 0, string.length
-      string.length
+      return 0 unless match = /^"(.+)"/.exec(@chunk)
+      string = match[1]
+      logging.debug("Token is a string: '#{string}', #{string.length}")
+      @token('STRING_LIT', string)
+      return match[0].length
 
     # Matches and consumes comments.
     commentToken: ->
       return 0 unless match = @chunk.match COMMENT
       [comment, here] = match
-      return logging.debug("Token is a comment")
-      comment.length
+      logging.debug("Token is a comment")
+      return comment.length
 
     # Matches and consumes non-meaningful whitespace. Tag the previous token
     # as being "spaced", because there are some cases where it makes a difference.
@@ -125,6 +123,7 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
         [re, token] = matcher
         match = re.exec(@chunk)
         if !match?
+          #logging.debug("No match against '#{re}'")
           continue
 
         [value] = match
@@ -171,7 +170,7 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
       return token
 
     token: (tag, value, offsetInChunk, length) ->
-      token = @makeToken tag, value, offsetInChunk, length
+      token = @makeToken(tag, value, offsetInChunk, length)
       @tokens.push token
       logging.debug("Pushed token '#{token[0]}'")
       return token
@@ -206,6 +205,8 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
   MATCHERS =
     '=>': 'CHUCK'
     '::': 'COLONCOLON'
+    '<<<': 'L_HACK'
+    '>>>': 'R_HACK'
 
   return {
     tokenize: (sourceCode) ->
