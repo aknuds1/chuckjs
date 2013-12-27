@@ -18,12 +18,12 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
       while @chunk = code[i..]
         #logging.debug("Consuming chunk #{@chunk} at position #{i}")
         consumed =
+          @_matchToken()     or
           @identifierToken() or
           @commentToken()    or
           @whitespaceToken() or
           @stringToken()     or
           @numberToken()     or
-          @_matchToken()     or
           @literalToken()
 
         # Update position
@@ -127,7 +127,7 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
           continue
 
         [value] = match
-        logging.debug("Matched text #{value} against token #{token}")
+        logging.debug("Matched text '#{value}' against token #{token}")
         @token(token, value)
         return value.length
 
@@ -207,6 +207,11 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
     '::': 'COLONCOLON'
     '<<<': 'L_HACK'
     '>>>': 'R_HACK'
+    'while': 'WHILE'
+    '\\(': 'LPAREN'
+    '\\)': 'RPAREN'
+    '\\{': 'LBRACE'
+    '\\}': 'RBRACE'
 
   return {
     tokenize: (sourceCode) ->

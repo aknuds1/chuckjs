@@ -1,5 +1,5 @@
 define("chuck", ["chuck/parserService", "chuck/scanner", "chuck/vm", "chuck/logging", "chuck/audioContextService"],
-(parserService, scanner, vm, logging, audioContextService) ->
+(parserService, scanner, vmModule, logging, audioContextService) ->
   module = {}
 
   module.Chuck = class
@@ -8,10 +8,14 @@ define("chuck", ["chuck/parserService", "chuck/scanner", "chuck/vm", "chuck/logg
 
       ast = parserService.parse(sourceCode)
       byteCode = scanner.scan(ast)
-      return vm.execute(byteCode)
+      @_vm = new vmModule.Vm()
+      return @_vm.execute(byteCode)
 
     stop: =>
+      @_vm.stop()
       return audioContextService.stopOperation()
+
+    isExecuting: => @_vm.isExecuting
 
   module.setLogger = (logger) ->
     logging.setLogger(logger)

@@ -91,7 +91,9 @@ define(['chuck', "q"], (chuckModule, q) ->
         if err
           throw new Error("An exception was thrown asynchronously: #{err}")
 
-        verifyCb()
+        expect(chuck.isExecuting()).toBe(false)
+        if verifyCb?
+          verifyCb()
       )
 
     it("can execute a program", ->
@@ -123,21 +125,23 @@ define(['chuck', "q"], (chuckModule, q) ->
       )
     )
 
-    it("can stop a program", ->
-      # TODO: Supply a program that doesn't halt on its own
-      executeCode("SinOsc sin => dac;")
-      runs(->
-        chuck.stop()
-      )
+    describe('looping', ->
+      it('supports infinite while loops', ->
+        # An infinite loop that sleeps between iterations so that we can stop the VM while it's sleeping
+        executeCode("""while (true)
+{
+  1::second => now;
+}
+"""
+        )
+        runs(->
+          expect(chuck.isExecuting()).toBe(true)
+          chuck.stop()
+          # Wake the VM up so that it can proceed to stop
+          jasmine.Clock.tick(1001)
+        )
 
-      verify(->
-        now = fakeAudioContext.currentTime
-        # This should be defined in test setup
-        expect(now).toBeDefined()
-        expect(fakeGainNode.gain.cancelScheduledValues).toHaveBeenCalledWith(now)
-        expect(fakeOscillator.stop).toHaveBeenCalledWith(0)
-        expect(fakeOscillator.disconnect).toHaveBeenCalledWith(0)
-        expect(fakeGainNode.gain.value).toBe(0)
+        verify()
       )
     )
 

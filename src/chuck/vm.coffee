@@ -5,23 +5,27 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
     constructor: ->
       @regStack = []
       @memStack = []
+      @isExecuting = false
       @_ugens = []
       @_dac = new ugen.Dac()
       @_now = 0
       @_wakeTime = undefined
       @_pc = 0
-
-    _isRunning: =>
-      return !@_wakeTime?
+      @_shouldStop = false
 
     execute: (byteCode) =>
       @_pc = 0
+      @isExecuting = true
 
       deferred = q.defer()
       setTimeout(=>
         @_compute(byteCode, deferred)
       , 0)
       return deferred.promise
+
+    stop: =>
+      logging.debug("Stopping VM")
+      @_shouldStop = true
 
     _compute: (byteCode, deferred) =>
       try
@@ -34,7 +38,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
           logging.debug("Executing instruction no. #{@_pc}: #{instr.instructionName}")
           instr.execute(@)
           ++@_pc
-        if @_wakeTime?
+        if @_wakeTime? && !@_shouldStop
           logging.debug("Halting VM execution for #{@_wakeTime} seconds")
           cb = => @_compute(byteCode, deferred)
           setTimeout(cb, @_wakeTime*1000)
@@ -83,12 +87,17 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
       @_wakeTime = time
       return undefined
 
+    jumpTo: (jmp) =>
+      @_pc = jmp
+
     _terminateProcessing: =>
       @_dac.stop()
+      @isExecuting = false
 
-  module.execute = (byteCode) ->
-    vm = new Vm()
-    return vm.execute(byteCode)
+    _isRunning: =>
+      return !@_wakeTime? && !@_shouldStop
+
+  module.Vm = Vm
 
   return module
 )

@@ -126,6 +126,8 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (n
       @_globalNamespace.commit()
       @_namespaceStack = [@_globalNamespace]
       @_currentNamespace = @_globalNamespace
+      @_breakStack = []
+      @_contStack = []
 
     findType: (typeName) =>
       type = @_currentNamespace.findType(typeName)
@@ -134,6 +136,12 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (n
     addVariable: (name, typeName) =>
       return @_currentNamespace.addVariable(name, typeName)
 
+    pushToBreakStack: (statement) =>
+      @_breakStack.push(statement)
+
+    pushToContStack: (statement) =>
+      @_contStack.push(statement)
+
     instantiateObject: (type) =>
       @code.append(instructions.instantiateObject(type))
       @_emitPreConstructor(type)
@@ -141,6 +149,10 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (n
     allocateLocal: (type, value) =>
       local = @code.allocateLocal(type, value)
       @code.append(instructions.allocWord(local.offset))
+
+    getNextIndex: =>
+      # TODO
+      return 0
 
     emitAssignment: (type, value) =>
       @instantiateObject(type)
@@ -173,6 +185,12 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (n
 
     emitGack: (types) =>
       @code.append(instructions.gack(types))
+
+    emitBranchEq: (jmp) =>
+      @code.append(instructions.branchEq(jmp))
+
+    emitGoto: (jmp) =>
+      @code.append(instructions.goto(jmp))
 
     finishScanning: =>
       locals = @code.finish()

@@ -133,5 +133,16 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     return undefined
   )
 
+  module.branchEq = (jmp) -> new Instruction("BranchEq", {}, (vm) ->
+    rhs = vm.popFromReg()
+    lhs = vm.popFromReg()
+    if lhs == rhs
+      vm.jumpTo(jmp)
+  )
+
+  module.goto = (jmp) -> new Instruction("Goto", {}, (vm) ->
+    vm.jumpTo(jmp)
+  )
+
   return module
 )

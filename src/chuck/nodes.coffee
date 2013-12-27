@@ -142,6 +142,9 @@ define("chuck/nodes", ["chuck/types"], (types) ->
         when "now"
           @type = types.Time
           break
+        when "true"
+          @_meta = "value"
+          @type = types.Int
 
     scanPass5: (context) =>
       super()
@@ -156,6 +159,8 @@ define("chuck/nodes", ["chuck/types"], (types) ->
         when "now"
           context.emitRegPushNow()
           break
+        when "true"
+          context.emitRegPushImm(1)
 
       return undefined
 
@@ -248,5 +253,43 @@ define("chuck/nodes", ["chuck/types"], (types) ->
         context.emitAddNumber()
         if rhs.name == "now"
           context.emitTimeAdvance()
+
+  module.WhileStatement = class extends NodeBase
+    constructor: (cond, body) ->
+      super("WhileStatement")
+      @condition = cond
+      @body = body
+
+    scanPass1: =>
+      @condition.scanPass1()
+      @body.scanPass1()
+
+    scanPass2: =>
+      @condition.scanPass2()
+      @body.scanPass2()
+
+    scanPass3: (context) =>
+      @condition.scanPass3(context)
+      @body.scanPass3(context)
+
+    scanPass4: (context) =>
+      @condition.scanPass4(context)
+      @body.scanPass4(context)
+
+    scanPass5: (context) =>
+      startIndex = context.getNextIndex()
+      context.pushToContStack(undefined)
+      context.pushToBreakStack(undefined)
+      @condition.scanPass5(context)
+      # Push 0
+      context.emitRegPushImm(0)
+      context.emitBranchEq(0)
+      @body.scanPass5(context)
+      context.emitGoto(startIndex)
+
+  module.CodeStatement = class extends ParentNodeBase
+    constructor: (statementList) ->
+      super(statementList, "CodeStatement")
+
   return module
 )

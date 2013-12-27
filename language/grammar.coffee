@@ -52,7 +52,9 @@ grammar = {
     o('Statement StatementList', -> [$1].concat($2))
   ],
   Statement: [
-    o('ExpressionStatement')
+    o('ExpressionStatement'),
+    o('CodeSegment'),
+    o('LoopStatement')
   ],
   ExpressionStatement: [
     o('SEMICOLON', -> return undefined),
@@ -148,6 +150,13 @@ grammar = {
     o('NUMBER', -> new PrimaryNumberExpression($1)),
     o('STRING_LIT', -> new PrimaryStringExpression($1))
     o('L_HACK Expression R_HACK', -> new PrimaryHackExpression($2))
+  ],
+  LoopStatement: [
+    o('WHILE LPAREN Expression RPAREN Statement', -> new WhileStatement($3, $5))
+  ],
+  CodeSegment: [
+    o('LBRACE RBRACE', -> new CodeStatement(undefined)),
+    o('LBRACE StatementList RBRACE', -> new CodeStatement($2))
   ]
 }
 
