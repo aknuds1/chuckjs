@@ -192,12 +192,24 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (n
     emitGoto: (jmp) =>
       @code.append(instructions.goto(jmp))
 
+    emitBreak: =>
+      instr = instructions.goto()
+      @code.append(instr)
+      @_breakStack.push(instr)
+
+    evaluateBreaks: =>
+      while @_breakStack.length
+        instr = @_breakStack.pop()
+        instr.jmp = @_nextIndex()
+      return
+
     finishScanning: =>
       locals = @code.finish()
       for local in locals
         @code.append(instructions.releaseObject2(local.offset))
 
       @code.append(instructions.eoc())
+      return
 
     _emitPreConstructor: (type) =>
       if type.parent?
@@ -205,6 +217,11 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (n
 
       if type.hasConstructor
         @code.append(instructions.preConstructor(type, @code.frame.currentOffset))
+
+      return
+
+    _nextIndex: =>
+      return @code.instructions.length
 
   class Scanner
     constructor: (ast) ->

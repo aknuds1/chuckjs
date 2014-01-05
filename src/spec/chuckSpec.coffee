@@ -72,15 +72,17 @@ define(['chuck', "q"], (chuckModule, q) ->
         chuck.execute(code)
         .done(->
           err = false
-          return undefined
+          return
         ,
         (e) ->
           err = e
-          return undefined
+          return
         )
         # The execution itself starts asynchronously - trigger it
         jasmine.Clock.tick(1)
+        return
       )
+      return
 
     verify = (verifyCb) ->
       waitsFor(->
@@ -142,6 +144,27 @@ define(['chuck', "q"], (chuckModule, q) ->
         )
 
         verify()
+        return
+      )
+
+      it('supports breaking out of while loops', ->
+        # Break and sleep, so that we can verify that code after the loop is executed
+        executeCode("""while (true)
+{
+  break;
+}
+1::second => now;
+"""
+        )
+        runs(->
+          expect(chuck.isExecuting()).toBe(true)
+          # Wake the VM up
+          jasmine.Clock.tick(1001)
+
+          verify()
+          return
+        )
+        return
       )
     )
 

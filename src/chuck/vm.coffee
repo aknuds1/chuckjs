@@ -11,6 +11,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
       @_now = 0
       @_wakeTime = undefined
       @_pc = 0
+      @_nextPc = 1
       @_shouldStop = false
 
     execute: (byteCode) =>
@@ -37,7 +38,8 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
           instr = byteCode[@_pc]
           logging.debug("Executing instruction no. #{@_pc}: #{instr.instructionName}")
           instr.execute(@)
-          ++@_pc
+          @_pc = @_nextPc
+          ++@_nextPc
         if @_wakeTime? && !@_shouldStop
           logging.debug("Halting VM execution for #{@_wakeTime} seconds")
           cb = => @_compute(byteCode, deferred)
@@ -60,7 +62,10 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
       return undefined
 
     popFromReg: =>
-      return @regStack.pop()
+      val = @regStack.pop()
+      if !val?
+        throw new Error("Nothing on the stack")
+      return val
 
     peekReg: =>
       return @regStack[@regStack.length-1]
@@ -84,11 +89,12 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
       return undefined
 
     suspendUntil: (time) =>
+      logging.debug("Suspending VM execution until #{time}")
       @_wakeTime = time
       return undefined
 
     jumpTo: (jmp) =>
-      @_pc = jmp
+      @_nextPc = jmp
 
     _terminateProcessing: =>
       @_dac.stop()

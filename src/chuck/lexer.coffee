@@ -212,6 +212,7 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
     '\\)': 'RPAREN'
     '\\{': 'LBRACE'
     '\\}': 'RBRACE'
+    'break': 'BREAK'
 
   return {
     tokenize: (sourceCode) ->

@@ -91,15 +91,18 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
   )
 
   module.regPushImm = (val) -> return new Instruction("RegPushImm", val: val, (vm) ->
+    logging.debug("RegPushImm: #{val}")
     vm.pushToReg(val)
-    return undefined
+    return
   )
 
   module.timesNumber = -> return new Instruction("TimesNumber", {}, (vm) ->
     lhs = vm.popFromReg()
     rhs = vm.popFromReg()
-    vm.pushToReg(lhs*rhs)
-    return undefined
+    number = lhs*rhs
+    logging.debug("TimesNumber resulted in: #{number}")
+    vm.pushToReg(number)
+    return
   )
 
   module.regPushNow = -> return new Instruction("RegPushNow", {}, (vm) ->
@@ -110,7 +113,9 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
   module.addNumber = -> return new Instruction("AddNumber", {}, (vm) ->
     lhs = vm.popFromReg()
     rhs = vm.popFromReg()
-    vm.pushToReg(lhs+rhs)
+    number = lhs+rhs
+    logging.debug("AddNumber resulted in: #{number}")
+    vm.pushToReg(number)
     return undefined
   )
 
@@ -140,8 +145,9 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
       vm.jumpTo(jmp)
   )
 
-  module.goto = (jmp) -> new Instruction("Goto", {}, (vm) ->
-    vm.jumpTo(jmp)
+  module.goto = (jmp) -> new Instruction("Goto", {jmp: jmp}, (vm) ->
+    logging.debug("Jumping to instruction #{@jmp}")
+    vm.jumpTo(@jmp)
   )
 
   return module

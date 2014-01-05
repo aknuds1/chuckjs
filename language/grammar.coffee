@@ -54,7 +54,8 @@ grammar = {
   Statement: [
     o('ExpressionStatement'),
     o('CodeSegment'),
-    o('LoopStatement')
+    o('LoopStatement'),
+    o('JumpStatement')
   ],
   ExpressionStatement: [
     o('SEMICOLON', -> return undefined),
@@ -155,8 +156,11 @@ grammar = {
     o('WHILE LPAREN Expression RPAREN Statement', -> new WhileStatement($3, $5))
   ],
   CodeSegment: [
-    o('LBRACE RBRACE', -> new CodeStatement(undefined)),
+    o('LBRACE RBRACE', -> new CodeStatement()),
     o('LBRACE StatementList RBRACE', -> new CodeStatement($2))
+  ],
+  JumpStatement: [
+    o('BREAK SEMICOLON', -> new BreakStatement())
   ]
 }
 

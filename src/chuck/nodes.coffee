@@ -263,33 +263,44 @@ define("chuck/nodes", ["chuck/types"], (types) ->
     scanPass1: =>
       @condition.scanPass1()
       @body.scanPass1()
+      return
 
     scanPass2: =>
       @condition.scanPass2()
       @body.scanPass2()
+      return
 
     scanPass3: (context) =>
       @condition.scanPass3(context)
       @body.scanPass3(context)
+      return
 
     scanPass4: (context) =>
       @condition.scanPass4(context)
       @body.scanPass4(context)
+      return
 
     scanPass5: (context) =>
       startIndex = context.getNextIndex()
-      context.pushToContStack(undefined)
-      context.pushToBreakStack(undefined)
       @condition.scanPass5(context)
       # Push 0
       context.emitRegPushImm(0)
       context.emitBranchEq(0)
       @body.scanPass5(context)
       context.emitGoto(startIndex)
+      context.evaluateBreaks()
+      return
 
   module.CodeStatement = class extends ParentNodeBase
     constructor: (statementList) ->
       super(statementList, "CodeStatement")
+
+  module.BreakStatement = class extends NodeBase
+    constructor: ->
+      super('BreakStatement')
+
+    scanPass5: (context) ->
+      context.emitBreak()
 
   return module
 )
