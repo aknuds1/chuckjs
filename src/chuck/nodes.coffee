@@ -76,7 +76,7 @@ define("chuck/nodes", ["chuck/types"], (types) ->
       @exp1.scanPass5(context)
       @exp2.scanPass5(context)
       @operator.emit(context, @exp1, @exp2)
-      context.emitPopWord()
+      #context.emitPopWord()
 
   class ExpressionBase extends NodeBase
     constructor: (nodeType) ->
