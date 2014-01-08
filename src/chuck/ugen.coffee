@@ -2,33 +2,29 @@ define("chuck/ugen", ["chuck/types", "chuck/audioContextService"], (types, audio
   module = {}
 
   module.UGen = class UGen
-    constructor: (type) ->
+    constructor: (type, useGainNode=true) ->
       @type = type
       @_node = undefined
+      if useGainNode
+        @_gainNode = audioContextService.createGainNode()
+        @_gainNode.gain.value = 1
       @size = @type.size
       @tick = @type.ugenTick
       @pmsg = @type.ugenPmsg
       @numIns = @type.ugenNumIns
       @numOuts = @type.ugenNumOuts
-      @_multiChanSize = Math.max(@numIns, @numOuts)
-      @_multiChan = []
       @_srcList = []
       @_destList = []
-      if @_multiChanSize == 1
-        # Mono
-        @_multiChanSize = 0
-        @_multiChan[0] = @
-      else if @_multiChanSize > 1
-        for i in [0..@_multiChanSize-1]
-          @_multiChan.push(new UGen(types.UGen))
+      @vtable =
+        setGain: (gain) =>
+          @_gainNode.gain.value = gain
 
     add: (src) =>
-      src._node.connect(@_node)
+      src._gainNode.connect(@_node)
 
       @_srcList.push(src)
       src._addDest(@)
-
-      return undefined
+      return
 
     stop: =>
       for src in @_srcList
@@ -41,15 +37,24 @@ define("chuck/ugen", ["chuck/types", "chuck/audioContextService"], (types, audio
         return
 
       for i in [0..@_destList.length-1]
-        @_node.disconnect(i)
+        @_gainNode.disconnect(i)
       @_destList.splice(0, @_destList.length)
+      # Disconnect from gain node
+      @_node.disconnect(0)
+      return
 
     _addDest: (dest) =>
       @_destList.push(dest)
+      return
+
+    _setNode: (node) =>
+      @_node = node
+      @_node.connect(@_gainNode)
+      return
 
   module.Dac = class Dac extends UGen
     constructor: ->
-      super(types.Dac)
+      super(types.Dac, false)
       @_node = audioContextService.outputNode
 
   return module

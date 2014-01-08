@@ -3,9 +3,12 @@ define("chuck/audioContextService", ["q", "chuck/logging"], (q, logging) ->
     createOscillator: =>
       return @_audioContext.createOscillator()
 
+    createGainNode: =>
+      return @_audioContext.createGainNode()
+
     getCurrentTime: =>
       return @_audioContext.currentTime
-      
+
     prepareForExecution: =>
       logging.debug("Initializing audio context")
       AudioContext = window.AudioContext  || window.webkitAudioContext

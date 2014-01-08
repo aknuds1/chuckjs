@@ -1,4 +1,4 @@
-define("chuck/nodes", ["chuck/types"], (types) ->
+define("chuck/nodes", ["chuck/types", "chuck/logging"], (types, logging) ->
   module = {}
 
   class NodeBase
@@ -98,7 +98,8 @@ define("chuck/nodes", ["chuck/types"], (types) ->
 
     scanPass3: (context) =>
       for varDecl in @varDecls
-        varDecl.value = context.addVariable(varDecl.name, @type.name)
+        logging.debug("Adding variable '#{varDecl.name}' of type #{@type.name} to current namespace")
+        varDecl.value = context.addVariable(varDecl.name, @type)
       return undefined
 
     scanPass4: =>
@@ -129,7 +130,7 @@ define("chuck/nodes", ["chuck/types"], (types) ->
       @name = name
       @_meta = "variable"
 
-    scanPass4: =>
+    scanPass4: (context) =>
       super()
       switch @name
         when "dac"
@@ -145,6 +146,9 @@ define("chuck/nodes", ["chuck/types"], (types) ->
         when "true"
           @_meta = "value"
           @type = types.Int
+        else
+          value = context.findValue(@name)
+          @type = value.type
 
     scanPass5: (context) =>
       super()
@@ -161,6 +165,8 @@ define("chuck/nodes", ["chuck/types"], (types) ->
           break
         when "true"
           context.emitRegPushImm(1)
+        else
+          context.emitRegPushMem(0)
 
       return undefined
 
@@ -253,6 +259,11 @@ define("chuck/nodes", ["chuck/types"], (types) ->
         context.emitAddNumber()
         if rhs.name == "now"
           context.emitTimeAdvance()
+      # Function call
+      else if rhs.type.isOfType(types.Function)
+        # FIXME
+        context.emitRegPushImm(8)
+        context.emitFuncCallMember()
 
   module.WhileStatement = class extends NodeBase
     constructor: (cond, body) ->
@@ -301,6 +312,32 @@ define("chuck/nodes", ["chuck/types"], (types) ->
 
     scanPass5: (context) ->
       context.emitBreak()
+      return
+
+  module.DotMemberExpression = class extends NodeBase
+    constructor: (base, id) ->
+      super("DotMemberExpression")
+      @base = base
+      @id = id
+
+    scanPass2: =>
+      @base.scanPass2()
+      return
+
+    scanPass3: =>
+      @base.scanPass3()
+      return
+
+    scanPass4: (context) =>
+      @base.scanPass4(context)
+      @type = @base.type.findValue(@id).type
+      return
+
+    scanPass5: (context) =>
+      @base.scanPass5(context)
+      context.emitRegDupLast()
+      context.emitDotMemberFunc(@id)
+      return
 
   return module
 )

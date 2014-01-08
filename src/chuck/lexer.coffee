@@ -100,7 +100,7 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
     whitespaceToken: ->
       return 0 unless (match = WHITESPACE.exec @chunk) or (nline = @chunk.charAt(0) is '\n')
       if match?
-        logging.debug("Consuming whitespace '#{match[0]}'")
+        logging.debug("Consuming whitespace")
       prev = last @tokens
       prev[if match then 'spaced' else 'newLine'] = true if prev
       return if match then match[0].length else 0
@@ -180,7 +180,6 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
       [first_line, first_column] = @getLineAndColumnFromChunk offset
       throwSyntaxError(message, {first_line, first_column})
 
-  # The character code of the nasty Microsoft madness otherwise known as the BOM.
   BOM = 65279
 
   # Token matching regexes.
@@ -192,8 +191,8 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
   NUMBER     = ///
     ^ 0[xX][0-9a-fA-F]+{IS}? |
     ^ 0[cC][0-7]+{IS}? |
-    ^ [0-9]+ |
-    ^ ([0-9]+"."[0-9]*)|([0-9]*"."[0-9]+) # Float
+    ^ (?:\d+\.\d*)|(?:\d*\.\d]+) | # Float
+    ^ [0-9]+
   ///i
 
   WHITESPACE = /^\s+/
@@ -213,6 +212,7 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
     '\\{': 'LBRACE'
     '\\}': 'RBRACE'
     'break': 'BREAK'
+    '\\.': 'DOT'
 
   return {
     tokenize: (sourceCode) ->

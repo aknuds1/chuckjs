@@ -144,7 +144,8 @@ grammar = {
     o('DurExpression COLONCOLON PostfixExpression', -> new DurExpression($1, $3))
   ],
   PostfixExpression: [
-    o('PrimaryExpression')
+    o('PrimaryExpression'),
+    o('PostfixExpression DOT ID', -> new DotMemberExpression($1, $3))
   ],
   PrimaryExpression: [
     o('ID', -> new PrimaryVariableExpression($1)),
@@ -161,7 +162,11 @@ grammar = {
   ],
   JumpStatement: [
     o('BREAK SEMICOLON', -> new BreakStatement())
-  ]
+  ],
+  IdDot: [
+    o('ID', -> [$1])
+    o('ID DOT IdDot', -> $3.push($1))
+  ],
 }
 
 operators = []

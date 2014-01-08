@@ -61,6 +61,9 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
       @regStack.push(value)
       return undefined
 
+    pushToRegFromMem: (offset) =>
+      @regStack.push(@memStack[offset])
+
     popFromReg: =>
       val = @regStack.pop()
       if !val?

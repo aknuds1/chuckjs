@@ -1,78 +1,6 @@
-define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (nodes, types, instructions) ->
+define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "chuck/namespace"],
+(nodes, types, instructions, namespaceModule) ->
   module = {}
-
-  class ChuckValue
-    constructor: (typeName, varName, namespace, isContextGlobal) ->
-      @type = typeName
-      @name = varName
-      @owner = namespace
-      @isContextGlobal = isContextGlobal
-
-  class Scope
-    constructor: ->
-      @_scopes = []
-      @_commitMap = {}
-      @push()
-
-    push: =>
-      @_scopes.push({})
-
-    findType: (name) =>
-      i = @_scopes.length-1
-      while i >= 0
-        type = @_scopes[i][name]
-        if type?
-          return type
-        --i
-
-      return @_commitMap[name]
-
-    addVariable: (name, typeName, namespace) =>
-      value = new ChuckValue(typeName, name, namespace)
-
-      @_addValue(value)
-      return value
-
-    addType: (type) =>
-      @_addValue(type)
-
-    commit: =>
-      scope = @_scopes[0]
-      for own k, v of @_commitMap
-        scope[k] = v
-
-      @_commitMap = []
-
-    _addValue: (value) =>
-      name = value.name
-      lastScope = @_scopes[@_scopes.length-1];
-      if @_scopes[0] != lastScope
-        lastScope[name] = value
-      else
-        @_commitMap[name] = value
-
-  class Namespace
-    constructor: (name) ->
-      @name = name
-      @_scope = new Scope()
-      @_types = new Scope()
-
-    addType: (type) =>
-      @_types.addType(type)
-
-    findType: (name) =>
-      type = @_types.findType(name)
-      if type?
-        return type
-
-      return if @_parent then @_parent.findType(name) else undefined
-
-    addVariable: (name, typeName) =>
-      return @_scope.addVariable(name, typeName, @)
-
-    commit: =>
-      for scope in [@_scope, @_types]
-        scope.commit()
 
   class ChuckLocal
     constructor: (size, offset, name) ->
@@ -120,7 +48,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (n
   class ScanningContext
     constructor: ->
       @code = new ChuckCode()
-      @_globalNamespace = new Namespace("global")
+      @_globalNamespace = new namespaceModule.Namespace("global")
       for own k, type of types
         @_globalNamespace.addType(type)
       @_globalNamespace.commit()
@@ -132,6 +60,9 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (n
     findType: (typeName) =>
       type = @_currentNamespace.findType(typeName)
       return type
+
+    findValue: (name) =>
+      return @_currentNamespace.findValue(name)
 
     addVariable: (name, typeName) =>
       return @_currentNamespace.addVariable(name, typeName)
@@ -170,6 +101,23 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (n
 
     emitRegPushImm: (value) =>
       @code.append(instructions.regPushImm(value))
+      return
+
+    emitFuncCallMember: =>
+      @code.append(instructions.funcCallMember())
+      return
+
+    emitRegPushMem: (offset) =>
+      @code.append(instructions.regPushMem(offset))
+      return
+
+    emitRegDupLast: =>
+      @code.append(instructions.regDupLast())
+      return
+
+    emitDotMemberFunc: (id) =>
+      @code.append(instructions.dotMemberFunc(id))
+      return
 
     emitTimesNumber: =>
       @code.append(instructions.timesNumber())
@@ -179,12 +127,15 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions"], (n
 
     emitAddNumber: =>
       @code.append(instructions.addNumber())
+      return
 
     emitTimeAdvance: =>
       @code.append(instructions.timeAdvance())
+      return
 
     emitGack: (types) =>
       @code.append(instructions.gack(types))
+      return
 
     emitBranchEq: (jmp) =>
       @code.append(instructions.branchEq(jmp))

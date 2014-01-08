@@ -16,6 +16,7 @@ define(['chuck', "q"], (chuckModule, q) ->
     fakeAudioContext = undefined
     fakeGainNode = undefined
     fakeOscillator = undefined
+    fakeOscillatorGainNode = undefined
     chuck = undefined
     err = undefined
     chuckModule.setLogger(new Logger())
@@ -32,7 +33,19 @@ define(['chuck', "q"], (chuckModule, q) ->
       fakeGainNode = jasmine.createSpyObj("gainNode", ["connect", "disconnect"])
       fakeGainNode.gain = jasmine.createSpyObj("gainNode.gain", ["cancelScheduledValues", "setValueAtTime",
         "linearRampToValueAtTime"])
-      fakeAudioContext.createGainNode.andReturn(fakeGainNode)
+      numCalls = 0
+      fakeAudioContext.createGainNode.andCallFake(->
+        if numCalls == 0
+          node = fakeGainNode
+        else if numCalls == 1
+          node = fakeOscillatorGainNode
+        else
+          throw new Error("Don't know which gain node to return")
+        ++numCalls
+        return node
+      )
+      fakeOscillatorGainNode = jasmine.createSpyObj("oscillatorGainNode", ["connect", "disconnect"])
+      fakeOscillatorGainNode.gain = {}
       fakeOscillator = jasmine.createSpyObj("oscillator", ["connect", "start", "stop", "disconnect"])
       fakeOscillator.frequency = {}
       fakeAudioContext.createOscillator.andReturn(fakeOscillator)
@@ -110,10 +123,13 @@ define(['chuck', "q"], (chuckModule, q) ->
         expect(fakeGainNode.connect).toHaveBeenCalledWith(fakeAudioContext.destination)
         expect(fakeGainNode.gain.cancelScheduledValues).toHaveBeenCalledWith(0);
         expect(fakeGainNode.gain.value).toBe(1)
-        expect(fakeOscillator.connect).toHaveBeenCalledWith(fakeGainNode)
+        expect(fakeOscillator.connect).toHaveBeenCalledWith(fakeOscillatorGainNode)
+        expect(fakeOscillatorGainNode.connect).toHaveBeenCalledWith(fakeGainNode)
+        expect(fakeOscillatorGainNode.gain.value).toBe(1)
         # Sine
         expect(fakeOscillator.type).toBe(0)
         expect(fakeOscillator.frequency.value).toBe(220)
+        expect(fakeOscillator)
         expect(fakeOscillator.start).toHaveBeenCalledWith(0)
 
         # Let the program advance until its end
@@ -122,8 +138,21 @@ define(['chuck', "q"], (chuckModule, q) ->
 
       verify(->
         expect(fakeOscillator.stop).toHaveBeenCalledWith(0)
-        expect(fakeOscillator.disconnect).toHaveBeenCalledWith(0)
+        expect(fakeOscillatorGainNode.disconnect).toHaveBeenCalledWith(0)
         expect(fakeGainNode.disconnect).not.toHaveBeenCalled()
+      )
+    )
+
+    it("supports adjusting oscillator parameters", ->
+      executeCode("""SinOsc sin => dac;
+0.6 => sin.gain;
+440 => sin.freq;
+1::second => now;
+""")
+
+      runs(->
+        expect(fakeOscillator.frequency.value).toBe(440)
+        expect(fakeOscillator.frequency.value).toBe(440)
       )
     )
 

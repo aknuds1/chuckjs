@@ -96,6 +96,30 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     return
   )
 
+  module.funcCallMember = -> new Instruction("FuncCallMember", (vm) ->
+    callMember(vm)
+    func = vm.popFromReg()
+
+  )
+
+  module.regPushMem = (offset) -> return new Instruction("RegPushMem", {}, (vm) ->
+    logging.debug("RegPushMem")
+    vm.pushToRegFromMem(offset)
+    return
+  )
+
+  module.regDupLast = -> new Instruction("RegDupLaat", {}, (vm) ->
+    vm.memStack.push(vm.memStack[vm.memStack.length-1])
+    return
+  )
+
+  module.dotMemberFunc = (id) -> new Instruction("DotMemberFunc", {}, (vm) ->
+    obj = vm.popFromReg()
+    func = obj.vtable[id]
+    vm.pushToReg(func)
+    return
+  )
+
   module.timesNumber = -> return new Instruction("TimesNumber", {}, (vm) ->
     lhs = vm.popFromReg()
     rhs = vm.popFromReg()
