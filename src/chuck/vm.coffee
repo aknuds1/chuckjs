@@ -52,7 +52,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
           deferred.resolve()
       catch err
         deferred.reject(err)
-        throw
+        throw err
 
     addUgen: (ugen) =>
       @_ugens.push(ugen)
