@@ -8,7 +8,7 @@
     require(["chuck"], function (chuckModule) {
       $(document).ready(function () {
         var btn = $('#button'),
-            code = "SinOsc sin => dac;\n0.2 => sin.gain;\n2::second => now;\n<<<\"Goodbye\">>>;",
+            code = "SinOsc sin => dac;\n0.333 => sin.gain;\n880 => sin.freq;\n2::second => now;\n<<<\"Goodbye\">>>;",
             pre = $('#code'),
             logger = log4javascript.getLogger();
         logger.addAppender(new log4javascript.BrowserConsoleAppender());
