@@ -19,7 +19,8 @@ module.exports = function (grunt) {
                     'lib/chuck/scanner.js': 'src/chuck/scanner.coffee',
                     'lib/chuck/types.js': 'src/chuck/types.coffee',
                     'lib/chuck/ugen.js': 'src/chuck/ugen.coffee',
-                    'lib/chuck/vm.js': 'src/chuck/vm.coffee'
+                    'lib/chuck/vm.js': 'src/chuck/vm.coffee',
+                    'lib/chuck/namespace.js': 'src/chuck/namespace.coffee'
                 }
             }
         },
