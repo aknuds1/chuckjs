@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="text/javascript" src="js/jquery-1.10.2.js"></script>
+  <script type="text/javascript" src="js/log4javascript.js"></script>
+  <script type="text/javascript" src="js/chuck.js"></script>
+  <script type="text/javascript">
+    require(["chuck"], function (chuckModule) {
+      $(document).ready(function () {
+        var btn = $('#button'),
+            code = "SinOsc sin => dac;\n0.2 => sin.gain;\n2::second => now;\n<<<\"Goodbye\">>>;",
+            pre = $('#code'),
+            logger = log4javascript.getLogger();
+        logger.addAppender(new log4javascript.BrowserConsoleAppender());
+        chuckModule.setLogger(logger);
+        logger.setLevel(log4javascript.Level.INFO);
+        pre.text(code);
+        btn.click(function () {
+          var chuck = new chuckModule.Chuck();
+          console.debug("Executing program");
+          chuck.execute(code)
+              .done(function () {
+                console.info("The program finished playing");
+              });
+        });
+
+      });
+    });
+  </script>
+  <title>ChuckJS Example 2</title>
+</head>
+<body>
+<h1>ChuckJS Example 2</h1>
+
+<p>This example plays a 2 second sine wave at a certain gain and frequency before stopping.</p>
+<pre id="code"></pre>
+<input id="button" type="button" value="Play">
+</body>
+</html>
