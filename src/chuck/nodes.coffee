@@ -94,6 +94,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging"], (types, logging) ->
 
     scanPass2: (context) =>
       @type = context.findType(@typeDecl.type)
+      logging.debug("Declaration of type #{@type.name}")
       return undefined
 
     scanPass3: (context) =>
@@ -145,10 +146,11 @@ define("chuck/nodes", ["chuck/types", "chuck/logging"], (types, logging) ->
           break
         when "true"
           @_meta = "value"
-          @type = types.Int
+          @type = types.Number
         else
           value = context.findValue(@name)
           @type = value.type
+          logging.debug("Primary variable of type #{@type.name}")
 
     scanPass5: (context) =>
       super()
@@ -173,12 +175,12 @@ define("chuck/nodes", ["chuck/types", "chuck/logging"], (types, logging) ->
   module.PrimaryNumberExpression = class extends ExpressionBase
     constructor: (value) ->
       super("PrimaryNumberExpression")
-      @value = value
+      @value = parseFloat(value)
       @_meta = "value"
 
     scanPass4: =>
       super()
-      @type = types.Int
+      @type = types.Number
 
     scanPass5: (context) =>
       super()
@@ -331,6 +333,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging"], (types, logging) ->
     scanPass4: (context) =>
       @base.scanPass4(context)
       @type = @base.type.findValue(@id).type
+      logging.debug("DotMemberExpression, type: #{@type.name}")
       return
 
     scanPass5: (context) =>

@@ -1,5 +1,5 @@
-define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "chuck/namespace"],
-(nodes, types, instructions, namespaceModule) ->
+define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "chuck/namespace", "chuck/logging"],
+(nodes, types, instructions, namespaceModule, logging) ->
   module = {}
 
   class ChuckLocal
@@ -202,10 +202,15 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
   module.scan = (ast) ->
     scanner = new Scanner(ast)
+    logging.debug("Scan pass 1")
     scanner.pass1()
+    logging.debug("Scan pass 2")
     scanner.pass2()
+    logging.debug("Scan pass 3")
     scanner.pass3()
+    logging.debug("Scan pass 4")
     scanner.pass4()
+    logging.debug("Scan pass 5")
     scanner.pass5()
 
     return scanner.byteCode

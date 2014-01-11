@@ -97,14 +97,19 @@ define(['chuck', "q"], (chuckModule, q) ->
       )
       return
 
-    verify = (verifyCb) ->
+    verify = (verifyCb, waitTime = undefined) ->
+      if waitTime?
+        runs(->
+          jasmine.Clock.tick(waitTime)
+        )
+
       waitsFor(->
         err?
       , "Execution should finish", 10)
 
       runs(->
         if err
-          throw new Error("An exception was thrown asynchronously: #{err}")
+          throw new Error("An exception was thrown asynchronously\n#{err.stack}")
 
         expect(chuck.isExecuting()).toBe(false)
         if verifyCb?
@@ -150,10 +155,10 @@ define(['chuck', "q"], (chuckModule, q) ->
 1::second => now;
 """)
 
-      runs(->
+      verify(->
+        expect(fakeOscillatorGainNode.gain.value).toBe(0.6)
         expect(fakeOscillator.frequency.value).toBe(440)
-        expect(fakeOscillator.frequency.value).toBe(440)
-      )
+      , 1001)
     )
 
     describe('looping', ->

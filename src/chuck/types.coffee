@@ -3,6 +3,26 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
 (audioContextService, namespace) ->
   module = {}
 
+  class FunctionArg
+    constructor: (name, typeName) ->
+      @name
+      @typeName = typeName
+
+  class ChuckFunctionBase
+    constructor: (name, args, isMember, func) ->
+      @name = name
+      @_func = func
+      @needThis = isMember
+      @stackDepth = if isMember then 1 else 0
+      @stackDepth += args.length
+
+    apply: (thisObj, args) ->
+      @_func.apply(thisObj, args)
+
+  class ChuckMethod extends ChuckFunctionBase
+    constructor: (name, args, func) ->
+      super(name, args, true, func)
+
   class ChuckType
     constructor: (name, parent, opts, constructorCb) ->
       opts = opts || {}
@@ -19,7 +39,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
 
       opts.namespace = opts.namespace || {}
       for own k, v of opts.namespace
-        memberType = if _(v).isFunction() then module.Function else undefined
+        memberType = if v instanceof ChuckFunctionBase then module.Function else undefined
         @_namespace.addVariable(k, memberType, v)
 
     isOfType: (otherType) =>
@@ -59,8 +79,9 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
     @size = opts.size
   )
   ugenNamespace =
-    gain: ->
-      debugger
+    gain: new ChuckMethod("gain", [new FunctionArg("value", "float")], (value) ->
+      @setGain(value)
+    )
   module.UGen = new ChuckType("UGen", module.Object, size: 8, numIns: 1, numOuts: 1, preConstructor: undefined,
   namespace: ugenNamespace,
   (opts) ->
@@ -76,13 +97,18 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
       @srate =
         @phase = 0.0
   oscNamespace =
-    freq: ->
-      debugger
+    freq: new ChuckMethod("freq", [new FunctionArg("value", "float")], (value) ->
+      @setFrequency(value)
+    )
   constructOsc = ->
     @data = new OscData()
     @_setNode(audioContextService.createOscillator())
-    @_node.frequency.value = 220
+    @setFrequency = (value) ->
+      @_node.frequency.value = value
+      return value
+    @setFrequency(220)
     @_node.start(0)
+
   module.Osc = new ChuckType("Osc", module.UGen, numIns: 1, numOuts: 1, preConstructor: constructOsc,
   namespace: oscNamespace)
   constructSinOsc = ->
@@ -92,7 +118,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
   constructDac = ->
     @_node = audioContextService.outputNode
   module.Dac = new ChuckType("Dac", module.UGenStereo, preConstructor: constructDac)
-  module.Int = new ChuckType("Int", undefined, size: 8, preConstructor: undefined)
+  module.Number = new ChuckType("Number", undefined, size: 8, preConstructor: undefined)
   module.Time = new ChuckType("Time", undefined, size: 8, preConstructor: undefined)
   module.Dur = new ChuckType("Dur", undefined, size: 8, preConstructor: undefined)
   module.String = new ChuckType("String", undefined, size: 8, preConstructor: undefined)

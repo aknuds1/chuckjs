@@ -15,9 +15,6 @@ define("chuck/ugen", ["chuck/types", "chuck/audioContextService"], (types, audio
       @numOuts = @type.ugenNumOuts
       @_srcList = []
       @_destList = []
-      @vtable =
-        setGain: (gain) =>
-          @_gainNode.gain.value = gain
 
     add: (src) =>
       src._gainNode.connect(@_node)
@@ -42,6 +39,10 @@ define("chuck/ugen", ["chuck/types", "chuck/audioContextService"], (types, audio
       # Disconnect from gain node
       @_node.disconnect(0)
       return
+
+    setGain: (gain) =>
+      @_gainNode.gain.value = gain
+      return gain
 
     _addDest: (dest) =>
       @_destList.push(dest)

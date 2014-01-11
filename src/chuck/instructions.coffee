@@ -3,16 +3,20 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
 
   callMember = (vm) ->
     localDepth = vm.popFromReg()
+    logging.debug("Popped local depth from stack: #{localDepth}")
     func = vm.popFromReg()
+    logging.debug("Popped function from stack")
     stackDepth = func.stackDepth
     args = []
     i = 0
     while i < stackDepth
       args.unshift(vm.popFromReg())
+      logging.debug("Popping argument #{i} from stack: #{args[0]}")
       ++i
     thisObj = undefined
     if func.needThis
-      thisObj = args.shift()
+      logging.debug("Function is a method, passing 'this' to it")
+      thisObj = args.pop()
     func.apply(thisObj, args)
 
   class Instruction
@@ -91,15 +95,18 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
   )
 
   module.regPushImm = (val) -> return new Instruction("RegPushImm", val: val, (vm) ->
-    logging.debug("RegPushImm: #{val}")
+    logging.debug("RegPushImm: Pushing #{val} to stack")
     vm.pushToReg(val)
     return
   )
 
-  module.funcCallMember = -> new Instruction("FuncCallMember", (vm) ->
-    callMember(vm)
+  module.funcCallMember = -> new Instruction("FuncCallMember", {}, (vm) ->
+    localDepth = vm.popFromReg()
     func = vm.popFromReg()
-
+    vm.pushToReg(func)
+    vm.pushToReg(localDepth)
+    logging.debug("Calling instance method '#{func.name}'")
+    callMember(vm)
   )
 
   module.regPushMem = (offset) -> return new Instruction("RegPushMem", {}, (vm) ->
@@ -109,13 +116,16 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
   )
 
   module.regDupLast = -> new Instruction("RegDupLaat", {}, (vm) ->
-    vm.memStack.push(vm.memStack[vm.memStack.length-1])
+    last = vm.regStack[vm.regStack.length-1]
+    logging.debug("RegDupLast: Duplicating top of stack: #{last}")
+    vm.regStack.push(last)
     return
   )
 
   module.dotMemberFunc = (id) -> new Instruction("DotMemberFunc", {}, (vm) ->
     obj = vm.popFromReg()
-    func = obj.vtable[id]
+    logging.debug("DotMemberFunc: Pushing method #{id} of type #{obj.type.name} to stack")
+    func = obj.type.findValue(id).value
     vm.pushToReg(func)
     return
   )

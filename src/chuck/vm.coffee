@@ -42,7 +42,8 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
           ++@_nextPc
         if @_wakeTime? && !@_shouldStop
           logging.debug("Halting VM execution for #{@_wakeTime} seconds")
-          cb = => @_compute(byteCode, deferred)
+          cb = =>
+            @_compute(byteCode, deferred)
           setTimeout(cb, @_wakeTime*1000)
           @_wakeTime = undefined
         else
@@ -51,6 +52,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
           deferred.resolve()
       catch err
         deferred.reject(err)
+        throw
 
     addUgen: (ugen) =>
       @_ugens.push(ugen)
@@ -58,6 +60,8 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
 
     # Push value to regular stack
     pushToReg: (value) =>
+      if !value?
+        throw new Error('value is undefined')
       @regStack.push(value)
       return undefined
 
