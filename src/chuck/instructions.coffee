@@ -83,7 +83,6 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
 
   module.releaseObject2 = (offset) ->
     return new Instruction("ReleaseObject2", offset: offset, (vm) ->
-      logging.debug("Removing index #{offset} of memory stack")
       vm.removeFromMemory(offset)
       return undefined
     )
@@ -113,7 +112,6 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
   )
 
   module.regPushMem = (offset) -> return new Instruction("RegPushMem", {}, (vm) ->
-    logging.debug("RegPushMem")
     vm.pushToRegFromMem(offset)
     return
   )

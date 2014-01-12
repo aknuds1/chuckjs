@@ -1,4 +1,5 @@
-define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging, ugen, types, q) ->
+define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/audioContextService"],
+(logging, ugen, types, q, audioContextService) ->
   module = {}
 
   class Vm
@@ -34,17 +35,20 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
           logging.debug("VM executing")
         else
           logging.debug("Resuming VM execution")
+
         while @_pc < byteCode.length && @_isRunning()
           instr = byteCode[@_pc]
           logging.debug("Executing instruction no. #{@_pc}: #{instr.instructionName}")
           instr.execute(@)
           @_pc = @_nextPc
           ++@_nextPc
+
         if @_wakeTime? && !@_shouldStop
-          logging.debug("Halting VM execution for #{@_wakeTime} seconds")
+          sampleRate = audioContextService.getSampleRate()
+          logging.debug("Halting VM execution for #{@_wakeTime/sampleRate} seconds")
           cb = =>
             @_compute(byteCode, deferred)
-          setTimeout(cb, @_wakeTime*1000)
+          setTimeout(cb, @_wakeTime/sampleRate*1000)
           @_wakeTime = undefined
         else
           logging.debug("VM execution has ended")
@@ -66,7 +70,9 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
       return undefined
 
     pushToRegFromMem: (offset) =>
-      @regStack.push(@memStack[offset])
+      value = @memStack[offset]
+      logging.debug("Pushing memory stack element #{offset} (#{value}) to regular stack")
+      @regStack.push(value)
 
     popFromReg: =>
       val = @regStack.pop()
@@ -83,7 +89,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
       return undefined
 
     removeFromMemory: (index) =>
-      logging.debug("Removing object at index #{index} of memory stack")
+      logging.debug("Removing element #{index} of memory stack")
       @memStack.splice(index, 1)
       return undefined
 
@@ -97,6 +103,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
       return undefined
 
     pushNow: =>
+      logging.debug("Pushing now (#{@_now}) to stack")
       @regStack.push(@_now)
       return undefined
 

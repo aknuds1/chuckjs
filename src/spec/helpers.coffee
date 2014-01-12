@@ -25,6 +25,7 @@ define("spec/helpers", ['chuck', "q"], (chuckModule, q) ->
 
     module.fakeAudioContext = jasmine.createSpyObj("AudioContext", ["createGainNode", "createOscillator"])
     module.fakeAudioContext.currentTime = 1
+    module.fakeAudioContext.sampleRate = 48000
     module.fakeAudioContext.destination = {name: "destination"}
     module.fakeGainNode = jasmine.createSpyObj("gainNode", ["connect", "disconnect"])
     module.fakeGainNode.gain = jasmine.createSpyObj("gainNode.gain", ["cancelScheduledValues", "setValueAtTime",

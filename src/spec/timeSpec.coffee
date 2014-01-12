@@ -16,7 +16,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
 """)
 
       verify(->
-        expect(console.log).toHaveBeenCalledWith("1 : (time)")
+        expect(console.log).toHaveBeenCalledWith("#{helpers.fakeAudioContext.sampleRate} : (time)")
         return
       )
     )

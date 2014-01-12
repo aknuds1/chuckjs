@@ -1,4 +1,5 @@
-define("chuck/nodes", ["chuck/types", "chuck/logging"], (types, logging) ->
+define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextService"],
+(types, logging, audioContextService) ->
   module = {}
 
   class NodeBase
@@ -161,7 +162,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging"], (types, logging) ->
           break
         when "second"
           # Push the value corresponding to a second
-          context.emitRegPushImm(1)
+          context.emitRegPushImm(audioContextService.getSampleRate())
           break
         when "now"
           context.emitRegPushNow()

@@ -9,6 +9,8 @@ define("chuck/audioContextService", ["q", "chuck/logging"], (q, logging) ->
     getCurrentTime: =>
       return @_audioContext.currentTime
 
+    getSampleRate: => @_audioContext.sampleRate
+
     prepareForExecution: =>
       logging.debug("Initializing audio context")
       AudioContext = window.AudioContext  || window.webkitAudioContext
