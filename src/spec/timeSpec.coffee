@@ -11,7 +11,14 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
     )
 
     it('can add two time values and chuck the result to a variable declaration', ->
-      executeCode("""1::second + now => time later;""")
+      executeCode("""1::second + now => time later;
+<<<later>>>;
+""")
+
+      verify(->
+        expect(console.log).toHaveBeenCalledWith("1 : (time)")
+        return
+      )
     )
 
 #    it('can loop until a certain time', ->

@@ -123,5 +123,11 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
   module.Dur = new ChuckType("Dur", undefined, size: 8, preConstructor: undefined)
   module.String = new ChuckType("String", undefined, size: 8, preConstructor: undefined)
 
+  module.isObj = (type) ->
+    return !module.isPrimitive(type)
+
+  module.isPrimitive = (type) ->
+    return type == module.Dur || type == module.Time
+
   return module
 )

@@ -15,6 +15,7 @@ define("spec/helpers", ['chuck', "q"], (chuckModule, q) ->
 
   err = undefined
   chuck = undefined
+  origAudioContext = window.AudioContext || window.webkitAudioContext
 
   module.beforeEach = ->
     chuckModule.setLogger(new Logger())
@@ -22,10 +23,32 @@ define("spec/helpers", ['chuck', "q"], (chuckModule, q) ->
     # Disable too eager logging of supposedly unhandled promise rejections
     q.stopUnhandledRejectionTracking()
 
+    module.fakeAudioContext = jasmine.createSpyObj("AudioContext", ["createGainNode", "createOscillator"])
+    module.fakeAudioContext.currentTime = 1
+    module.fakeAudioContext.destination = {name: "destination"}
+    module.fakeGainNode = jasmine.createSpyObj("gainNode", ["connect", "disconnect"])
+    module.fakeGainNode.gain = jasmine.createSpyObj("gainNode.gain", ["cancelScheduledValues", "setValueAtTime",
+                                                                      "linearRampToValueAtTime"])
+    numCalls = 0
+    module.fakeAudioContext.createGainNode.andCallFake(->
+      if numCalls == 0
+        node = module.fakeGainNode
+      else
+        throw new Error("Don't know which gain node to return")
+      ++numCalls
+      return node
+    )
+
+    # Fake AudioContext constructor
+    window.AudioContext = ->
+      _(this).extend(module.fakeAudioContext)
+
     chuck = new chuckModule.Chuck()
     err = undefined
 
   module.afterEach = ->
+    window.AudioContext = origAudioContext
+
     # Reset shared state
     err = undefined
 

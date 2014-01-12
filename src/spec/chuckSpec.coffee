@@ -1,25 +1,17 @@
 define(['chuck', "q", "spec/helpers"], (chuckModule, q, helpers) ->
   describe("Chuck", ->
-    origAudioContext = window.AudioContext || window.webkitAudioContext
-    fakeAudioContext = undefined
-    fakeGainNode = undefined
     fakeOscillator = undefined
     fakeOscillatorGainNode = undefined
     {executeCode, verify} = helpers
 
     beforeEach(->
       helpers.beforeEach()
-
-      fakeAudioContext = jasmine.createSpyObj("AudioContext", ["createGainNode", "createOscillator"])
-      fakeAudioContext.currentTime = 1
-      fakeAudioContext.destination = {name: "destination"}
-      fakeGainNode = jasmine.createSpyObj("gainNode", ["connect", "disconnect"])
-      fakeGainNode.gain = jasmine.createSpyObj("gainNode.gain", ["cancelScheduledValues", "setValueAtTime",
-        "linearRampToValueAtTime"])
+      fakeOscillatorGainNode = jasmine.createSpyObj("oscillatorGainNode", ["connect", "disconnect"])
+      fakeOscillatorGainNode.gain = {}
       numCalls = 0
-      fakeAudioContext.createGainNode.andCallFake(->
+      helpers.fakeAudioContext.createGainNode.andCallFake(->
         if numCalls == 0
-          node = fakeGainNode
+          node = helpers.fakeGainNode
         else if numCalls == 1
           node = fakeOscillatorGainNode
         else
@@ -27,19 +19,12 @@ define(['chuck', "q", "spec/helpers"], (chuckModule, q, helpers) ->
         ++numCalls
         return node
       )
-      fakeOscillatorGainNode = jasmine.createSpyObj("oscillatorGainNode", ["connect", "disconnect"])
-      fakeOscillatorGainNode.gain = {}
       fakeOscillator = jasmine.createSpyObj("oscillator", ["connect", "start", "stop", "disconnect"])
       fakeOscillator.frequency = {}
-      fakeAudioContext.createOscillator.andReturn(fakeOscillator)
-
-      # Fake constructor
-      window.AudioContext = ->
-        _(this).extend(fakeAudioContext)
+      helpers.fakeAudioContext.createOscillator.andReturn(fakeOscillator)
     )
 
     afterEach(->
-      window.AudioContext = origAudioContext
       helpers.afterEach()
     )
 
@@ -51,12 +36,12 @@ define(['chuck', "q", "spec/helpers"], (chuckModule, q, helpers) ->
 
       runs(->
         # Verify the program's execution
-        expect(fakeAudioContext.createGainNode).toHaveBeenCalled()
-        expect(fakeGainNode.connect).toHaveBeenCalledWith(fakeAudioContext.destination)
-        expect(fakeGainNode.gain.cancelScheduledValues).toHaveBeenCalledWith(0);
-        expect(fakeGainNode.gain.value).toBe(1)
+        expect(helpers.fakeAudioContext.createGainNode).toHaveBeenCalled()
+        expect(helpers.fakeGainNode.connect).toHaveBeenCalledWith(helpers.fakeAudioContext.destination)
+        expect(helpers.fakeGainNode.gain.cancelScheduledValues).toHaveBeenCalledWith(0);
+        expect(helpers.fakeGainNode.gain.value).toBe(1)
         expect(fakeOscillator.connect).toHaveBeenCalledWith(fakeOscillatorGainNode)
-        expect(fakeOscillatorGainNode.connect).toHaveBeenCalledWith(fakeGainNode)
+        expect(fakeOscillatorGainNode.connect).toHaveBeenCalledWith(helpers.fakeGainNode)
         expect(fakeOscillatorGainNode.gain.value).toBe(1)
         # Sine
         expect(fakeOscillator.type).toBe(0)
@@ -71,7 +56,7 @@ define(['chuck', "q", "spec/helpers"], (chuckModule, q, helpers) ->
       verify(->
         expect(fakeOscillator.stop).toHaveBeenCalledWith(0)
         expect(fakeOscillatorGainNode.disconnect).toHaveBeenCalledWith(0)
-        expect(fakeGainNode.disconnect).not.toHaveBeenCalled()
+        expect(helpers.fakeGainNode.disconnect).not.toHaveBeenCalled()
       )
     )
 

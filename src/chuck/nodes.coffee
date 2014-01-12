@@ -193,9 +193,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging"], (types, logging) ->
       @_meta = "value"
       @expression = expression
 
-    scanPass4: =>
-      super()
-      @expression.scanPass4()
+    scanPass4: (context) =>
+      super(context)
+      @expression.scanPass4(context)
 
     scanPass5: (context) =>
       super()

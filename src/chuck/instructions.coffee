@@ -41,11 +41,13 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
   module.allocWord = (offset) ->
     return new Instruction("AllocWord", offset: offset, (vm) ->
       # Push memory stack index of value
+      logging.debug("Pushing memory stack index #{@offset} to regular stack")
       vm.pushToReg(@offset)
     )
 
   module.popWord = ->
     return new Instruction("PopWord", undefined, (vm) ->
+      logging.debug("Popping from regular stack")
       vm.popFromReg()
     )
 
@@ -81,6 +83,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
 
   module.releaseObject2 = (offset) ->
     return new Instruction("ReleaseObject2", offset: offset, (vm) ->
+      logging.debug("Removing index #{offset} of memory stack")
       vm.removeFromMemory(offset)
       return undefined
     )
@@ -150,26 +153,29 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     number = lhs+rhs
     logging.debug("AddNumber resulted in: #{number}")
     vm.pushToReg(number)
-    return undefined
+    return
   )
 
   module.timeAdvance = -> return new Instruction("TimeAdvance", {}, (vm) ->
     time = vm.popFromReg()
     vm.suspendUntil(time)
     vm.pushToReg(time)
-    return undefined
+    return
   )
 
   module.gack = (types) -> new Instruction("Gack", {}, (vm) ->
-    hack = module.hack(types[0])
-    hack.execute(vm)
-    return undefined
+    module.hack(types[0]).execute(vm)
+    return
   )
 
   module.hack = (type) -> new Instruction("Hack", {}, (vm) ->
-    str = vm.peekReg()
-    console.log("\"#{str}\" : (#{type.name})")
-    return undefined
+    obj = vm.peekReg()
+    logging.debug("Printing object of type #{type.name}")
+    if type == typesModule.String
+      console.log("\"#{obj}\" : (#{type.name})")
+    else
+      console.log("#{obj} : (#{type.name})")
+    return
   )
 
   module.branchEq = (jmp) -> new Instruction("BranchEq", {}, (vm) ->
@@ -177,11 +183,13 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     lhs = vm.popFromReg()
     if lhs == rhs
       vm.jumpTo(jmp)
+    return
   )
 
   module.goto = (jmp) -> new Instruction("Goto", {jmp: jmp}, (vm) ->
     logging.debug("Jumping to instruction #{@jmp}")
     vm.jumpTo(@jmp)
+    return
   )
 
   return module

@@ -74,10 +74,12 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @_contStack.push(statement)
 
     instantiateObject: (type) =>
+      logging.debug("Emitting instantiation of object of type #{type.name} along with preconstructor")
       @code.append(instructions.instantiateObject(type))
       @_emitPreConstructor(type)
 
     allocateLocal: (type, value) =>
+      logging.debug("Emitting AllocWord instruction")
       local = @code.allocateLocal(type, value)
       @code.append(instructions.allocWord(local.offset))
 
@@ -86,9 +88,14 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       return 0
 
     emitAssignment: (type, value) =>
-      @instantiateObject(type)
+      isObj = types.isObj(type)
+      if isObj
+        @instantiateObject(type)
+
       @allocateLocal(type, value)
-      @code.append(instructions.assignObject())
+      if isObj
+        logging.debug("Emitting AssignObject")
+        @code.append(instructions.assignObject())
       return
 
     emitDac: =>
