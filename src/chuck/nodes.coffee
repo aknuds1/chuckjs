@@ -70,7 +70,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging"], (types, logging) ->
     scanPass4: (context) =>
       @exp1.scanPass4(context)
       @exp2.scanPass4(context)
-      @operator.check()
+      @type = @operator.check(@exp1, @exp2)
 
     scanPass5: (context) =>
       @exp1.scanPass5(context)
@@ -112,6 +112,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging"], (types, logging) ->
     scanPass5: (context) =>
       super()
       for varDecl in @varDecls
+        logging.debug("DeclarationExpression emitting Assignment for value #{varDecl.value}")
         context.emitAssignment(@type, varDecl.value)
       return undefined
 
@@ -199,8 +200,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging"], (types, logging) ->
     scanPass5: (context) =>
       super()
       @expression.scanPass5(context)
-      types = [@expression.type]
-      context.emitGack(types)
+      context.emitGack([@expression.type])
 
   module.PrimaryStringExpression= class extends ExpressionBase
     constructor: (value) ->
@@ -224,6 +224,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging"], (types, logging) ->
 
     scanPass2: =>
       super()
+      logging.debug('DurExpression')
       @base.scanPass2()
       @unit.scanPass2()
 
@@ -250,6 +251,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging"], (types, logging) ->
       @name = name
 
   module.ChuckOperator = class
+    constructor: ->
+      @name = "ChuckOperator"
+
     check: (lhs, rhs) =>
 
     emit: (context, lhs, rhs) =>
@@ -266,6 +270,21 @@ define("chuck/nodes", ["chuck/types", "chuck/logging"], (types, logging) ->
         # FIXME
         context.emitRegPushImm(8)
         context.emitFuncCallMember()
+      else if lhs.type.isOfType(rhs.type)
+        logging.debug("ChuckOperator emitting OpAtChuck to assign one object to another")
+        context.emitOpAtChuck()
+
+  module.PlusOperator = class
+    constructor: ->
+      @name = "PlusOperator"
+
+    check: (lhs, rhs) =>
+      if (lhs.type == types.Dur && rhs.type == types.Time)|| (lhs.type == types.Time && rhs.type == types.Dur)
+        return types.Time
+
+    emit: (context, lhs, rhs) =>
+      logging.debug('PlusOperator emitting AddNumber')
+      context.emitAddNumber()
 
   module.WhileStatement = class extends NodeBase
     constructor: (cond, body) ->

@@ -119,7 +119,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
     @_node = audioContextService.outputNode
   module.Dac = new ChuckType("Dac", module.UGenStereo, preConstructor: constructDac)
   module.Number = new ChuckType("Number", undefined, size: 8, preConstructor: undefined)
-  module.Time = new ChuckType("Time", undefined, size: 8, preConstructor: undefined)
+  module.Time = new ChuckType("time", undefined, size: 8, preConstructor: undefined)
   module.Dur = new ChuckType("Dur", undefined, size: 8, preConstructor: undefined)
   module.String = new ChuckType("String", undefined, size: 8, preConstructor: undefined)
 

@@ -125,7 +125,8 @@ grammar = {
     o('AdditiveExpression')
   ],
   AdditiveExpression: [
-    o('MultiplicativeExpression')
+    o('MultiplicativeExpression'),
+    o('AdditiveExpression PLUS MultiplicativeExpression', -> new BinaryExpression($1, new PlusOperator(), $3))
   ],
   MultiplicativeExpression: [
     o('TildaExpression')

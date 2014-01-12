@@ -89,15 +89,19 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @instantiateObject(type)
       @allocateLocal(type, value)
       @code.append(instructions.assignObject())
+      return
 
     emitDac: =>
       @code.append(instructions.dac())
+      return
 
     emitUGenLink: =>
       @code.append(instructions.uGenLink())
+      return
 
     emitPopWord: =>
       @code.append(instructions.popWord())
+      return
 
     emitRegPushImm: (value) =>
       @code.append(instructions.regPushImm(value))
@@ -121,9 +125,11 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     emitTimesNumber: =>
       @code.append(instructions.timesNumber())
+      return
 
     emitRegPushNow: =>
       @code.append(instructions.regPushNow())
+      return
 
     emitAddNumber: =>
       @code.append(instructions.addNumber())
@@ -131,6 +137,10 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     emitTimeAdvance: =>
       @code.append(instructions.timeAdvance())
+      return
+
+    emitOpAtChuck: =>
+      @code.append(instructions.assignObject())
       return
 
     emitGack: (types) =>

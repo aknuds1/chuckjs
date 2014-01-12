@@ -87,6 +87,11 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q"], (logging
       @memStack.splice(index, 1)
       return undefined
 
+    pushToMem: (value) =>
+      if !value?
+        throw new Error('value is undefined')
+      @memStack.push(value)
+
     pushDac: =>
       @regStack.push(@_dac)
       return undefined
