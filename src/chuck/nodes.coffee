@@ -38,9 +38,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     _scanPass: (pass, context) =>
       if _(@_child).isArray()
-        @_scanArray(@_child, pass, context)
+        return @_scanArray(@_child, pass, context)
       else
-        @_child["scanPass#{pass}"](context)
+        return @_child["scanPass#{pass}"](context)
 
     _scanArray: (array, pass, context) =>
       for c in array
@@ -53,6 +53,18 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: (child) ->
       super(child, "Program")
 
+  module.ExpressionStatement = class extends ParentNodeBase
+    constructor: (exp) ->
+      super(exp)
+
+    scanPass5: (context) =>
+      @_child.scanPass5(context)
+      if @_child.type? && @_child.type.size > 0
+        logging.debug("ExpressionStatement: Emitting PopWord to remove superfluous return value")
+        context.emitPopWord()
+      else
+        logging.debug("ExpressionStatement: Child expression has no return value")
+
   module.BinaryExpression = class extends NodeBase
     constructor: (exp1, operator, exp2) ->
       super("BinaryExpression")
@@ -63,21 +75,30 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     scanPass2: (context) =>
       @exp1.scanPass2(context)
       @exp2.scanPass2(context)
+      return
 
     scanPass3: (context) =>
       @exp1.scanPass3(context)
       @exp2.scanPass3(context)
+      return
 
     scanPass4: (context) =>
       @exp1.scanPass4(context)
+      logging.debug("BinaryExpression: Type checked LHS, type #{@exp1.type.name}")
       @exp2.scanPass4(context)
+      logging.debug("BinaryExpression: Type checked RHS, type #{@exp2.type.name}")
       @type = @operator.check(@exp1, @exp2)
+      logging.debug("BinaryExpression: Type checked operator, type #{@type.name}")
+      return
 
     scanPass5: (context) =>
+      logging.debug("Binary expression: Emitting LHS")
       @exp1.scanPass5(context)
+      logging.debug("Binary expression: Emitting RHS")
       @exp2.scanPass5(context)
+      logging.debug("Binary expression: Emitting operator #{@operator.name}")
       @operator.emit(context, @exp1, @exp2)
-      #context.emitPopWord()
+      return
 
   class ExpressionBase extends NodeBase
     constructor: (nodeType) ->
@@ -256,6 +277,11 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @name = "ChuckOperator"
 
     check: (lhs, rhs) =>
+      if lhs.type == rhs.type
+        if types.isPrimitive(lhs.type) || left.type == types.STRING
+          return rhs.type
+      if lhs.type == types.Dur && rhs.type == types.Time && rhs.name == "now"
+        return rhs.type
 
     emit: (context, lhs, rhs) =>
       # UGen => UGen
@@ -271,9 +297,12 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         # FIXME
         context.emitRegPushImm(8)
         context.emitFuncCallMember()
+      # Assignment
       else if lhs.type.isOfType(rhs.type)
         logging.debug("ChuckOperator emitting OpAtChuck to assign one object to another")
-        context.emitOpAtChuck()
+        return context.emitOpAtChuck()
+
+      return
 
   module.PlusOperator = class
     constructor: ->
@@ -286,6 +315,22 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     emit: (context, lhs, rhs) =>
       logging.debug('PlusOperator emitting AddNumber')
       context.emitAddNumber()
+
+  module.LtOperator = class
+    constructor: ->
+      @name = "LtOperator"
+
+    check: (lhs, rhs) =>
+      if lhs.type == types.Time && rhs.type == types.Time
+        return types.Number
+
+    emit: (context) =>
+      logging.debug("LtOperator: Emitting")
+      context.emitLtNumber()
+
+  module.GtOperator = class
+    constructor: ->
+      @name = "GtOperator"
 
   module.WhileStatement = class extends NodeBase
     constructor: (cond, body) ->
@@ -309,7 +354,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       return
 
     scanPass4: (context) =>
+      logging.debug("WhileStatement: Type checking condition")
       @condition.scanPass4(context)
+      logging.debug("WhileStatement: Body")
       @body.scanPass4(context)
       return
 

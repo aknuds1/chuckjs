@@ -59,7 +59,7 @@ grammar = {
   ],
   ExpressionStatement: [
     o('SEMICOLON', -> return undefined),
-    o('Expression SEMICOLON')
+    o('Expression SEMICOLON', -> new ExpressionStatement($1))
   ],
   Expression: [
     o('ChuckExpression'),
@@ -119,7 +119,9 @@ grammar = {
     o('RelationalExpression')
   ],
   RelationalExpression: [
-    o('ShiftExpression')
+    o('ShiftExpression'),
+    o('RelationalExpression LT ShiftExpression', -> new BinaryExpression($1, new LtOperator(), $3)),
+    o('RelationalExpression GT ShiftExpression', -> new BinaryExpression($1, new GtOperator(), $3))
   ],
   ShiftExpression: [
     o('AdditiveExpression')

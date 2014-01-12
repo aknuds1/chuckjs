@@ -154,6 +154,15 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     return
   )
 
+  module.ltNumber = -> new Instruction("LtNumber", {}, (vm) ->
+    rhs = vm.popFromReg()
+    lhs = vm.popFromReg()
+    result = lhs < rhs
+    logging.debug("Pushing #{result} to regular stack")
+    vm.pushToReg(result)
+    return
+  )
+
   module.timeAdvance = -> return new Instruction("TimeAdvance", {}, (vm) ->
     time = vm.popFromReg()
     vm.suspendUntil(time)
@@ -179,8 +188,13 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
   module.branchEq = (jmp) -> new Instruction("BranchEq", {}, (vm) ->
     rhs = vm.popFromReg()
     lhs = vm.popFromReg()
-    if lhs == rhs
+    result = lhs == rhs
+    logging.debug("Comparing #{lhs} to #{rhs}: #{result}")
+    if result
+      logging.debug("Jumping to instruction number #{jmp}")
       vm.jumpTo(jmp)
+    else
+      logging.debug("Not jumping")
     return
   )
 

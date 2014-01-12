@@ -28,6 +28,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
       opts = opts || {}
       @name = name
       @parent = parent
+      @size = opts.size
       @_constructor = constructorCb
       @_opts = opts
       @_namespace = new namespace.Namespace()

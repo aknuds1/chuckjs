@@ -21,7 +21,26 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
       )
     )
 
-#    it('can loop until a certain time', ->
-#    )
+    it('can loop until a certain time', ->
+      executeCode("""1::second + now => time later;
+while (now < later)
+{
+  <<<now>>>;
+  1::second => now;
+}
+<<<now>>>;
+""")
+      # Verify the first iteration, which'll sleep one second
+      runs(->
+        expect(console.log.calls.length).toEqual(1)
+        expect(console.log).toHaveBeenCalledWith("0 : (time)")
+        jasmine.Clock.tick(100001)
+      )
+      # Verify the post-loop statement, after letting 1 second pass
+      verify(->
+        expect(console.log.calls.length).toEqual(2)
+        expect(console.log).toHaveBeenCalledWith("#{helpers.fakeAudioContext.sampleRate} : (time)")
+      , 1001)
+    )
   )
 )
