@@ -25,6 +25,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     append: (instruction) =>
       @instructions.push(instruction)
+      return instruction
 
     allocateLocal: (type, value) =>
       local = new ChuckLocal(type.size, @frame.currentOffset, value.name)
@@ -44,6 +45,8 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       # Get rid of sentinel
       stack.pop()
       return locals
+
+    getNextIndex: => @instructions.length
 
   class ScanningContext
     constructor: ->
@@ -83,9 +86,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       local = @code.allocateLocal(type, value)
       @code.append(instructions.allocWord(local.offset))
 
-    getNextIndex: =>
-      # TODO
-      return 0
+    getNextIndex: => @code.getNextIndex()
 
     emitAssignment: (type, value) =>
       isObj = types.isObj(type)

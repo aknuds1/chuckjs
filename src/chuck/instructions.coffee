@@ -185,21 +185,21 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     return
   )
 
-  module.branchEq = (jmp) -> new Instruction("BranchEq", {}, (vm) ->
+  module.branchEq = (jmp) -> new Instruction("BranchEq", {jmp: jmp}, (vm) ->
     rhs = vm.popFromReg()
     lhs = vm.popFromReg()
     result = lhs == rhs
     logging.debug("Comparing #{lhs} to #{rhs}: #{result}")
     if result
-      logging.debug("Jumping to instruction number #{jmp}")
-      vm.jumpTo(jmp)
+      logging.debug("Jumping to instruction number #{@jmp}")
+      vm.jumpTo(@jmp)
     else
       logging.debug("Not jumping")
     return
   )
 
   module.goto = (jmp) -> new Instruction("Goto", {jmp: jmp}, (vm) ->
-    logging.debug("Jumping to instruction #{@jmp}")
+    logging.debug("Jumping to instruction number #{@jmp}")
     vm.jumpTo(@jmp)
     return
   )

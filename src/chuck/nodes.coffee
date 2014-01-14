@@ -365,10 +365,11 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @condition.scanPass5(context)
       # Push 0
       context.emitRegPushImm(0)
-      context.emitBranchEq(0)
+      branchEq = context.emitBranchEq()
       @body.scanPass5(context)
       context.emitGoto(startIndex)
       context.evaluateBreaks()
+      branchEq.jmp = context.getNextIndex()
       return
 
   module.CodeStatement = class extends ParentNodeBase
