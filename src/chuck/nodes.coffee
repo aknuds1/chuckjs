@@ -365,11 +365,15 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @condition.scanPass5(context)
       # Push 0
       context.emitRegPushImm(0)
+      logging.debug("WhileStatement: Emitting BranchEq")
       branchEq = context.emitBranchEq()
       @body.scanPass5(context)
+      logging.debug("WhileStatement: Emitting GoTo (instruction number #{startIndex})")
       context.emitGoto(startIndex)
       context.evaluateBreaks()
-      branchEq.jmp = context.getNextIndex()
+      breakJmp = context.getNextIndex()
+      logging.debug("WhileStatement: Configuring BranchEq instruction to jump to instruction number #{breakJmp}")
+      branchEq.jmp = breakJmp
       return
 
   module.CodeStatement = class extends ParentNodeBase
