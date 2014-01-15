@@ -1,0 +1,1 @@
+var code = "SinOsc sin => dac;\n0.333 => sin.gain;\n880 => sin.freq;\n2::second => now;\n<<<\"Goodbye\">>>;";

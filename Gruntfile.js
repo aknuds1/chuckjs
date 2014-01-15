@@ -63,14 +63,31 @@ module.exports = function (grunt) {
             }
         },
         stencil: {
+            options: {
+                templates: 'pages/templates'
+            },
             main: {
                 options: {
-                    templates: 'pages/templates'
+                    env: {
+                        root: ''
+                    }
+                },
+                files: {
+                    'examples/example1.html': ['pages/example1.dot.html'],
+                    'examples/example2.html': ['pages/example2.dot.html']
+                }
+            },
+            basic: {
+                options: {
+                    env: {
+                        root: '../'
+                    }
                 },
                 files: {
                     'examples/basic/demo0.html': ['pages/basic/demo0.dot.html']
                 }
             }
+
         }
     });
 

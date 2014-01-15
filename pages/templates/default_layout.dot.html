@@ -1,9 +1,10 @@
+{{##def.root = def.root || "." #}}
 <!DOCTYPE html>
 <html>
 <head>
-  <script type="text/javascript" src="../js/jquery-1.10.2.js"></script>
-  <script type="text/javascript" src="../js/log4javascript.js"></script>
-  <script type="text/javascript" src="../js/chuck.js"></script>
+  <script type="text/javascript" src="{{= it.root}}js/jquery-1.10.2.js"></script>
+  <script type="text/javascript" src="{{= it.root}}js/log4javascript.js"></script>
+  <script type="text/javascript" src="{{= it.root}}js/chuck.js"></script>
   <script type="text/javascript" src="{{= it.document.code}}"></script>
   <script type="text/javascript">
     require(["chuck"], function (chuckModule) {
