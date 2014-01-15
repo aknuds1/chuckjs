@@ -24,7 +24,7 @@ define("spec/helpers", ['chuck', "q"], (chuckModule, q) ->
     q.stopUnhandledRejectionTracking()
 
     module.fakeAudioContext = jasmine.createSpyObj("AudioContext", ["createGainNode", "createOscillator"])
-    module.fakeAudioContext.currentTime = 1
+    module.fakeAudioContext.currentTime = 0
     module.fakeAudioContext.sampleRate = 48000
     module.fakeAudioContext.destination = {name: "destination"}
     module.fakeGainNode = jasmine.createSpyObj("gainNode", ["connect", "disconnect"])
@@ -43,6 +43,8 @@ define("spec/helpers", ['chuck', "q"], (chuckModule, q) ->
     # Fake AudioContext constructor
     window.AudioContext = ->
       _(this).extend(module.fakeAudioContext)
+      # Keep the constructed AudioContext
+      module.fakeAudioContext = this
 
     chuck = new chuckModule.Chuck()
     err = undefined

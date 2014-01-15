@@ -87,7 +87,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       logging.debug("BinaryExpression: Type checked LHS, type #{@exp1.type.name}")
       @exp2.scanPass4(context)
       logging.debug("BinaryExpression: Type checked RHS, type #{@exp2.type.name}")
-      @type = @operator.check(@exp1, @exp2)
+      @type = @operator.check(@exp1, @exp2, context)
       logging.debug("BinaryExpression: Type checked operator, type #{@type.name}")
       return
 
@@ -276,11 +276,16 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: ->
       @name = "ChuckOperator"
 
-    check: (lhs, rhs) =>
+    check: (lhs, rhs, context) =>
       if lhs.type == rhs.type
         if types.isPrimitive(lhs.type) || left.type == types.STRING
           return rhs.type
       if lhs.type == types.Dur && rhs.type == types.Time && rhs.name == "now"
+        return rhs.type
+      if lhs.type.isOfType(types.UGen) && rhs.type.isOfType(types.UGen)
+        return rhs.type
+      if rhs.type.isOfType(types.Function)
+        rhs.scanPass4(context)
         return rhs.type
 
     emit: (context, lhs, rhs) =>
@@ -363,8 +368,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     scanPass5: (context) =>
       startIndex = context.getNextIndex()
       @condition.scanPass5(context)
-      # Push 0
-      context.emitRegPushImm(0)
+      # Push break condition
+      context.emitRegPushImm(false)
       logging.debug("WhileStatement: Emitting BranchEq")
       branchEq = context.emitBranchEq()
       @body.scanPass5(context)

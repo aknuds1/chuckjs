@@ -9,7 +9,6 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
       @isExecuting = false
       @_ugens = []
       @_dac = new ugen.Dac()
-      @_now = 0
       @_wakeTime = undefined
       @_pc = 0
       @_nextPc = 1
@@ -28,6 +27,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
     stop: =>
       logging.debug("Stopping VM")
       @_shouldStop = true
+      return
 
     _compute: (byteCode, deferred) =>
       try
@@ -60,14 +60,14 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
 
     addUgen: (ugen) =>
       @_ugens.push(ugen)
-      return undefined
+      return
 
     # Push value to regular stack
     pushToReg: (value) =>
       if !value?
         throw new Error('value is undefined')
       @regStack.push(value)
-      return undefined
+      return
 
     pushToRegFromMem: (offset) =>
       value = @memStack[offset]
@@ -86,12 +86,12 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
     insertIntoMemory: (index, value) =>
       logging.debug("Inserting value #{value} into memory stack at index #{index}")
       @memStack[index] = value
-      return undefined
+      return
 
     removeFromMemory: (index) =>
       logging.debug("Removing element #{index} of memory stack")
       @memStack.splice(index, 1)
-      return undefined
+      return
 
     pushToMem: (value) =>
       if !value?
@@ -100,20 +100,22 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
 
     pushDac: =>
       @regStack.push(@_dac)
-      return undefined
+      return
 
     pushNow: =>
-      logging.debug("Pushing now (#{@_now}) to stack")
-      @regStack.push(@_now)
-      return undefined
+      now = audioContextService.getCurrentTime()
+      logging.debug("Pushing now (#{now}) to stack")
+      @regStack.push(now)
+      return
 
     suspendUntil: (time) =>
       logging.debug("Suspending VM execution until #{time}")
       @_wakeTime = time
-      return undefined
+      return
 
     jumpTo: (jmp) =>
       @_nextPc = jmp
+      return
 
     _terminateProcessing: =>
       @_dac.stop()

@@ -19,9 +19,6 @@ define('chuck/helpers', [], ->
     # (this is useful when the error bubbles up in Node.js applications that
     # compile CoffeeScript for example).
     error.stack = error.toString()
-
-    console.log("Throwing error", error)
-
     throw error
 
   return module

@@ -34,6 +34,8 @@ define("chuck/audioContextService", ["q", "chuck/logging"], (q, logging) ->
       deferred.resolve()
       return deferred.promise
 
+    getCurrentTime: => @_audioContext.currentTime
+
   service = new AudioContextService()
   return service
 )

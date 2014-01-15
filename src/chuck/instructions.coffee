@@ -93,6 +93,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     dest = vm.popFromReg()
     src = vm.popFromReg()
     dest.add(src)
+    vm.pushToReg(dest)
     return undefined
   )
 
@@ -142,7 +143,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
 
   module.regPushNow = -> return new Instruction("RegPushNow", {}, (vm) ->
     vm.pushNow()
-    return undefined
+    return
   )
 
   module.addNumber = -> return new Instruction("AddNumber", {}, (vm) ->

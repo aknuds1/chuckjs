@@ -34,13 +34,15 @@ while (now < later)
       runs(->
         expect(console.log.calls.length).toEqual(1)
         expect(console.log).toHaveBeenCalledWith("0 : (time)")
-        jasmine.Clock.tick(100001)
+        # Simulate that 1 second has passed
+        helpers.fakeAudioContext.currentTime = helpers.fakeAudioContext.sampleRate
+        jasmine.Clock.tick(1001)
       )
       # Verify the post-loop statement, after letting 1 second pass
       verify(->
         expect(console.log.calls.length).toEqual(2)
         expect(console.log).toHaveBeenCalledWith("#{helpers.fakeAudioContext.sampleRate} : (time)")
-      , 1001)
+      )
     )
   )
 )
