@@ -6,10 +6,9 @@ define("chuck/audioContextService", ["q", "chuck/logging"], (q, logging) ->
     createGainNode: =>
       return @_audioContext.createGainNode()
 
-    getCurrentTime: =>
-      return @_audioContext.currentTime
-
     getSampleRate: => @_audioContext.sampleRate
+
+    getCurrentTime: => @_audioContext.currentTime * @_audioContext.sampleRate
 
     prepareForExecution: =>
       logging.debug("Initializing audio context")
@@ -33,8 +32,6 @@ define("chuck/audioContextService", ["q", "chuck/logging"], (q, logging) ->
       deferred = q.defer()
       deferred.resolve()
       return deferred.promise
-
-    getCurrentTime: => @_audioContext.currentTime
 
   service = new AudioContextService()
   return service
