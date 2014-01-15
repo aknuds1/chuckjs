@@ -2,6 +2,7 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-contrib-coffee');
     grunt.loadNpmTasks('grunt-shell');
     grunt.loadNpmTasks('grunt-contrib-copy');
+    grunt.loadNpmTasks('grunt-stencil')
 
     grunt.initConfig({
         coffee: {
@@ -41,6 +42,16 @@ module.exports = function (grunt) {
                 files: [
                     {expand: true, cwd: 'src/lib/', src: ['q.js'], dest: 'lib/'}
                 ]
+            },
+            stencil: {
+                files: [
+                    {
+                        expand: true, cwd: 'pages', dest: 'examples/', filter: 'isFile',
+                        src: [
+                            '**/*.js'
+                        ]
+                    }
+                ]
             }
         },
         shell: {
@@ -49,6 +60,16 @@ module.exports = function (grunt) {
                 command: 'node node_modules/requirejs/bin/r.js -o baseUrl=lib name=almond include=' +
                     'chuck,underscore,underscore.string,chuck/parser wrap=false optimize=none ' +
                     'out=examples/js/chuck.js'
+            }
+        },
+        stencil: {
+            main: {
+                options: {
+                    templates: 'pages/templates'
+                },
+                files: {
+                    'examples/basic/demo0.html': ['pages/basic/demo0.dot.html']
+                }
             }
         }
     });
@@ -61,5 +82,5 @@ module.exports = function (grunt) {
         grunt.file.write('lib/chuck/parser.js', parserCode);
     });
 
-    grunt.registerTask('default', ['coffee', 'parser', 'copy', 'shell']);
+    grunt.registerTask('default', ['coffee', 'parser', 'copy', 'shell', 'stencil']);
 };

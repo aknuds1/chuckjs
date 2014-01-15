@@ -4,17 +4,11 @@
   <script type="text/javascript" src="../js/jquery-1.10.2.js"></script>
   <script type="text/javascript" src="../js/log4javascript.js"></script>
   <script type="text/javascript" src="../js/chuck.js"></script>
+  <script type="text/javascript" src="{{= it.document.code}}"></script>
   <script type="text/javascript">
     require(["chuck"], function (chuckModule) {
       $(document).ready(function () {
         var btn = $('#button'),
-            code = "5::second + now => time later;\n" +
-            "while( now < later )\n" +
-            "{\n" +
-            "    <<<now>>>;\n" +
-            "    1::second => now;\n" +
-            "}\n" +
-            "<<<now>>>;\n",
             pre = $('#code'),
             logger = log4javascript.getLogger();
         logger.addAppender(new log4javascript.BrowserConsoleAppender());
@@ -33,12 +27,11 @@
       });
     });
   </script>
-  <title>ChuckJS Basic Demo 0</title>
+  <title>ChucKJS {{= it.document.title}}</title>
 </head>
 <body>
-<h1>ChuckJS Basic Demo 0</h1>
-
-<p>This example loops until 5 seconds have passed; printing the time for each, 1 second long, iteration.</p>
+<h1>ChucKJS {{= it.document.title}}</h1>
+{{= it.document }}
 <pre id="code"></pre>
 <input id="button" type="button" value="Play">
 </body>

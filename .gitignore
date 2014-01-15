@@ -3,4 +3,5 @@ node_modules/
 .idea/*.iws
 .idea/tasks.xml
 /lib/
-examples/js/chuck*
+/pages/js/chuck*
+/examples/
