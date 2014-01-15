@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="text/javascript" src="../js/jquery-1.10.2.js"></script>
+  <script type="text/javascript" src="../js/log4javascript.js"></script>
+  <script type="text/javascript" src="../js/chuck.js"></script>
+  <script type="text/javascript">
+    require(["chuck"], function (chuckModule) {
+      $(document).ready(function () {
+        var btn = $('#button'),
+            code = "5::second + now => time later;\n" +
+            "while( now < later )\n" +
+            "{\n" +
+            "    <<<now>>>;\n" +
+            "    1::second => now;\n" +
+            "}\n" +
+            "<<<now>>>;\n",
+            pre = $('#code'),
+            logger = log4javascript.getLogger();
+        logger.addAppender(new log4javascript.BrowserConsoleAppender());
+        chuckModule.setLogger(logger);
+        logger.setLevel(log4javascript.Level.INFO);
+        pre.text(code);
+        btn.click(function () {
+          var chuck = new chuckModule.Chuck();
+          console.debug("Executing program");
+          chuck.execute(code)
+              .done(function () {
+                console.info("The program finished playing");
+              });
+        });
+
+      });
+    });
+  </script>
+  <title>ChuckJS Basic Demo 0</title>
+</head>
+<body>
+<h1>ChuckJS Basic Demo 0</h1>
+
+<p>This example loops until 5 seconds have passed; printing the time for each, 1 second long, iteration.</p>
+<pre id="code"></pre>
+<input id="button" type="button" value="Play">
+</body>
+</html>
