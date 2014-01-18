@@ -13,6 +13,8 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
       @_pc = 0
       @_nextPc = 1
       @_shouldStop = false
+      @_now = 0
+      @_systemNow = 0
 
     execute: (byteCode) =>
       @_pc = 0
@@ -20,7 +22,29 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
 
       deferred = q.defer()
       setTimeout(=>
-        @_compute(byteCode, deferred)
+        if !@_compute(byteCode, deferred)
+          logging.debug("Ending VM execution")
+          return
+
+        # Start audio processing
+        logging.debug("Starting audio processing")
+        @_scriptProcessor = audioContextService.createScriptProcessor()
+        @_scriptProcessor.onaudioprocess = (event) =>
+#          logging.debug("ScriptProcessorNode audio processing callback invoked for #{event.outputBuffer.length} samples")
+          # Compute each sample
+          for i in [0..event.outputBuffer.length-1]
+            # Detect if the VM should be awoken
+            if @_wakeTime <= (@_systemNow + 0.5)
+              @_now = @_wakeTime
+              @_wakeTime = undefined
+              logging.debug("Letting VM compute sample, now: #{@_now}")
+              if !@_compute(byteCode, deferred)
+                logging.debug("VM has finished execution, finishing audio callback")
+                break
+#            else
+#              logging.debug("VM is not yet ready to wake up (#{@_wakeTime}, #{@_systemNow})")
+
+            ++@_systemNow
       , 0)
       return deferred.promise
 
@@ -45,15 +69,17 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
 
         if @_wakeTime? && !@_shouldStop
           sampleRate = audioContextService.getSampleRate()
-          logging.debug("Halting VM execution for #{@_wakeTime/sampleRate} seconds")
-          cb = =>
-            @_compute(byteCode, deferred)
-          setTimeout(cb, @_wakeTime/sampleRate*1000)
-          @_wakeTime = undefined
+          logging.debug("Halting VM execution for #{(@_wakeTime - @_now)/sampleRate} second(s)")
+          
+#          cb = =>
+#            @_compute(byteCode, deferred)
+#          setTimeout(cb, @_wakeTime/sampleRate*1000)
+          return true
         else
           logging.debug("VM execution has ended")
           @_terminateProcessing()
           deferred.resolve()
+          return false
       catch err
         deferred.reject(err)
         throw err
@@ -103,9 +129,8 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
       return
 
     pushNow: =>
-      now = audioContextService.getCurrentTime()
-      logging.debug("Pushing now (#{now}) to stack")
-      @regStack.push(now)
+      logging.debug("Pushing now (#{@_now}) to stack")
+      @regStack.push(@_now)
       return
 
     suspendUntil: (time) =>
@@ -118,7 +143,10 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
       return
 
     _terminateProcessing: =>
+      logging.debug("Terminating processing")
       @_dac.stop()
+      @_scriptProcessor.disconnect(0)
+      @_scriptProcessor = undefined
       @isExecuting = false
 
     _isRunning: =>
