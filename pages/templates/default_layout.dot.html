@@ -14,7 +14,7 @@
             logger = log4javascript.getLogger();
         logger.addAppender(new log4javascript.BrowserConsoleAppender());
         chuckModule.setLogger(logger);
-        logger.setLevel(log4javascript.Level.INFO);
+        logger.setLevel(log4javascript.Level.DEBUG);
         pre.text(code);
         btn.click(function () {
           var chuck = new chuckModule.Chuck();

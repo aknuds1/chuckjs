@@ -14,7 +14,8 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
       @_nextPc = 1
       @_shouldStop = false
       @_now = 0
-      @_systemNow = 0
+      @_nowSystem = 0
+      @_gain = 1
 
     execute: (byteCode) =>
       @_pc = 0
@@ -30,11 +31,15 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
         logging.debug("Starting audio processing")
         @_scriptProcessor = audioContextService.createScriptProcessor()
         @_scriptProcessor.onaudioprocess = (event) =>
-#          logging.debug("ScriptProcessorNode audio processing callback invoked for #{event.outputBuffer.length} samples")
+          logging.debug("ScriptProcessorNode audio processing callback invoked for #{event.outputBuffer.length} samples" +
+          ", current time: #{event.playbackTime * audioContextService.getSampleRate()}")
           # Compute each sample
+          samplesLeft = event.outputBuffer.getChannelData(0)
+          samplesRight = event.outputBuffer.getChannelData(1)
           for i in [0..event.outputBuffer.length-1]
+            @_nowSystem = event.playbackTime * audioContextService.getSampleRate() + i
             # Detect if the VM should be awoken
-            if @_wakeTime <= (@_systemNow + 0.5)
+            if @_wakeTime <= (@_nowSystem + 0.5)
               @_now = @_wakeTime
               @_wakeTime = undefined
               logging.debug("Letting VM compute sample, now: #{@_now}")
@@ -42,9 +47,14 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
                 logging.debug("VM has finished execution, finishing audio callback")
                 break
 #            else
-#              logging.debug("VM is not yet ready to wake up (#{@_wakeTime}, #{@_systemNow})")
+#              logging.debug("VM is not yet ready to wake up (#{@_wakeTime}, #{@_nowSystem})")
 
-            ++@_systemNow
+            frame = []
+            @_dac.tick(@_nowSystem, frame)
+            samplesLeft[i] = frame[0] * @_gain
+            samplesRight[i] = frame[1] * @_gain
+
+            ++@_nowSystem
       , 0)
       return deferred.promise
 

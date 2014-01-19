@@ -95,25 +95,28 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
       @freq = 220.0
       @sync = 0
       @width = 0.5
-      @srate =
-        @phase = 0.0
   oscNamespace =
     freq: new ChuckMethod("freq", [new FunctionArg("value", "float")], (value) ->
       @setFrequency(value)
     )
   constructOsc = ->
     @data = new OscData()
-    @_setNode(audioContextService.createOscillator())
+#    @_setNode(audioContextService.createOscillator())
     @setFrequency = (value) ->
       @_node.frequency.value = value
       return value
-    @setFrequency(220)
-    @_node.start(0)
+#    @setFrequency(220)
+#    @_node.start(0)
+
+    @tick = (now, frames) ->
+      sample = Math.sin(now / audioContextService.getSampleRate() * @data.freq * Math.PI*2)
+      frames[0] = sample
+      frames[1] = sample
 
   module.Osc = new ChuckType("Osc", module.UGen, numIns: 1, numOuts: 1, preConstructor: constructOsc,
   namespace: oscNamespace)
   constructSinOsc = ->
-    @_node.type = 0
+    #@_node.type = 0
   module.SinOsc = new ChuckType("SinOsc", module.Osc, preConstructor: constructSinOsc)
   module.UGenStereo = new ChuckType("Ugen_Stereo", module.UGen, numIns: 2, numOuts: 2, preConstructor: undefined)
   constructDac = ->

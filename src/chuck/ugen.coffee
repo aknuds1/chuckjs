@@ -31,6 +31,16 @@ define("chuck/ugen", ["chuck/types", "chuck/audioContextService"], (types, audio
     setGain: (gain) =>
       return gain
 
+    tick: (now, frame) =>
+      logging.debug("DAC ticking")
+      frame[0] = 0
+      frame[1] = 0
+      srcFrame = []
+      for src in @_srcList
+        src.tick(now, srcFrame)
+        frame[0] += srcFrame[0] / @_srcList.length
+        frame[1] += srcFrame[1] / @_srcList.length
+
     _addDest: (dest) =>
       @_destList.push(dest)
       return
