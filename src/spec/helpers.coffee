@@ -23,22 +23,12 @@ define("spec/helpers", ['chuck', "q"], (chuckModule, q) ->
     # Disable too eager logging of supposedly unhandled promise rejections
     q.stopUnhandledRejectionTracking()
 
-    module.fakeAudioContext = jasmine.createSpyObj("AudioContext", ["createGainNode", "createOscillator"])
+    module.fakeAudioContext = jasmine.createSpyObj("AudioContext", ["createScriptProcessor"])
     module.fakeAudioContext.currentTime = 0
     module.fakeAudioContext.sampleRate = 48000
     module.fakeAudioContext.destination = {name: "destination"}
-    module.fakeGainNode = jasmine.createSpyObj("gainNode", ["connect", "disconnect"])
-    module.fakeGainNode.gain = jasmine.createSpyObj("gainNode.gain", ["cancelScheduledValues", "setValueAtTime",
-                                                                      "linearRampToValueAtTime"])
-    numCalls = 0
-    module.fakeAudioContext.createGainNode.andCallFake(->
-      if numCalls == 0
-        node = module.fakeGainNode
-      else
-        throw new Error("Don't know which gain node to return")
-      ++numCalls
-      return node
-    )
+    module.fakeScriptProcessor = jasmine.createSpyObj("scriptProcessor", ["connect", "disconnect"])
+    module.fakeAudioContext.createScriptProcessor.andCallFake(-> module.fakeScriptProcessor)
 
     # Fake AudioContext constructor
     window.AudioContext = ->
@@ -106,13 +96,21 @@ define("spec/helpers", ['chuck', "q"], (chuckModule, q) ->
       if err
         throw new Error("An exception was thrown asynchronously\n#{err.stack}")
 
-      expect(chuck.isExecuting()).toBe(false)
+      expect(chuck.isExecuting()).toBe(false, "isExecuting should be false")
       if verifyCb?
         verifyCb()
     )
 
   module.isChuckExecuting = -> chuck.isExecuting()
   module.stopChuck = -> chuck.stop()
+
+  # Simulate processing of an audio buffer of a certain length
+  module.processAudio = (seconds) ->
+    event =
+      outputBuffer:
+        getChannelData: -> []
+        length: seconds * module.fakeAudioContext.sampleRate
+    chuck._vm._scriptProcessor.onaudioprocess(event)
 
   return module
 )

@@ -32,11 +32,12 @@ while (now < later)
 """)
       # Verify the first iteration, which'll sleep one second
       runs(->
-        expect(console.log.calls.length).toEqual(1)
+        expect(console.log.calls.length).toBe(1)
         expect(console.log).toHaveBeenCalledWith("0 : (time)")
         # Simulate that 1 second has passed
-        helpers.fakeAudioContext.currentTime = 1
-        jasmine.Clock.tick(1001)
+        helpers.processAudio(1)
+        # Let the VM terminate
+        helpers.processAudio(1)
       )
       # Verify the post-loop statement, after letting 1 second pass
       verify(->

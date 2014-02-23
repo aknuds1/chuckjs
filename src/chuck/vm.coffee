@@ -25,6 +25,8 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
       setTimeout(=>
         if !@_compute(byteCode, deferred)
           logging.debug("Ending VM execution")
+          @_terminateProcessing()
+          deferred.resolve()
           return
 
         # Start audio processing
@@ -92,10 +94,6 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
         if @_wakeTime? && !@_shouldStop
           sampleRate = audioContextService.getSampleRate()
           logging.debug("Halting VM execution for #{(@_wakeTime - @_now)/sampleRate} second(s)")
-          
-#          cb = =>
-#            @_compute(byteCode, deferred)
-#          setTimeout(cb, @_wakeTime/sampleRate*1000)
           return true
         else
           @_shouldStop = true
@@ -166,8 +164,9 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
     _terminateProcessing: =>
       logging.debug("Terminating processing")
       @_dac.stop()
-      @_scriptProcessor.disconnect(0)
-      @_scriptProcessor = undefined
+      if @_scriptProcessor?
+        @_scriptProcessor.disconnect(0)
+        @_scriptProcessor = undefined
       @isExecuting = false
 
     _isRunning: =>
