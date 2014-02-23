@@ -48,7 +48,7 @@ module.exports = function (grunt) {
                     {
                         expand: true, cwd: 'pages', dest: 'examples/', filter: 'isFile',
                         src: [
-                            '**/*.js'
+                            '**/*.js', '**/*.css'
                         ]
                     }
                 ]

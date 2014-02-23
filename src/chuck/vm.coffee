@@ -31,9 +31,16 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
         logging.debug("Starting audio processing")
         @_scriptProcessor = audioContextService.createScriptProcessor()
         @_scriptProcessor.onaudioprocess = (event) =>
-          logging.debug("ScriptProcessorNode audio processing callback invoked for #{event.outputBuffer.length} samples" +
-          ", current time: #{event.playbackTime * audioContextService.getSampleRate()}")
+          if !event.playbackTime?
+            logging.warn("onaudioprocess: event.playbackTime is undefined")
+            return
+
           # Compute each sample
+
+#          logging.debug("ScriptProcessorNode audio processing callback invoked for #{event.outputBuffer.length} samples,
+#          current time: #{event.playbackTime * audioContextService.getSampleRate()}", event.playbackTime,
+#            audioContextService.getSampleRate())
+
           samplesLeft = event.outputBuffer.getChannelData(0)
           samplesRight = event.outputBuffer.getChannelData(1)
           for i in [0..event.outputBuffer.length-1]
@@ -49,12 +56,14 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
 #            else
 #              logging.debug("VM is not yet ready to wake up (#{@_wakeTime}, #{@_nowSystem})")
 
-            frame = []
+            frame = [0, 0]
             @_dac.tick(@_nowSystem, frame)
             samplesLeft[i] = frame[0] * @_gain
             samplesRight[i] = frame[1] * @_gain
 
             ++@_nowSystem
+
+          return
       , 0)
       return deferred.promise
 

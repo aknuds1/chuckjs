@@ -2,6 +2,7 @@
 define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
 (audioContextService, namespace) ->
   module = {}
+  TwoPi = Math.PI*2
 
   class FunctionArg
     constructor: (name, typeName) ->
@@ -67,7 +68,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
       if !parent?
         return
 
-      opts = _(parent._opts).extend(opts)
+      opts = _({}).chain().extend(parent._opts).extend(opts).value()
       @_constructParent(parent.parent, opts)
       if parent._constructor?
         parent._constructor.call(@, opts)
@@ -84,10 +85,11 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
       @setGain(value)
     )
   module.UGen = new ChuckType("UGen", module.Object, size: 8, numIns: 1, numOuts: 1, preConstructor: undefined,
-  namespace: ugenNamespace,
+  namespace: ugenNamespace, ugenTick: undefined
   (opts) ->
     @ugenNumIns = opts.numIns
     @ugenNumOuts = opts.numOuts
+    @ugenTick = opts.ugenTick
   )
   class OscData
     constructor: ->
@@ -95,6 +97,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
       @freq = 220.0
       @sync = 0
       @width = 0.5
+      @phase = 0
   oscNamespace =
     freq: new ChuckMethod("freq", [new FunctionArg("value", "float")], (value) ->
       @setFrequency(value)
@@ -108,16 +111,19 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
 #    @setFrequency(220)
 #    @_node.start(0)
 
-    @tick = (now, frames) ->
-      sample = Math.sin(now / audioContextService.getSampleRate() * @data.freq * Math.PI*2)
-      frames[0] = sample
-      frames[1] = sample
-
   module.Osc = new ChuckType("Osc", module.UGen, numIns: 1, numOuts: 1, preConstructor: constructOsc,
   namespace: oscNamespace)
   constructSinOsc = ->
     #@_node.type = 0
-  module.SinOsc = new ChuckType("SinOsc", module.Osc, preConstructor: constructSinOsc)
+  @tickSinOsc = ->
+    out = Math.sin(@data.phase * TwoPi)
+    @data.phase += @data.num
+    if @data.phase > 1
+      @data.phase -= 1
+    else if @data.phase < 0
+      @data.phase += 1
+    out
+  module.SinOsc = new ChuckType("SinOsc", module.Osc, preConstructor: constructSinOsc, ugenTick: tickSinOsc)
   module.UGenStereo = new ChuckType("Ugen_Stereo", module.UGen, numIns: 2, numOuts: 2, preConstructor: undefined)
   constructDac = ->
     @_node = audioContextService.outputNode

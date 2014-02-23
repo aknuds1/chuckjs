@@ -18,13 +18,13 @@ define("chuck/audioContextService", ["q", "chuck/logging"], (q, logging) ->
       @_audioContext = new AudioContext()
 
     createScriptProcessor: =>
-      @_scriptProcessor = @_audioContext.createScriptProcessor(512, 0, 2)
+      @_scriptProcessor = @_audioContext.createScriptProcessor(16384, 0, 2)
       @_scriptProcessor.connect(@_audioContext.destination)
       return @_scriptProcessor
 
     stopOperation: =>
-#      if @_scriptProcessor?
-#        @_scriptProcessor.disconnect(0)
+      if @_scriptProcessor?
+        @_scriptProcessor.disconnect(0)
 
       deferred = q.defer()
       deferred.resolve()

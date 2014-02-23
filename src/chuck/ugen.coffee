@@ -1,19 +1,44 @@
-define("chuck/ugen", ["chuck/types", "chuck/audioContextService"], (types, audioContextService) ->
+define("chuck/ugen", ["chuck/types", "chuck/logging"], (types, logging) ->
   module = {}
+
+  class UGenChannel
+    constructor: ->
+      @current = 0
+      @sources = []
+
+    tick: (now) =>
+      @current = 0
+      if @sources.length == 0
+        return @current
+
+      # Tick sources
+      ugen = @sources[0]
+      ugen.tick(now)
+      @current = ugen.current
+      for source in (@sources[i] for i in [1...@sources.length])
+        source.tick(now)
+        @current += source.current
+
+      @current
+
+    add: (source) =>
+      @sources.push(source)
 
   module.UGen = class UGen
     constructor: (type) ->
       @type = type
       @size = @type.size
-      @tick = @type.ugenTick
       @pmsg = @type.ugenPmsg
       @numIns = @type.ugenNumIns
       @numOuts = @type.ugenNumOuts
-      @_srcList = []
+      @_channels = (new UGenChannel() for i in [0..@numIns-1])
+      @_tick = if type.ugenTick? then _(type.ugenTick).bind(@) else (input) -> input
+      @_now = -1
       @_destList = []
 
     add: (src) =>
-      @_srcList.push(src)
+      for channel in @_channels
+        channel.add(src)
       src._addDest(@)
       return
 
@@ -31,26 +56,32 @@ define("chuck/ugen", ["chuck/types", "chuck/audioContextService"], (types, audio
     setGain: (gain) =>
       return gain
 
-    tick: (now, frame) =>
-      logging.debug("DAC ticking")
-      frame[0] = 0
-      frame[1] = 0
-      srcFrame = []
-      for src in @_srcList
-        src.tick(now, srcFrame)
-        frame[0] += srcFrame[0] / @_srcList.length
-        frame[1] += srcFrame[1] / @_srcList.length
+    tick: (now) =>
+      if @_now >= now
+        return @current
+
+      @_now = now
+
+      # Tick inputs
+      sum = 0
+      for channel in @_channels
+        sum += channel.tick(now)
+      sum /= @_channels.length
+
+      # Synthesize
+      @current = @_tick(sum)
+      return @current
 
     _addDest: (dest) =>
       @_destList.push(dest)
       return
 
-    _setNode: (node) =>
-      return
-
   module.Dac = class Dac extends UGen
-    constructor: ->
-      super(types.Dac, false)
+    tick: (now, frame) =>
+      super(now)
+      for i in [0...frame.length]
+        frame[i] = @_channels[i].current
+      return
 
   return module
 )
