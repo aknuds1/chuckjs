@@ -140,7 +140,7 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
       if offset >= @chunk.length
         string = @chunk
       else
-        string = @chunk[..offset-1]
+        string = @chunk[...offset]
 
       lineCount = count(string, '\n')
 

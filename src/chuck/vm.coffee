@@ -31,10 +31,6 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
         logging.debug("Starting audio processing")
         @_scriptProcessor = audioContextService.createScriptProcessor()
         @_scriptProcessor.onaudioprocess = (event) =>
-          if !event.playbackTime?
-            logging.warn("onaudioprocess: event.playbackTime is undefined")
-            return
-
           # Compute each sample
 
 #          logging.debug("ScriptProcessorNode audio processing callback invoked for #{event.outputBuffer.length} samples,
@@ -43,8 +39,8 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
 
           samplesLeft = event.outputBuffer.getChannelData(0)
           samplesRight = event.outputBuffer.getChannelData(1)
-          for i in [0..event.outputBuffer.length-1]
-            @_nowSystem = event.playbackTime * audioContextService.getSampleRate() + i
+          for i in [0...event.outputBuffer.length]
+            ++@_nowSystem
             # Detect if the VM should be awoken
             if @_wakeTime <= (@_nowSystem + 0.5)
               @_now = @_wakeTime

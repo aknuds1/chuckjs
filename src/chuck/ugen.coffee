@@ -24,6 +24,9 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], (types, logging) ->
     add: (source) =>
       @sources.push(source)
 
+    stop: =>
+      @sources.splice(0, @sources)
+
   module.UGen = class UGen
     constructor: (type) ->
       @type = type
@@ -31,7 +34,7 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], (types, logging) ->
       @pmsg = @type.ugenPmsg
       @numIns = @type.ugenNumIns
       @numOuts = @type.ugenNumOuts
-      @_channels = (new UGenChannel() for i in [0..@numIns-1])
+      @_channels = (new UGenChannel() for i in [0...@numIns])
       @_tick = if type.ugenTick? then _(type.ugenTick).bind(@) else (input) -> input
       @_now = -1
       @_destList = []
@@ -43,9 +46,8 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], (types, logging) ->
       return
 
     stop: =>
-      for src in @_srcList
-        src.stop()
-      @_srcList.splice(0, @_srcList.length)
+      for channel in @_channels
+        channel.stop()
 
       if @_destList.length == 0
         return
@@ -77,6 +79,9 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], (types, logging) ->
       return
 
   module.Dac = class Dac extends UGen
+    constructor: ->
+      super(types.Dac)
+
     tick: (now, frame) =>
       super(now)
       for i in [0...frame.length]
