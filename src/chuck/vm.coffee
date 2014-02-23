@@ -33,12 +33,18 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
         @_scriptProcessor.onaudioprocess = (event) =>
           # Compute each sample
 
-#          logging.debug("ScriptProcessorNode audio processing callback invoked for #{event.outputBuffer.length} samples,
-#          current time: #{event.playbackTime * audioContextService.getSampleRate()}", event.playbackTime,
-#            audioContextService.getSampleRate())
-
           samplesLeft = event.outputBuffer.getChannelData(0)
           samplesRight = event.outputBuffer.getChannelData(1)
+
+          if @_shouldStop
+            logging.debug("Audio callback finishing execution after processing #{@_nowSystem} samples")
+            for i in [0...event.outputBuffer.length]
+              samplesLeft[i] = 0
+              samplesRight[i] = 0
+            @_terminateProcessing()
+            deferred.resolve()
+            return
+
           for i in [0...event.outputBuffer.length]
             ++@_nowSystem
             # Detect if the VM should be awoken
@@ -46,19 +52,20 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
               @_now = @_wakeTime
               @_wakeTime = undefined
               logging.debug("Letting VM compute sample, now: #{@_now}")
-              if !@_compute(byteCode, deferred)
-                logging.debug("VM has finished execution, finishing audio callback")
-                break
+              @_compute(byteCode, deferred)
 #            else
 #              logging.debug("VM is not yet ready to wake up (#{@_wakeTime}, #{@_nowSystem})")
 
             frame = [0, 0]
-            @_dac.tick(@_nowSystem, frame)
+            if !@_shouldStop
+              @_dac.tick(@_nowSystem, frame)
             samplesLeft[i] = frame[0] * @_gain
             samplesRight[i] = frame[1] * @_gain
 
             ++@_nowSystem
 
+          if @_shouldStop
+            logging.debug("Audio callback: In the process of stopping, flushing buffers")
           return
       , 0)
       return deferred.promise
@@ -91,9 +98,8 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
 #          setTimeout(cb, @_wakeTime/sampleRate*1000)
           return true
         else
-          logging.debug("VM execution has ended")
-          @_terminateProcessing()
-          deferred.resolve()
+          @_shouldStop = true
+          logging.debug("VM execution has ended at #{@_nowSystem} samples", @_shouldStop)
           return false
       catch err
         deferred.reject(err)
