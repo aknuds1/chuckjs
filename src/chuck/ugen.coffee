@@ -25,7 +25,7 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], (types, logging) ->
       @sources.push(source)
 
     stop: =>
-      @sources.splice(0, @sources)
+      @sources.splice(0, @sources.length)
 
   module.UGen = class UGen
     constructor: (type) ->

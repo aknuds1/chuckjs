@@ -1,32 +1,22 @@
-define(['chuck', "q", "spec/helpers"], (chuckModule, q, helpers) ->
+define(['chuck', "q", "spec/helpers", "chuck/types"], (chuckModule, q, helpers, chuckTypes) ->
+
   describe("Chuck", ->
-    fakeOscillator = undefined
-    fakeOscillatorGainNode = undefined
     {executeCode, verify} = helpers
 
     beforeEach(->
       helpers.beforeEach()
-      fakeOscillatorGainNode = jasmine.createSpyObj("oscillatorGainNode", ["connect", "disconnect"])
-      fakeOscillatorGainNode.gain = {}
-      numCalls = 0
-      helpers.fakeAudioContext.createGainNode.andCallFake(->
-        if numCalls == 0
-          node = helpers.fakeGainNode
-        else if numCalls == 1
-          node = fakeOscillatorGainNode
-        else
-          throw new Error("Don't know which gain node to return")
-        ++numCalls
-        return node
-      )
-      fakeOscillator = jasmine.createSpyObj("oscillator", ["connect", "start", "stop", "disconnect"])
-      fakeOscillator.frequency = {}
-      helpers.fakeAudioContext.createOscillator.andReturn(fakeOscillator)
+      spyOn(chuckTypes.SinOsc, "ugenTick")
     )
 
     afterEach(->
       helpers.afterEach()
     )
+
+    verifySinOsc = (sinOsc, frequency=220, gain=1) ->
+      expect(sinOsc.type.name).toBe("SinOsc")
+      expect(sinOsc.data.num).toBe((1/helpers.fakeAudioContext.sampleRate)*frequency,
+        "Frequency should be correctly set")
+      expect(sinOsc._gain).toBe(gain, "Gain should be correctly set")
 
     it("can execute a program", ->
       executeCode("""SinOsc sin => dac;
@@ -36,28 +26,24 @@ define(['chuck', "q", "spec/helpers"], (chuckModule, q, helpers) ->
 
       runs(->
         # Verify the program's execution
-        expect(helpers.fakeAudioContext.createGainNode).toHaveBeenCalled()
-        expect(helpers.fakeGainNode.connect).toHaveBeenCalledWith(helpers.fakeAudioContext.destination)
-        expect(helpers.fakeGainNode.gain.cancelScheduledValues).toHaveBeenCalledWith(0);
-        expect(helpers.fakeGainNode.gain.value).toBe(1)
-        expect(fakeOscillator.connect).toHaveBeenCalledWith(fakeOscillatorGainNode)
-        expect(fakeOscillatorGainNode.connect).toHaveBeenCalledWith(helpers.fakeGainNode)
-        expect(fakeOscillatorGainNode.gain.value).toBe(1)
-        # Sine
-        expect(fakeOscillator.type).toBe(0)
-        expect(fakeOscillator.frequency.value).toBe(220)
-        expect(fakeOscillator)
-        expect(fakeOscillator.start).toHaveBeenCalledWith(0)
+        expect(helpers.fakeAudioContext.createScriptProcessor).toHaveBeenCalled()
+        expect(helpers.fakeScriptProcessor.connect).toHaveBeenCalledWith(helpers.fakeAudioContext.destination)
 
-        # Let the program advance until its end
-        jasmine.Clock.tick(2001)
+        # Sine
+        dac = helpers.getDac()
+        expect(dac._channels[0].sources.length).toBe(1, "Sine oscillator should be connected to DAC")
+        sine = dac._channels[0].sources[0]
+        expect(dac._channels[1].sources).toEqual([sine], "Sine oscillator should be connected to DAC")
+        verifySinOsc(sine)
       )
 
       verify(->
-        expect(fakeOscillator.stop).toHaveBeenCalledWith(0)
-        expect(fakeOscillatorGainNode.disconnect).toHaveBeenCalledWith(0)
-        expect(helpers.fakeGainNode.disconnect).not.toHaveBeenCalled()
-      )
+        dac = helpers.getDac()
+        for i in [0...dac._channels.length]
+          channel = dac._channels[i]
+          expect(channel.sources.length).toBe(0, "DAC channel #{i} sources should be empty")
+        expect(helpers.fakeScriptProcessor.disconnect).toHaveBeenCalled()
+      , 2)
     )
 
     it("supports adjusting oscillator parameters", ->
@@ -67,10 +53,13 @@ define(['chuck', "q", "spec/helpers"], (chuckModule, q, helpers) ->
 1::second => now;
 """)
 
-      verify(->
-        expect(fakeOscillatorGainNode.gain.value).toBe(0.6)
-        expect(fakeOscillator.frequency.value).toBe(440)
-      , 1001)
+      runs(->
+        dac = helpers.getDac()
+        sine = dac._channels[0].sources[0]
+        verifySinOsc(sine, 440, 0.6)
+      )
+
+      verify(null, 1)
     )
 
     describe('looping', ->
@@ -85,8 +74,8 @@ define(['chuck', "q", "spec/helpers"], (chuckModule, q, helpers) ->
         runs(->
           expect(helpers.isChuckExecuting()).toBe(true)
           helpers.stopChuck()
-          # Wake the VM up so that it can proceed to stop
-          jasmine.Clock.tick(1001)
+          # Audio callback should discover upon first invocation that there's nothing to do
+          helpers.processAudio(0)
         )
 
         verify()
@@ -104,12 +93,10 @@ define(['chuck', "q", "spec/helpers"], (chuckModule, q, helpers) ->
         )
         runs(->
           expect(helpers.isChuckExecuting()).toBe(true)
-          # Wake the VM up
-          jasmine.Clock.tick(1001)
-
-          verify()
           return
         )
+
+        verify(null, 1)
         return
       )
     )

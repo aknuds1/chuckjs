@@ -93,6 +93,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     dest = vm.popFromReg()
     src = vm.popFromReg()
     dest.add(src)
+    logging.debug("UGenLink: Linking node of type #{src.type.name} to node of type #{dest.type.name}")
     vm.pushToReg(dest)
     return undefined
   )

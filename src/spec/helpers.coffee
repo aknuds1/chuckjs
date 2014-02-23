@@ -85,7 +85,7 @@ define("spec/helpers", ['chuck', "q"], (chuckModule, q) ->
   module.verify = (verifyCb, waitTime = undefined) ->
     if waitTime?
       runs(->
-        jasmine.Clock.tick(waitTime)
+        module.processAllAudio(waitTime)
       )
 
     waitsFor(->
@@ -111,6 +111,16 @@ define("spec/helpers", ['chuck', "q"], (chuckModule, q) ->
         getChannelData: -> []
         length: seconds * module.fakeAudioContext.sampleRate
     chuck._vm._scriptProcessor.onaudioprocess(event)
+    return
+
+  # Process a number of audio samples (expressed in seconds), during which execution should finish, and make a
+  # second audio callback call to allow for audio termination
+  module.processAllAudio = (seconds) ->
+    module.processAudio(seconds)
+    module.processAudio(0)
+    return
+
+  module.getDac = -> chuck._vm._dac
 
   return module
 )

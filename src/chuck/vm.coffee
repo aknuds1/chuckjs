@@ -47,6 +47,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
             deferred.resolve()
             return
 
+          logging.debug("Audio callback processing #{event.outputBuffer.length} samples")
           for i in [0...event.outputBuffer.length]
             ++@_nowSystem
             # Detect if the VM should be awoken

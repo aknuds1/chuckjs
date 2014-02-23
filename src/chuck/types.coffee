@@ -94,7 +94,6 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
   class OscData
     constructor: ->
       @num = 0.0
-      @freq = 220.0
       @sync = 0
       @width = 0.5
       @phase = 0
@@ -111,7 +110,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
 
   module.Osc = new ChuckType("Osc", module.UGen, numIns: 1, numOuts: 1, preConstructor: constructOsc,
   namespace: oscNamespace)
-  @tickSinOsc = ->
+  tickSinOsc = ->
     out = Math.sin(@data.phase * TwoPi)
     @data.phase += @data.num
     if @data.phase > 1
