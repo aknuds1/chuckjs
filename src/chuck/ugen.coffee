@@ -38,6 +38,7 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], (types, logging) ->
       @_tick = if type.ugenTick? then _(type.ugenTick).bind(@) else (input) -> input
       @_now = -1
       @_destList = []
+      @_gain = 1
 
     add: (src) =>
       for channel in @_channels
@@ -56,6 +57,7 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], (types, logging) ->
       return
 
     setGain: (gain) =>
+      @_gain = gain
       return gain
 
     tick: (now) =>
@@ -71,7 +73,7 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], (types, logging) ->
       sum /= @_channels.length
 
       # Synthesize
-      @current = @_tick(sum)
+      @current = @_tick(sum) * @_gain
       return @current
 
     _addDest: (dest) =>
