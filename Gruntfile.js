@@ -92,10 +92,16 @@ module.exports = function (grunt) {
                         root: '../'
                     }
                 },
-                files: {
-                    'examples/basic/demo0.html': ['pages/basic/demo0.dot.html'],
-                    'examples/basic/demo1.html': ['pages/basic/demo1.dot.html']
-                }
+                files: [
+                    {
+                        expand: true,
+                        cwd: 'pages',
+                        src: 'basic/**/*.dot.html',
+                        dest: 'examples/',
+                        ext: '.html',
+                        filter: 'isFile'
+                    }
+                ]
             }
 
         }
