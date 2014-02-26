@@ -23,6 +23,15 @@ module.exports = function (grunt) {
                     'lib/chuck/vm.js': 'src/chuck/vm.coffee',
                     'lib/chuck/namespace.js': 'src/chuck/namespace.coffee'
                 }
+            },
+            compileExamples: {
+                options: { bare: true },
+                expand: true,
+                flatten: false,
+                cwd: 'pages/',
+                src: ['**/*.coffee'],
+                dest: 'examples/',
+                ext: '.js'
             }
         },
         copy: {
@@ -84,7 +93,8 @@ module.exports = function (grunt) {
                     }
                 },
                 files: {
-                    'examples/basic/demo0.html': ['pages/basic/demo0.dot.html']
+                    'examples/basic/demo0.html': ['pages/basic/demo0.dot.html'],
+                    'examples/basic/demo1.html': ['pages/basic/demo1.dot.html']
                 }
             }
 
