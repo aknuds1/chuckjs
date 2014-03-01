@@ -92,11 +92,11 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       return
 
     scanPass5: (context) =>
-      logging.debug("Binary expression: Emitting LHS")
+      logging.debug("Binary expression #{@operator.name}: Emitting LHS")
       @exp1.scanPass5(context)
-      logging.debug("Binary expression: Emitting RHS")
+      logging.debug("Binary expression #{@operator.name}: Emitting RHS")
       @exp2.scanPass5(context)
-      logging.debug("Binary expression: Emitting operator #{@operator.name}")
+      logging.debug("Binary expression #{@operator.name}: Emitting operator")
       @operator.emit(context, @exp1, @exp2)
       return
 
@@ -191,7 +191,12 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         when "true"
           context.emitRegPushImm(1)
         else
-          context.emitRegPushMem(0)
+          # Emit symbol
+          # TODO Use real offset
+          if @_emitVar
+            context.emitRegPushMemAddr(0)
+          else
+            context.emitRegPushMem(0)
 
       return undefined
 
@@ -293,6 +298,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     check: (lhs, rhs, context) =>
       if lhs.type == rhs.type
         if types.isPrimitive(lhs.type) || lhs.type == types.String
+          if rhs._meta == "variable"
+            # Assign to variable
+            rhs._emitVar = true
           return rhs.type
       if lhs.type == types.Dur && rhs.type == types.Time && rhs.name == "now"
         return rhs.type
@@ -349,21 +357,28 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       logging.debug('MinusOperator emitting SubtractNumber')
       context.emitSubtractNumber()
 
-  module.LtOperator = class
-    constructor: ->
-      @name = "LtOperator"
-
+  class GtLtOperatorBase
     check: (lhs, rhs) =>
+      if lhs.type == rhs.type
+        return lhs.type
       if lhs.type == types.Time && rhs.type == types.Time
         return types.int
+
+  module.LtOperator = class extends GtLtOperatorBase
+    constructor: ->
+      @name = "LtOperator"
 
     emit: (context) =>
       logging.debug("LtOperator: Emitting")
       context.emitLtNumber()
 
-  module.GtOperator = class
+  module.GtOperator = class extends GtLtOperatorBase
     constructor: ->
       @name = "GtOperator"
+
+    emit: (context) =>
+      logging.debug("GtOperator: Emitting")
+      context.emitGtNumber()
 
   module.WhileStatement = class extends NodeBase
     constructor: (cond, body) ->

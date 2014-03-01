@@ -72,19 +72,19 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
       obj = vm.popFromReg()
       vm.insertIntoMemory(memStackIndex, obj)
       vm.pushToReg(obj)
-      return undefined
+      return
     )
 
   module.dac = ->
     return new Instruction("Dac", {}, (vm) ->
       vm.pushDac()
-      return undefined
+      return
     )
 
   module.releaseObject2 = (offset) ->
     return new Instruction("ReleaseObject2", offset: offset, (vm) ->
       vm.removeFromMemory(offset)
-      return undefined
+      return
     )
 
   module.eoc = -> return new Instruction("Eoc")
@@ -113,6 +113,10 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     callMember(vm)
   )
 
+  module.regPushMemAddr = (offset) -> return new Instruction("RegPushMemAddr", {}, (vm) ->
+    vm.pushMemAddrToReg(offset)
+    return
+  )
   module.regPushMem = (offset) -> return new Instruction("RegPushMem", {}, (vm) ->
     vm.pushToRegFromMem(offset)
     return
@@ -169,7 +173,16 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     rhs = vm.popFromReg()
     lhs = vm.popFromReg()
     result = lhs < rhs
-    logging.debug("Pushing #{result} to regular stack")
+    logging.debug("#{@instructionName}: Pushing #{result} to regular stack")
+    vm.pushToReg(result)
+    return
+  )
+
+  module.gtNumber = -> new Instruction("GtNumber", {}, (vm) ->
+    rhs = vm.popFromReg()
+    lhs = vm.popFromReg()
+    result = lhs > rhs
+    logging.debug("#{@instructionName}: Pushing #{result} to regular stack")
     vm.pushToReg(result)
     return
   )

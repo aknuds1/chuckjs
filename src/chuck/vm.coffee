@@ -115,9 +115,14 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
       @regStack.push(value)
       return
 
+    pushMemAddrToReg: (offset) =>
+      value = @memStack[offset]
+      logging.debug("Pushing memory stack address #{offset} (#{value}) to regular stack")
+      @regStack.push(offset)
+
     pushToRegFromMem: (offset) =>
       value = @memStack[offset]
-      logging.debug("Pushing memory stack element #{offset} (#{value}) to regular stack")
+      logging.debug("Pushing memory stack value #{value} @#{offset} to regular stack")
       @regStack.push(value)
 
     popFromReg: =>

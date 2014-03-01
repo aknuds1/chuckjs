@@ -6,6 +6,7 @@ define(['chuck', "q", "spec/helpers", "chuck/types"], (chuckModule, q, helpers, 
     beforeEach(->
       helpers.beforeEach()
       spyOn(chuckTypes.SinOsc, "ugenTick")
+      spyOn(console, 'log')
     )
 
     afterEach(->
@@ -63,49 +64,64 @@ define(['chuck', "q", "spec/helpers", "chuck/types"], (chuckModule, q, helpers, 
     )
 
     describe('looping', ->
-      it('supports infinite while loops', ->
-        # An infinite loop that sleeps between iterations so that we can stop the VM while it's sleeping
-        executeCode("""while (true)
-{
-  1::second => now;
-}
-"""
-        )
-        runs(->
-          expect(helpers.isChuckExecuting()).toBe(true)
-          helpers.stopChuck()
-          # Audio callback should discover upon first invocation that there's nothing to do
-          helpers.processAudio(0)
-        )
+      describe('while', ->
+        it('supports infinite loops', ->
+          # An infinite loop that sleeps between iterations so that we can stop the VM while it's sleeping
+          executeCode("""while (true)
+  {
+    1::second => now;
+  }
+  """
+          )
+          runs(->
+            expect(helpers.isChuckExecuting()).toBe(true)
+            helpers.stopChuck()
+            # Audio callback should discover upon first invocation that there's nothing to do
+            helpers.processAudio(0)
+          )
 
-        verify()
-        return
-      )
-
-      it('supports breaking out of while loops', ->
-        # Break and sleep, so that we can verify that code after the loop is executed
-        executeCode("""while (true)
-{
-  break;
-}
-1::second => now;
-"""
-        )
-        runs(->
-          expect(helpers.isChuckExecuting()).toBe(true)
+          verify()
           return
         )
 
-        verify(null, 1)
-        return
+        it('supports breaking out of loops', ->
+          # Break and sleep, so that we can verify that code after the loop is executed
+          executeCode("""while (true)
+  {
+    break;
+  }
+  1::second => now;
+  """
+          )
+          runs(->
+            expect(helpers.isChuckExecuting()).toBe(true)
+            return
+          )
+
+          verify(null, 1)
+          return
+        )
+
+        it('supports a greater than int condition', ->
+          executeCode("""\
+1 => int c;
+while (c > 0)
+{
+  0 => c;
+  <<<c>>>;
+}
+"""
+          )
+
+          verify(->
+            expect(console.log).toHaveBeenCalledWith("0 : (int)")
+          )
+          return
+        )
       )
     )
 
     describe('Console interaction', ->
-      beforeEach(->
-        spyOn(console, 'log')
-      )
-
       it('can print to the console', ->
         str = "Hello world!"
         executeCode("<<<\"#{str}\">>>;")

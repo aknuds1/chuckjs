@@ -119,6 +119,9 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instructions.funcCallMember())
       return
 
+    emitRegPushMemAddr: (offset) =>
+      @code.append(instructions.regPushMemAddr(offset))
+      return
     emitRegPushMem: (offset) =>
       @code.append(instructions.regPushMem(offset))
       return
@@ -149,6 +152,11 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     emitLtNumber: =>
       @code.append(instructions.ltNumber())
+      return
+
+    emitGtNumber: =>
+      @code.append(instructions.gtNumber())
+      return
 
     emitTimeAdvance: =>
       @code.append(instructions.timeAdvance())
