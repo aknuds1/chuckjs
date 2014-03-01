@@ -128,7 +128,8 @@ grammar = {
   ],
   AdditiveExpression: [
     o('MultiplicativeExpression'),
-    o('AdditiveExpression PLUS MultiplicativeExpression', -> new BinaryExpression($1, new PlusOperator(), $3))
+    o('AdditiveExpression PLUS MultiplicativeExpression', -> new BinaryExpression($1, new PlusOperator(), $3)),
+    o('AdditiveExpression MINUS MultiplicativeExpression', -> new BinaryExpression($1, new MinusOperator(), $3))
   ],
   MultiplicativeExpression: [
     o('TildaExpression')
@@ -152,7 +153,8 @@ grammar = {
   ],
   PrimaryExpression: [
     o('ID', -> new PrimaryVariableExpression($1)),
-    o('NUMBER', -> new PrimaryNumberExpression($1)),
+    o('NUMBER', -> new PrimaryIntExpression($1)),
+    o('FLOAT', -> new PrimaryFloatExpression($1)),
     o('STRING_LIT', -> new PrimaryStringExpression($1))
     o('L_HACK Expression R_HACK', -> new PrimaryHackExpression($2))
   ],

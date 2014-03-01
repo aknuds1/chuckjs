@@ -16,7 +16,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass5: =>
 
-   class ParentNodeBase
+  class ParentNodeBase
     constructor: (child, nodeType) ->
       @_child = child
       @nodeType = nodeType
@@ -84,11 +84,11 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass4: (context) =>
       @exp1.scanPass4(context)
-      logging.debug("BinaryExpression: Type checked LHS, type #{@exp1.type.name}")
+      logging.debug("BinaryExpression #{@operator.name}: Type checked LHS, type #{@exp1.type.name}")
       @exp2.scanPass4(context)
-      logging.debug("BinaryExpression: Type checked RHS, type #{@exp2.type.name}")
+      logging.debug("BinaryExpression #{@operator.name}: Type checked RHS, type #{@exp2.type.name}")
       @type = @operator.check(@exp1, @exp2, context)
-      logging.debug("BinaryExpression: Type checked operator, type #{@type.name}")
+      logging.debug("BinaryExpression #{@operator.name}: Type checked operator, type #{@type.name}")
       return
 
     scanPass5: (context) =>
@@ -116,7 +116,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass2: (context) =>
       @type = context.findType(@typeDecl.type)
-      logging.debug("Declaration of type #{@type.name}")
+      logging.debug("Variable declaration of type #{@type.name}")
       return undefined
 
     scanPass3: (context) =>
@@ -169,7 +169,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           break
         when "true"
           @_meta = "value"
-          @type = types.Number
+          @type = types.int
         else
           value = context.findValue(@name)
           @type = value.type
@@ -195,15 +195,29 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
       return undefined
 
-  module.PrimaryNumberExpression = class extends ExpressionBase
+  module.PrimaryIntExpression = class extends ExpressionBase
     constructor: (value) ->
-      super("PrimaryNumberExpression")
+      super("PrimaryIntExpression")
+      @value = parseInt(value)
+      @_meta = "value"
+
+    scanPass4: =>
+      super()
+      @type = types.int
+
+    scanPass5: (context) =>
+      super()
+      context.emitRegPushImm(@value)
+
+  module.PrimaryFloatExpression = class extends ExpressionBase
+    constructor: (value) ->
+      super("PrimaryFloatExpression")
       @value = parseFloat(value)
       @_meta = "value"
 
     scanPass4: =>
       super()
-      @type = types.Number
+      @type = types.float
 
     scanPass5: (context) =>
       super()
@@ -278,7 +292,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     check: (lhs, rhs, context) =>
       if lhs.type == rhs.type
-        if types.isPrimitive(lhs.type) || left.type == types.STRING
+        if types.isPrimitive(lhs.type) || lhs.type == types.String
           return rhs.type
       if lhs.type == types.Dur && rhs.type == types.Time && rhs.name == "now"
         return rhs.type
@@ -309,17 +323,31 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
       return
 
-  module.PlusOperator = class
+  class AdditiveSubtractiveOperatorBase
+    check: (lhs, rhs) =>
+      if (lhs.type == types.Dur && rhs.type == types.Time) || (lhs.type == types.Time && rhs.type == types.Dur)
+        return types.Time
+      if (lhs.type == types.int && rhs.type == types.int)
+        return types.int
+      if (lhs.type == types.float && rhs.type == types.float) || (lhs.type == types.int && rhs.type == types.float) ||
+      (lhs.type == types.float && rhs.type == types.int)
+        return types.float
+
+  module.PlusOperator = class extends AdditiveSubtractiveOperatorBase
     constructor: ->
       @name = "PlusOperator"
-
-    check: (lhs, rhs) =>
-      if (lhs.type == types.Dur && rhs.type == types.Time)|| (lhs.type == types.Time && rhs.type == types.Dur)
-        return types.Time
 
     emit: (context, lhs, rhs) =>
       logging.debug('PlusOperator emitting AddNumber')
       context.emitAddNumber()
+
+  module.MinusOperator = class extends AdditiveSubtractiveOperatorBase
+    constructor: ->
+      @name = "MinusOperator"
+
+    emit: (context, lhs, rhs) =>
+      logging.debug('MinusOperator emitting SubtractNumber')
+      context.emitSubtractNumber()
 
   module.LtOperator = class
     constructor: ->
@@ -327,7 +355,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     check: (lhs, rhs) =>
       if lhs.type == types.Time && rhs.type == types.Time
-        return types.Number
+        return types.int
 
     emit: (context) =>
       logging.debug("LtOperator: Emitting")

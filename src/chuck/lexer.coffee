@@ -23,7 +23,8 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
           @commentToken()    or
           @whitespaceToken() or
           @stringToken()     or
-          @numberToken()     or
+          @floatToken()      or
+          @intToken()        or
           @literalToken()
 
         # Update position
@@ -59,16 +60,13 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
 
       return id.length
 
-    # Matches numbers, including decimals, hex, and exponential notation.
-    # Be careful not to interfere with ranges-in-progress.
-    numberToken: ->
+    # Matches integer numbers
+    intToken: ->
       return 0 unless match = NUMBER.exec @chunk
       number = match[0]
-      logging.debug("Token is a number: #{number}")
+      logging.debug("Token is an integer: #{number}")
       if /^0[BOX]/.test number
         @error "radix prefix '#{number}' must be lowercase"
-      else if /E/.test(number) and not /^0x/.test number
-        @error "exponential notation '#{number}' must be indicated with a lowercase 'e'"
       else if /^0\d*[89]/.test number
         @error "decimal literal '#{number}' must not be prefixed with '0'"
       else if /^0\d+/.test number
@@ -79,6 +77,17 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
       if binaryLiteral = /^0b([01]+)/.exec number
         number = '0x' + parseInt(binaryLiteral[1], 2).toString 16
       @token 'NUMBER', number, 0, lexedLength
+      lexedLength
+
+    # Matches floating point numbers
+    floatToken: ->
+      return 0 unless match = FLOAT.exec @chunk
+      number = match[0]
+      logging.debug("Token is a float: #{number}")
+      if /E/.test(number) and not /^0x/.test number
+        @error "exponential notation '#{number}' must be indicated with a lowercase 'e'"
+      lexedLength = number.length
+      @token 'FLOAT', number, 0, lexedLength
       lexedLength
 
     stringToken: ->
@@ -188,11 +197,13 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
     [A-Za-z_][A-Za-z0-9_]*
   ///
 
-  NUMBER     = ///
-    ^ 0[xX][0-9a-fA-F]+{IS}? |
-    ^ 0[cC][0-7]+{IS}? |
-    ^ (?:\d+\.\d*)|(?:\d*\.\d]+) | # Float
+  NUMBER = ///
+    ^ 0[xX][0-9a-fA-F]+ |
+    ^ 0[cC][0-7]+ |
     ^ [0-9]+
+  ///i
+  FLOAT = ///
+    ^ (?:\d+\.\d*)|(?:\d*\.\d]+)
   ///i
 
   WHITESPACE = /^\s+/
@@ -214,6 +225,7 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
     'break': 'BREAK'
     '\\.': 'DOT'
     '\\+': 'PLUS'
+    '-': 'MINUS'
     '<': 'LT'
     '>': 'GT'
 

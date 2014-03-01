@@ -148,10 +148,19 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
   )
 
   module.addNumber = -> return new Instruction("AddNumber", {}, (vm) ->
-    lhs = vm.popFromReg()
     rhs = vm.popFromReg()
+    lhs = vm.popFromReg()
     number = lhs+rhs
-    logging.debug("AddNumber resulted in: #{number}")
+    logging.debug("#{@instructionName} resulted in: #{number}")
+    vm.pushToReg(number)
+    return
+  )
+
+  module.subtractNumber = -> new Instruction("SubtractNumber", {}, (vm) ->
+    rhs = vm.popFromReg()
+    lhs = vm.popFromReg()
+    number = lhs-rhs
+    logging.debug("#{@instructionName}: Subtracting #{rhs} from #{lhs} resulted in: #{number}")
     vm.pushToReg(number)
     return
   )

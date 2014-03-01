@@ -123,7 +123,8 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
   constructDac = ->
     @_node = audioContextService.outputNode
   module.Dac = new ChuckType("Dac", module.UGenStereo, preConstructor: constructDac)
-  module.Number = new ChuckType("Number", undefined, size: 8, preConstructor: undefined)
+  module.int = new ChuckType("int", undefined, size: 8, preConstructor: undefined)
+  module.float = new ChuckType("float", undefined, size: 8, preConstructor: undefined)
   module.Time = new ChuckType("time", undefined, size: 8, preConstructor: undefined)
   module.Dur = new ChuckType("Dur", undefined, size: 8, preConstructor: undefined)
   module.String = new ChuckType("String", undefined, size: 8, preConstructor: undefined)
@@ -132,7 +133,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
     return !module.isPrimitive(type)
 
   module.isPrimitive = (type) ->
-    return type == module.Dur || type == module.Time
+    return type == module.Dur || type == module.Time || type == module.int || type == module.float
 
   return module
 )
