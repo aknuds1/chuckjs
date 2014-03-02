@@ -1,5 +1,4 @@
 define(['chuck', "q", "spec/helpers", "chuck/types"], (chuckModule, q, helpers, chuckTypes) ->
-
   describe("Chuck", ->
     {executeCode, verify} = helpers
 

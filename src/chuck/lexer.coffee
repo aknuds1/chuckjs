@@ -18,13 +18,13 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
       while @chunk = code[i..]
         #logging.debug("Consuming chunk #{@chunk} at position #{i}")
         consumed =
+          @floatToken()      or
+          @intToken()        or
           @_matchToken()     or
           @identifierToken() or
           @commentToken()    or
           @whitespaceToken() or
           @stringToken()     or
-          @floatToken()      or
-          @intToken()        or
           @literalToken()
 
         # Update position
@@ -203,7 +203,8 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
     ^ [0-9]+
   ///i
   FLOAT = ///
-    ^ (?:\d+\.\d*)|(?:\d*\.\d]+)
+    ^ (?:\d+\.\d*)|
+    ^ (?:\d*\.\d+)
   ///i
 
   WHITESPACE = /^\s+/
