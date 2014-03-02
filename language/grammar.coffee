@@ -143,7 +143,8 @@ grammar = {
     o('UnaryExpression')
   ],
   UnaryExpression: [
-    o('DurExpression')
+    o('DurExpression'),
+    o('PLUSPLUS UnaryExpression', -> new UnaryExpression(new PlusPlusOperator(), $2))
   ],
   DurExpression: [
     o('PostfixExpression'),
@@ -162,7 +163,9 @@ grammar = {
     o('L_HACK Expression R_HACK', -> new PrimaryHackExpression($2))
   ],
   LoopStatement: [
-    o('WHILE LPAREN Expression RPAREN Statement', -> new WhileStatement($3, $5))
+    o('WHILE LPAREN Expression RPAREN Statement', -> new WhileStatement($3, $5)),
+    o('FOR LPAREN ExpressionStatement ExpressionStatement Expression RPAREN Statement',
+    -> new ForStatement($3, $4, $5, $7))
   ],
   CodeSegment: [
     o('LBRACE RBRACE', -> new CodeStatement()),

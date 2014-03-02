@@ -216,11 +216,14 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
   TRAILING_SPACES = /\s+$/
 
   MATCHERS =
+    '\\+\\+': 'PLUSPLUS'
+    '\\-\\-': 'MINUSMINUS'
     '=>': 'CHUCK'
     '::': 'COLONCOLON'
     '<<<': 'L_HACK'
     '>>>': 'R_HACK'
     'while': 'WHILE'
+    'for': 'FOR'
     '\\(': 'LPAREN'
     '\\)': 'RPAREN'
     '\\{': 'LBRACE'

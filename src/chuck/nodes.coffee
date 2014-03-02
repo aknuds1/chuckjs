@@ -321,6 +321,11 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @unit.scanPass5(context)
       context.emitTimesNumber()
 
+  module.UnaryExpression = class extends ExpressionBase
+    constructor: (operator, exp) ->
+      @op = operator
+      @exp = exp
+
   module.ChuckOperator = class
     constructor: ->
       @name = "ChuckOperator"
@@ -379,6 +384,10 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       logging.debug('PlusOperator emitting AddNumber')
       context.emitAddNumber()
 
+  module.PlusPlusOperator = class
+    constructor: ->
+      @name = "PlusPlusOperator"
+
   module.MinusOperator = class extends AdditiveSubtractiveOperatorBase
     constructor: ->
       @name = "MinusOperator"
@@ -386,6 +395,10 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     emit: (context, lhs, rhs) =>
       logging.debug('MinusOperator emitting SubtractNumber')
       context.emitSubtractNumber()
+
+  module.MinusMinusOperator = class
+    constructor: ->
+      @name = "MinusMinusOperator"
 
   class GtLtOperatorBase
     check: (lhs, rhs) =>
@@ -453,6 +466,14 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       logging.debug("WhileStatement: Configuring BranchEq instruction to jump to instruction number #{breakJmp}")
       branchEq.jmp = breakJmp
       return
+
+  module.ForStatement = class extends NodeBase
+    constructor: (c1, c2, c3, body) ->
+      super("ForStatement")
+      @c1 = c1
+      @c2 = c2
+      @c3 = c3
+      @body = body
 
   module.CodeStatement = class extends ParentNodeBase
     constructor: (statementList) ->
