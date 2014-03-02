@@ -231,6 +231,8 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
     '-': 'MINUS'
     '<': 'LT'
     '>': 'GT'
+    '\\[': 'LBRACK'
+    '\\]': 'RBRACK'
 
   return {
     tokenize: (sourceCode) ->

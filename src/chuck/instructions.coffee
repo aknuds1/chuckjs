@@ -75,6 +75,17 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
       return
     )
 
+  module.allocateArray = (type) ->
+    new Instruction("AllocateArray", {}, (vm) ->
+      sz = vm.popFromReg()
+      logging.debug("#{@instructionName}: Allocating array of type #{type.name} and of size #{sz}")
+      array = new Array(sz)
+      for i in [0...sz]
+        array[i] = 0
+      vm.pushToReg(array)
+      return
+    )
+
   module.dac = ->
     return new Instruction("Dac", {}, (vm) ->
       vm.pushDac()
@@ -225,6 +236,15 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
   module.goto = (jmp) -> new Instruction("Goto", {jmp: jmp}, (vm) ->
     logging.debug("Jumping to instruction number #{@jmp}")
     vm.jumpTo(@jmp)
+    return
+  )
+
+  module.arrayAccess = (type) -> new Instruction("ArrayAccess", {}, (vm) ->
+    logging.debug("#{@instructionName}: Accessing array of type #{type.name}")
+    [idx, array] = [vm.popFromReg(), vm.popFromReg()]
+    val = array[idx]
+    logging.debug("Pushing array[#{idx}] (#{val}) to regular stack")
+    vm.pushToReg(val)
     return
   )
 

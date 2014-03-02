@@ -80,7 +80,9 @@ grammar = {
     o('VarDecl', -> [$1])
   ],
   VarDecl: [
-    o('ID', -> new VariableDeclaration($1))
+    o('ID', -> new VariableDeclaration($1)),
+    o('ID ArrayExpression', -> new VariableDeclaration($1, $2))
+    o('ID ArrayEmpty', -> new VariableDeclaration($1, $2))
   ]
   Literal: [
     o('NULL', -> new Null)
@@ -149,7 +151,8 @@ grammar = {
   ],
   PostfixExpression: [
     o('PrimaryExpression'),
-    o('PostfixExpression DOT ID', -> new DotMemberExpression($1, $3))
+    o('PostfixExpression ArrayExpression', -> new PrimaryArrayExpression($1, $2)),
+    o('PostfixExpression DOT ID', -> new DotMemberExpression($1, $3)),
   ],
   PrimaryExpression: [
     o('ID', -> new PrimaryVariableExpression($1)),
@@ -172,6 +175,12 @@ grammar = {
     o('ID', -> [$1])
     o('ID DOT IdDot', -> $3.push($1))
   ],
+  ArrayExpression: [
+    o('LBRACK Expression RBRACK', -> new ArraySub($2))
+  ],
+  ArrayEmpty: [
+    o('LBRACK RBRACK', -> new ArraySub())
+  ]
 }
 
 operators = []

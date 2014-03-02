@@ -101,8 +101,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       return
 
   class ExpressionBase extends NodeBase
-    constructor: (nodeType) ->
+    constructor: (nodeType, meta) ->
       super(nodeType)
+      @_meta = "meta"
 
     scanPass4: =>
       @groupSize = 0
@@ -129,14 +130,18 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       super()
       for varDecl in @varDecls
         varDecl.value.isDeclChecked = true
-      return undefined
+      return
 
     scanPass5: (context) =>
       super()
       for varDecl in @varDecls
-        logging.debug("DeclarationExpression emitting Assignment for value #{varDecl.value}")
-        context.emitAssignment(@type, varDecl.value)
-      return undefined
+        if varDecl.array?
+          logging.debug("DeclarationExpression instantiating array", varDecl)
+        else
+          logging.debug("DeclarationExpression emitting Assignment for value #{varDecl.value}")
+      context.emitAssignment(@type, varDecl)
+
+      return
 
   module.TypeDeclaration = class extends NodeBase
     constructor: (type) ->
@@ -144,15 +149,15 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @type = type
 
   module.VariableDeclaration = class extends NodeBase
-    constructor: (name) ->
+    constructor: (name, array) ->
       super("VariableDeclaration")
       @name = name
+      @array = array
 
   module.PrimaryVariableExpression = class extends ExpressionBase
     constructor: (name) ->
-      super("PrimaryVariableExpression")
+      super("PrimaryVariableExpression", "variable")
       @name = name
-      @_meta = "variable"
 
     scanPass4: (context) =>
       super()
@@ -173,8 +178,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         else
           value = context.findValue(@name)
           @type = value.type
-          @value = value
           logging.debug("Primary variable of type #{@type.name}")
+          @value = value
+          @type
 
     scanPass5: (context) =>
       super()
@@ -202,9 +208,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
   module.PrimaryIntExpression = class extends ExpressionBase
     constructor: (value) ->
-      super("PrimaryIntExpression")
+      super("PrimaryIntExpression", "value")
       @value = parseInt(value)
-      @_meta = "value"
 
     scanPass4: =>
       super()
@@ -216,9 +221,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
   module.PrimaryFloatExpression = class extends ExpressionBase
     constructor: (value) ->
-      super("PrimaryFloatExpression")
+      super("PrimaryFloatExpression", "value")
       @value = parseFloat(value)
-      @_meta = "value"
 
     scanPass4: =>
       super()
@@ -230,8 +234,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
   module.PrimaryHackExpression = class extends ExpressionBase
     constructor: (expression) ->
-      super("PrimaryHackExpression")
-      @_meta = "value"
+      super("PrimaryHackExpression", "value")
       @expression = expression
 
     scanPass4: (context) =>
@@ -245,8 +248,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
   module.PrimaryStringExpression= class extends ExpressionBase
     constructor: (value) ->
-      super("PrimaryStringExpression")
-      @_meta = "value"
+      super("PrimaryStringExpression", "value")
       @value = value
 
     scanPass4: =>
@@ -256,6 +258,39 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     scanPass5: (context) =>
       super()
       context.emitRegPushImm(@value)
+
+  module.PrimaryArrayExpression = class extends ExpressionBase
+    constructor: (base, indices) ->
+      super("PrimaryArrayExpression", "variable")
+      @base = base
+      @indices = indices
+
+    scanPass1: =>
+      super()
+      @base.scanPass1()
+      @indices.scanPass1()
+
+    scanPass2: =>
+      super()
+      @base.scanPass2()
+      @indices.scanPass2()
+
+    scanPass3: =>
+      super()
+      @base.scanPass3()
+      @indices.scanPass3()
+
+    scanPass4: (context) =>
+      super(context)
+      baseType = @base.scanPass4(context)
+      @indices.scanPass4(context)
+      @type = baseType
+
+    scanPass5: (context) =>
+      super(context)
+      @base.scanPass5(context)
+      @indices.scanPass5(context)
+      context.emitArrayAccess(@type)
 
   module.DurExpression = class extends ExpressionBase
     constructor: (base, unit) ->
@@ -285,11 +320,6 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @base.scanPass5(context)
       @unit.scanPass5(context)
       context.emitTimesNumber()
-
-  module.VariableDeclaration = class extends NodeBase
-    constructor: (name) ->
-      super("VariableDeclaration")
-      @name = name
 
   module.ChuckOperator = class
     constructor: ->
@@ -461,6 +491,15 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       context.emitRegDupLast()
       context.emitDotMemberFunc(@id)
       return
+
+  module.ArraySub = class extends NodeBase
+    constructor: (exp) ->
+      super("ArraySub")
+      @exp = exp
+
+    scanPass5: (context) =>
+      logging.debug("#{@nodeType}: Emitting array indices")
+      @exp.scanPass5(context)
 
   return module
 )

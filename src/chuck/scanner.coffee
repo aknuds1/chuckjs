@@ -88,9 +88,16 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     getNextIndex: => @code.getNextIndex()
 
-    emitAssignment: (type, value) =>
-      isObj = types.isObj(type)
-      if isObj
+    emitAssignment: (type, varDecl) =>
+      {value, array} = varDecl
+      if array?
+        # Emit indices
+        array.scanPass5(@)
+        logging.debug("Emitting AllocateArray")
+        @code.append(instructions.allocateArray(type))
+
+      isObj = types.isObj(type) || array?
+      if isObj && !array?
         @instantiateObject(type)
 
       @allocateLocal(type, value)
@@ -180,6 +187,9 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       instr = instructions.goto()
       @code.append(instr)
       @_breakStack.push(instr)
+
+    emitArrayAccess: (type) =>
+      @code.append(instructions.arrayAccess(type))
 
     evaluateBreaks: =>
       while @_breakStack.length
