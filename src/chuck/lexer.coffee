@@ -100,8 +100,8 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
     # Matches and consumes comments.
     commentToken: ->
       return 0 unless match = @chunk.match COMMENT
-      [comment, here] = match
-      logging.debug("Token is a comment")
+      [comment] = match
+      logging.debug("Token is a comment", comment)
       return comment.length
 
     # Matches and consumes non-meaningful whitespace. Tag the previous token
@@ -208,7 +208,9 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
 
   WHITESPACE = /^\s+/
 
-  COMMENT = /^###([^#][\s\S]*?)(?:###[^\n\S]*|###$)|^(?:\s*#(?!##[^#]).*)+/
+  COMMENT = ///
+    ^(?:\s*//.*)+
+    ///
 
   TRAILING_SPACES = /\s+$/
 

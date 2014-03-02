@@ -132,5 +132,16 @@ while (b > 0)
         )
       )
     )
+
+    describe('Comments', ->
+      it('can ignore single-line comments', ->
+        str = "Test"
+        executeCode("<<<\"#{str}\">>>;// Ignore me")
+
+        verify(->
+          expect(console.log).toHaveBeenCalledWith("\"#{str}\" : (String)")
+        )
+      )
+    )
   )
 )
