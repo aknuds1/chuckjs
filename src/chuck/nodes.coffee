@@ -173,6 +173,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         else
           value = context.findValue(@name)
           @type = value.type
+          @value = value
           logging.debug("Primary variable of type #{@type.name}")
 
     scanPass5: (context) =>
@@ -192,11 +193,10 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           context.emitRegPushImm(1)
         else
           # Emit symbol
-          # TODO Use real offset
           if @_emitVar
-            context.emitRegPushMemAddr(0)
+            context.emitRegPushMemAddr(@value.offset)
           else
-            context.emitRegPushMem(0)
+            context.emitRegPushMem(@value.offset)
 
       return undefined
 

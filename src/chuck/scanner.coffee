@@ -29,7 +29,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     allocateLocal: (type, value) =>
       local = new ChuckLocal(type.size, @frame.currentOffset, value.name)
-      @frame.currentOffset += local.size
+      @frame.currentOffset += 1
       @frame.stack.push(local)
       value.offset = local.offset
       return local

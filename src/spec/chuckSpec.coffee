@@ -104,17 +104,18 @@ define(['chuck', "q", "spec/helpers", "chuck/types"], (chuckModule, q, helpers, 
 
         it('supports a greater than int condition', ->
           executeCode("""\
-1 => int c;
-while (c > 0)
+2 => int a;
+1 => int b;
+while (b > 0)
 {
-  0 => c;
-  <<<c>>>;
+  0 => b;
+  <<<a>>>;
 }
 """
           )
 
           verify(->
-            expect(console.log).toHaveBeenCalledWith("0 : (int)")
+            expect(console.log).toHaveBeenCalledWith("2 : (int)")
           )
           return
         )

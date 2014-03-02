@@ -122,7 +122,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     return
   )
 
-  module.regDupLast = -> new Instruction("RegDupLaat", {}, (vm) ->
+  module.regDupLast = -> new Instruction("RegDupLast", {}, (vm) ->
     last = vm.regStack[vm.regStack.length-1]
     logging.debug("RegDupLast: Duplicating top of stack: #{last}")
     vm.regStack.push(last)
