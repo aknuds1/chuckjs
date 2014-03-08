@@ -19,8 +19,9 @@ for (0 => int i; i < 2; ++i) {
 """)
 
         verify(->
-          expect(console.log).toHaveBeenCalledWith("0 : (int)")
-          expect(console.log).toHaveBeenCalledWith("1 : (int)")
+          expect(console.log.calls.length).toBe(2)
+          expect(console.log.calls[0].args[0]).toBe("0 : (int)")
+          expect(console.log.calls[1].args[0]).toBe("1 : (int)")
         )
       )
     )

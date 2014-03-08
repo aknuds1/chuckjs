@@ -57,11 +57,14 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: (exp) ->
       super(exp)
 
-    scanPass5: (context) =>
+    scanPass5: (context, opts) =>
+      opts = opts || {}
+      shouldPop = if opts.pop? then opts.pop else true
       @_child.scanPass5(context)
       if @_child.type? && @_child.type.size > 0
-        logging.debug("ExpressionStatement: Emitting PopWord to remove superfluous return value")
-        context.emitPopWord()
+        if shouldPop
+          logging.debug("ExpressionStatement: Emitting PopWord to remove superfluous return value")
+          context.emitPopWord()
       else
         logging.debug("ExpressionStatement: Child expression has no return value")
 
@@ -103,7 +106,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
   class ExpressionBase extends NodeBase
     constructor: (nodeType, meta) ->
       super(nodeType)
-      @_meta = "meta"
+      @_meta = meta
 
     scanPass4: =>
       @groupSize = 0
@@ -158,6 +161,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: (name) ->
       super("PrimaryVariableExpression", "variable")
       @name = name
+      @_emitVar = false
 
     scanPass4: (context) =>
       super()
@@ -200,8 +204,10 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         else
           # Emit symbol
           if @_emitVar
+            logging.debug("#{@nodeType}: Emitting RegPushMemAddr since this is a variable")
             context.emitRegPushMemAddr(@value.offset)
           else
+            logging.debug("#{@nodeType}: Emitting RegPushMem since this is a constant")
             context.emitRegPushMem(@value.offset)
 
       return undefined
@@ -326,6 +332,18 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @op = operator
       @exp = exp
 
+    scanPass4: (context) =>
+      if @exp?
+        t = @exp.scanPass4(context)
+      @type = @op.check(@exp, t)
+
+    scanPass5: (context) =>
+      logging.debug("UnaryExpression: Emitting expression")
+      @exp.scanPass5(context)
+      logging.debug("UnaryExpression: Emitting operator")
+      @op.emit(context)
+      return
+
   module.ChuckOperator = class
     constructor: ->
       @name = "ChuckOperator"
@@ -387,6 +405,17 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
   module.PlusPlusOperator = class
     constructor: ->
       @name = "PlusPlusOperator"
+
+    check: (exp, type) =>
+      exp._emitVar = true
+      if type == types.int || type == types.float
+        type
+      else
+        null
+
+    emit: (context) =>
+      logging.debug('PlusPlusOperator emitting PreIncNumber')
+      context.emitPreIncNumber()
 
   module.MinusOperator = class extends AdditiveSubtractiveOperatorBase
     constructor: ->
@@ -474,6 +503,57 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @c2 = c2
       @c3 = c3
       @body = body
+
+    scanPass2: (context) =>
+      @c1.scanPass2(context)
+      @c2.scanPass2(context)
+      if @c3?
+        @c3.scanPass2(context)
+      @body.scanPass2(context)
+
+    scanPass3: (context) =>
+      @c1.scanPass3(context)
+      @c2.scanPass3(context)
+      if @c3?
+        @c3.scanPass3(context)
+      @body.scanPass3(context)
+
+    scanPass4: (context) =>
+      @c1.scanPass4(context)
+      @c2.scanPass4(context)
+      if @c3?
+        @c3.scanPass4(context)
+      @body.scanPass4(context)
+
+    scanPass5: (context) =>
+      logging.debug("ForStatement: Emitting the initial")
+      @c1.scanPass5(context)
+      startIndex = context.getNextIndex()
+      # The condition
+      logging.debug("ForStatement: Emitting the condition")
+      @c2.scanPass5(context, pop: false)
+      context.emitRegPushImm(false)
+      logging.debug("ForStatement: Emitting BranchEq")
+      branchEq = context.emitBranchEq()
+      # The body
+      logging.debug("ForStatement: Emitting the body")
+      @body.scanPass5(context)
+
+      if @c3?
+        logging.debug("ForStatement: Emitting the post")
+        @c3.scanPass5(context)
+        context.emitPopWord()
+
+      logging.debug("ForStatement: Emitting GoTo (instruction number #{startIndex})")
+      context.emitGoto(startIndex)
+      if @c2?
+        breakJmp = context.getNextIndex()
+        logging.debug("ForStatement: Configuring BranchEq instruction to jump to instruction number #{breakJmp}")
+        branchEq.jmp = breakJmp
+
+      context.evaluateBreaks()
+
+      return
 
   module.CodeStatement = class extends ParentNodeBase
     constructor: (statementList) ->

@@ -171,6 +171,15 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     return
   )
 
+  module.preIncNumber = -> new Instruction("PreIncnUmber", {}, (vm) ->
+    memStackIndex = vm.popFromReg()
+    val = vm.getFromMemory(memStackIndex)
+    ++val
+    vm.insertIntoMemory(memStackIndex, val)
+    vm.pushToReg(val)
+    return
+  )
+
   module.subtractNumber = -> new Instruction("SubtractNumber", {}, (vm) ->
     rhs = vm.popFromReg()
     lhs = vm.popFromReg()
@@ -212,7 +221,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
 
   module.hack = (type) -> new Instruction("Hack", {}, (vm) ->
     obj = vm.peekReg()
-    logging.debug("Printing object of type #{type.name}")
+    logging.debug("Printing object of type #{type.name}:", obj)
     if type == typesModule.String
       console.log("\"#{obj}\" : (#{type.name})")
     else

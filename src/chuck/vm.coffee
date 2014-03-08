@@ -144,6 +144,11 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
       @memStack.splice(index, 1)
       return
 
+    getFromMemory: (index) =>
+      val = @memStack[index]
+      logging.debug("Getting value from memory stack at index #{index}: #{val}")
+      val
+
     pushToMem: (value) =>
       if !value?
         throw new Error('value is undefined')
