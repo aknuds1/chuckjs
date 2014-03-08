@@ -83,6 +83,11 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
       for i in [0...sz]
         array[i] = 0
       vm.pushToReg(array)
+
+      if typesModule.isObj(type)
+        # Push index
+        logging.debug("#{@instructionName}: Pushing index to stack")
+        vm.pushToReg(0)
       return
     )
 
@@ -103,8 +108,8 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
   module.uGenLink = -> return new Instruction("UGenLink", {}, (vm) ->
     dest = vm.popFromReg()
     src = vm.popFromReg()
-    dest.add(src)
     logging.debug("UGenLink: Linking node of type #{src.type.name} to node of type #{dest.type.name}")
+    dest.add(src)
     vm.pushToReg(dest)
     return undefined
   )
@@ -264,6 +269,49 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     logging.debug("Pushing array[#{idx}] (#{val}) to regular stack")
     vm.pushToReg(val)
     return
+  )
+
+  class UnaryOpInstruction extends Instruction
+    constructor: (name, params, execute) ->
+      super(name, params, execute)
+      @_val = 0
+
+    set: (val) =>
+      @_val = val
+
+  module.preCtorArrayTop = (type) -> new UnaryOpInstruction("PreCtorArrayTop", {}, (vm) ->
+    index = vm.peekReg()
+    array = vm.peekReg(1)
+    if index >= array.length
+      logging.debug("#{@instructionName}: Finished instantiating elements")
+      vm.jumpTo(@_val)
+    else
+      logging.debug("#{@instructionName}: Instantiating element #{index} of type #{type.name}")
+      module.instantiateObject(type).execute(vm)
+  )
+
+  module.preCtorArrayBottom = -> new UnaryOpInstruction("PreCtorArrayBottom", {}, (vm) ->
+    logging.debug("#{@instructionName}: Popping object and index from stack")
+    obj = vm.popFromReg()
+    index = vm.popFromReg()
+    logging.debug("#{@instructionName}: Peeking array from stack")
+    array = vm.peekReg()
+
+    logging.debug("#{@instructionName}: Assigning to index #{index} of array:", obj)
+    array[index] = obj
+    # Increment index
+    logging.debug("#{@instructionName}: Pushing incremented index to stack")
+    vm.pushToReg(index+1)
+
+    # Goto top
+    logging.debug("#{@instructionName}: Jumping to instruction #{@_val}")
+    vm.jumpTo(@_val)
+  )
+
+  module.preCtorArrayPost = -> new Instruction("PreCtorArrayPost", {}, (vm) ->
+    logging.debug("#{@instructionName}: Cleaning up, popping index from stack")
+    # Pop index
+    vm.popFromReg()
   )
 
   return module

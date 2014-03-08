@@ -131,8 +131,10 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
         throw new Error("Nothing on the stack")
       return val
 
-    peekReg: =>
-      return @regStack[@regStack.length-1]
+    peekReg: (offset) =>
+      if !offset?
+        offset = 0
+      return @regStack[@regStack.length-(1+offset)]
 
     insertIntoMemory: (index, value) =>
       logging.debug("Inserting value #{value} into memory stack at index #{index}")

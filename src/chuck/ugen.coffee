@@ -22,6 +22,7 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], (types, logging) ->
       @current
 
     add: (source) =>
+      logging.debug("UGen channel: Adding source ##{@sources.length+1}")
       @sources.push(source)
 
     stop: =>

@@ -92,9 +92,20 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       {value, array} = varDecl
       if array?
         # Emit indices
+        logging.debug("Emitting array indices")
         array.scanPass5(@)
         logging.debug("Emitting AllocateArray")
         @code.append(instructions.allocateArray(type))
+        if types.isObj(type)
+          startIndex = @_nextIndex()
+          logging.debug("Emitting PreCtorArrayTop")
+          top = @code.append(instructions.preCtorArrayTop(type))
+          @_emitPreConstructor(type)
+          logging.debug("Emitting PreCtorArrayBottom")
+          bottom = @code.append(instructions.preCtorArrayBottom(type))
+          top.set(@_nextIndex())
+          bottom.set(startIndex)
+          @code.append(instructions.preCtorArrayPost())
 
       isObj = types.isObj(type) || array?
       if isObj && !array?

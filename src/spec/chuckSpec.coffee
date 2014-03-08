@@ -12,12 +12,6 @@ define(['chuck', "q", "spec/helpers", "chuck/types"], (chuckModule, q, helpers, 
       helpers.afterEach()
     )
 
-    verifySinOsc = (sinOsc, frequency=220, gain=1) ->
-      expect(sinOsc.type.name).toBe("SinOsc")
-      expect(sinOsc.data.num).toBe((1/helpers.fakeAudioContext.sampleRate)*frequency,
-        "Frequency should be correctly set")
-      expect(sinOsc._gain).toBe(gain, "Gain should be correctly set")
-
     it("can execute a program", ->
       executeCode("""SinOsc sin => dac;
 2::second => now;
@@ -34,7 +28,7 @@ define(['chuck', "q", "spec/helpers", "chuck/types"], (chuckModule, q, helpers, 
         expect(dac._channels[0].sources.length).toBe(1, "Sine oscillator should be connected to DAC")
         sine = dac._channels[0].sources[0]
         expect(dac._channels[1].sources).toEqual([sine], "Sine oscillator should be connected to DAC")
-        verifySinOsc(sine)
+        helpers.verifySinOsc(sine)
       )
 
       verify(->
@@ -56,7 +50,7 @@ define(['chuck', "q", "spec/helpers", "chuck/types"], (chuckModule, q, helpers, 
       runs(->
         dac = helpers.getDac()
         sine = dac._channels[0].sources[0]
-        verifySinOsc(sine, 440, 0.6)
+        helpers.verifySinOsc(sine, 440, 0.6)
       )
 
       verify(null, 1)

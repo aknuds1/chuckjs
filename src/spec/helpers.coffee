@@ -122,5 +122,14 @@ define("spec/helpers", ['chuck', "q"], (chuckModule, q) ->
 
   module.getDac = -> chuck._vm._dac
 
+  module.verifySinOsc = (sinOsc, frequency=220, gain=1) ->
+    expect(sinOsc).toBeDefined()
+    if !sinOsc?
+      return
+    expect(sinOsc.type.name).toBe("SinOsc")
+    expect(sinOsc.data.num).toBe((1/module.fakeAudioContext.sampleRate)*frequency,
+      "Frequency should be correctly set")
+    expect(sinOsc._gain).toBe(gain, "Gain should be correctly set")
+
   return module
 )
