@@ -153,8 +153,9 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instructions.addNumber())
       return
 
-    emitPreIncNumber: =>
-      @code.append(instructions.preIncNumber())
+    emitPreIncNumber: => @code.append(instructions.preIncNumber())
+
+    emitPostIncNumber: => @code.append(instructions.postIncNumber())
 
     emitSubtractNumber: =>
       @code.append(instructions.subtractNumber())

@@ -180,6 +180,15 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     return
   )
 
+  module.postIncNumber = -> new Instruction("PostIncnUmber", {}, (vm) ->
+    memStackIndex = vm.popFromReg()
+    val = vm.getFromMemory(memStackIndex)
+    vm.pushToReg(val)
+    ++val
+    vm.insertIntoMemory(memStackIndex, val)
+    return
+  )
+
   module.subtractNumber = -> new Instruction("SubtractNumber", {}, (vm) ->
     rhs = vm.popFromReg()
     lhs = vm.popFromReg()

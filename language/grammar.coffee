@@ -144,7 +144,7 @@ grammar = {
   ],
   UnaryExpression: [
     o('DurExpression'),
-    o('PLUSPLUS UnaryExpression', -> new UnaryExpression(new PlusPlusOperator(), $2))
+    o('PLUSPLUS UnaryExpression', -> new UnaryExpression(new PrefixPlusPlusOperator(), $2))
   ],
   DurExpression: [
     o('PostfixExpression'),
@@ -154,6 +154,7 @@ grammar = {
     o('PrimaryExpression'),
     o('PostfixExpression ArrayExpression', -> new PrimaryArrayExpression($1, $2)),
     o('PostfixExpression DOT ID', -> new DotMemberExpression($1, $3)),
+    o('PostfixExpression PLUSPLUS', -> new PostfixExpression($1, new PostfixPlusPlusOperator()))
   ],
   PrimaryExpression: [
     o('ID', -> new PrimaryVariableExpression($1)),

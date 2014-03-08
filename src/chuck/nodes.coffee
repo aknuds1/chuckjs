@@ -334,8 +334,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass4: (context) =>
       if @exp?
-        t = @exp.scanPass4(context)
-      @type = @op.check(@exp, t)
+        @exp.scanPass4(context)
+      @type = @op.check(@exp)
 
     scanPass5: (context) =>
       logging.debug("UnaryExpression: Emitting expression")
@@ -402,20 +402,33 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       logging.debug('PlusOperator emitting AddNumber')
       context.emitAddNumber()
 
-  module.PlusPlusOperator = class
-    constructor: ->
-      @name = "PlusPlusOperator"
+  PlusPlusOperatorBase = class
+    constructor: (name) ->
+      @name = name
 
-    check: (exp, type) =>
+    check: (exp) =>
       exp._emitVar = true
+      type = exp.type
       if type == types.int || type == types.float
         type
       else
         null
 
+  module.PrefixPlusPlusOperator = class extends PlusPlusOperatorBase
+    constructor: ->
+      super("PrefixPlusPlusOperator")
+
     emit: (context) =>
-      logging.debug('PlusPlusOperator emitting PreIncNumber')
+      logging.debug("#{@name} emitting PreIncNumber")
       context.emitPreIncNumber()
+
+  module.PostfixPlusPlusOperator = class extends PlusPlusOperatorBase
+    constructor: ->
+      super("PostfixPlusPlusOperator")
+
+    emit: (context) =>
+      logging.debug("#{@name} emitting PostIncNumber")
+      context.emitPostIncNumber()
 
   module.MinusOperator = class extends AdditiveSubtractiveOperatorBase
     constructor: ->
@@ -592,6 +605,20 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       context.emitRegDupLast()
       context.emitDotMemberFunc(@id)
       return
+
+  module.PostfixExpression = class extends NodeBase
+    constructor: (base, operator) ->
+      super("PostfixExpression", "variable")
+      @exp = base
+      @op = operator
+
+    scanPass4: (context) =>
+      @exp.scanPass4(context)
+      @type = @op.check(@exp)
+
+    scanPass5: (context) =>
+      @exp.scanPass5(context)
+      @op.emit(context)
 
   module.ArraySub = class extends NodeBase
     constructor: (exp) ->
