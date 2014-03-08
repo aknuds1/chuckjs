@@ -219,6 +219,7 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
     '\\+\\+': 'PLUSPLUS'
     '\\-\\-': 'MINUSMINUS'
     '=>': 'CHUCK'
+    '=<': 'UNCHUCK'
     '::': 'COLONCOLON'
     '<<<': 'L_HACK'
     '>>>': 'R_HACK'

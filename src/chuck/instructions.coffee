@@ -111,7 +111,16 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     logging.debug("UGenLink: Linking node of type #{src.type.name} to node of type #{dest.type.name}")
     dest.add(src)
     vm.pushToReg(dest)
-    return undefined
+    return
+  )
+
+  module.uGenUnlink = -> new Instruction("UGenUnlink", {}, (vm) ->
+    dest = vm.popFromReg()
+    src = vm.popFromReg()
+    logging.debug("#{@instructionName}: Unlinking node of type #{src.type.name} from node of type #{dest.type.name}")
+    dest.remove(src)
+    vm.pushToReg(dest)
+    return
   )
 
   module.regPushImm = (val) -> return new Instruction("RegPushImm", val: val, (vm) ->

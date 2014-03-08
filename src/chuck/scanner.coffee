@@ -125,6 +125,10 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instructions.uGenLink())
       return
 
+    emitUGenUnlink: =>
+      @code.append(instructions.uGenUnlink())
+      return
+
     emitPopWord: =>
       @code.append(instructions.popWord())
       return

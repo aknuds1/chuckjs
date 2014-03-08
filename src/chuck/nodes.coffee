@@ -384,6 +384,21 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
       return
 
+  module.UnchuckOperator = class
+    constructor: ->
+      @name = "UnchuckOperator"
+
+    check: (lhs, rhs, context) =>
+      if lhs.type.isOfType(types.UGen) && rhs.type.isOfType(types.UGen)
+        return rhs.type
+
+    emit: (context, lhs, rhs) =>
+      # UGen => UGen
+      if lhs.type.isOfType(types.UGen) && rhs.type.isOfType(types.UGen)
+        context.emitUGenUnlink()
+
+      return
+
   class AdditiveSubtractiveOperatorBase
     check: (lhs, rhs) =>
       if (lhs.type == types.Dur && rhs.type == types.Time) || (lhs.type == types.Time && rhs.type == types.Dur)

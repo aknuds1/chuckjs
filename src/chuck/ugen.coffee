@@ -22,8 +22,15 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], (types, logging) ->
       @current
 
     add: (source) =>
-      logging.debug("UGen channel: Adding source ##{@sources.length+1}")
+      logging.debug("UGen channel: Adding source ##{@sources.length}")
       @sources.push(source)
+      return
+
+    remove: (source) =>
+      idx = _.find(@sources, (src) -> src == source)
+      logging.debug("UGen channel: Removing source ##{idx}")
+      @sources.splice(idx, 1)
+      return
 
     stop: =>
       @sources.splice(0, @sources.length)
@@ -45,6 +52,12 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], (types, logging) ->
       for channel in @_channels
         channel.add(src)
       src._addDest(@)
+      return
+
+    remove: (src) =>
+      for channel in @_channels
+        channel.remove(src)
+      src._removeDest(@)
       return
 
     stop: =>
@@ -79,6 +92,12 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], (types, logging) ->
 
     _addDest: (dest) =>
       @_destList.push(dest)
+      return
+
+    _removeDest: (dest) =>
+      idx = _.find(@_destList, (d) -> d == dest)
+      logging.debug("UGen: Removing destination #{idx}")
+      @_destList.splice(idx, 1)
       return
 
   module.Dac = class Dac extends UGen

@@ -67,7 +67,7 @@ grammar = {
   ],
   ChuckExpression: [
     o('ArrowExpression'),
-    o('ChuckExpression CHUCK ArrowExpression', -> new BinaryExpression($1, new ChuckOperator(), $3))
+    o('ChuckExpression ChuckOperator ArrowExpression', -> new BinaryExpression($1, $2, $3))
   ],
   ArrowExpression: [
     o('DeclExpression'),
@@ -184,6 +184,10 @@ grammar = {
   ],
   ArrayEmpty: [
     o('LBRACK RBRACK', -> new ArraySub())
+  ],
+  ChuckOperator: [
+    o('CHUCK', -> new ChuckOperator()),
+    o('UNCHUCK', -> new UnchuckOperator())
   ]
 }
 
