@@ -167,8 +167,8 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instructions.regDupLast())
       return
 
-    emitDotMemberFunc: (id) =>
-      @code.append(instructions.dotMemberFunc(id))
+    emitDotMemberFunc: (func) =>
+      @code.append(instructions.dotMemberFunc(func))
       return
 
     emitDotStaticFunc: (func) =>

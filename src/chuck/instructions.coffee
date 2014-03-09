@@ -172,10 +172,9 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     return
   )
 
-  module.dotMemberFunc = (id) -> new Instruction("DotMemberFunc", {}, (vm) ->
+  module.dotMemberFunc = (func) -> new Instruction("DotMemberFunc", {}, (vm) ->
     obj = vm.popFromReg()
-    logging.debug("DotMemberFunc: Pushing method #{id} of type #{obj.type.name} to stack")
-    func = obj.type.findValue(id).value
+    logging.debug("DotMemberFunc: Pushing method #{func.name} of type #{obj.type.name} to stack")
     vm.pushToReg(func)
     return
   )

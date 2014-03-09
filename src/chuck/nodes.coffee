@@ -442,7 +442,13 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         return rhs.type
       if rhs.type.isOfType(types.Function)
         rhs.scanPass4(context)
-        return rhs.type
+        # Find method overload
+        funcGroup = rhs.value.value
+        # TODO: Make lhs into an ExpressionList
+        rhs._ckFunc = funcGroup.findOverload([lhs])
+        @type = funcGroup.retType
+        logging.debug("#{@name} check: Got function overload #{rhs._ckFunc.name} with return type #{@type.name}")
+        @type
 
     emit: (context, lhs, rhs) =>
       # UGen => UGen
@@ -706,7 +712,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     scanPass5: (context) =>
       @base.scanPass5(context)
       context.emitRegDupLast()
-      context.emitDotMemberFunc(@id)
+      context.emitDotMemberFunc(@_ckFunc)
       return
 
   module.PostfixExpression = class extends NodeBase
