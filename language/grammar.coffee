@@ -63,7 +63,7 @@ grammar = {
   ],
   Expression: [
     o('ChuckExpression', -> new ExpressionList($1)),
-    o('ChuckExpression COMMA Expression', -> $3.push($1))
+    o('ChuckExpression COMMA Expression', -> $3.prepend($1))
   ],
   ChuckExpression: [
     o('ArrowExpression'),

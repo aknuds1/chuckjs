@@ -73,7 +73,6 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
       @stackDepth = args.length
 
     apply: (obj) =>
-      debugger
       @func.apply(arguments[0], arguments[1])
 
   class ChuckFunctionBase

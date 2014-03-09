@@ -39,7 +39,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
     describe('pow', ->
       it('can return the value of x to the power of y', ->
         executeCode("""\
-<<<Math.pow(1, 2)>>>;
+<<<Math.pow(2, 3)>>>;
 """)
 
         verify(->

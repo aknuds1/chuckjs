@@ -157,7 +157,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     vm.pushMemAddrToReg(offset)
     return
   )
-  module.regPushMem = (offset) -> if !offset? then debugger; return new Instruction("RegPushMem", {}, (vm) ->
+  module.regPushMem = (offset) -> return new Instruction("RegPushMem", {}, (vm) ->
     vm.pushToRegFromMem(offset)
     return
   )

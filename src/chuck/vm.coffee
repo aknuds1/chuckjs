@@ -122,8 +122,6 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
 
     pushToRegFromMem: (offset) =>
       value = @memStack[offset]
-      if !offset?
-        debugger
       logging.debug("Pushing memory stack value @#{offset} to regular stack")
       @regStack.push(value)
 
