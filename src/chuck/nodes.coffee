@@ -1,6 +1,7 @@
 define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextService"],
-(types, logging, audioContextService) ->
+(typesModule, logging, audioContextService) ->
   module = {}
+  {types} = typesModule
 
   class NodeBase
     constructor: (nodeType) ->
@@ -48,6 +49,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           @_scanArray(c, pass, context)
         else
           c["scanPass#{pass}"](context)
+      return
 
   module.Program = class extends ParentNodeBase
     constructor: (child) ->
@@ -111,6 +113,28 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     scanPass4: =>
       @groupSize = 0
       ++@groupSize
+
+  module.ExpressionList = class
+    constructor: (expression) ->
+      @_expressions = [expression]
+
+    push: (expression) =>
+      @_expressions.push(expression)
+      @
+
+    _scanPass: (pass) =>
+      for exp in @_expressions
+        exp["scanPass#{pass}"].apply(exp, Array.prototype.slice.call(arguments, 1))
+      return
+
+    scanPass1: _.partial(@prototype._scanPass, 1)
+    scanPass2: _.partial(@prototype._scanPass, 2)
+    scanPass3: _.partial(@prototype._scanPass, 3)
+    scanPass4: _.partial(@prototype._scanPass, 4)
+
+    scanPass5: (context) =>
+      @_scanPass(5, context)
+      @types = (exp.type for exp in @_expressions)
 
   module.DeclarationExpression = class extends ExpressionBase
     constructor: (typeDecl, varDecls) ->
@@ -180,10 +204,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           @_meta = "value"
           @type = types.int
         else
-          value = context.findValue(@name)
-          @type = value.type
+          @value = context.findValue(@name)
+          @type = @value.type
           logging.debug("Primary variable of type #{@type.name}")
-          @value = value
           @type
 
     scanPass5: (context) =>
@@ -204,10 +227,11 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         else
           # Emit symbol
           if @_emitVar
-            logging.debug("#{@nodeType}: Emitting RegPushMemAddr since this is a variable")
+            logging.debug("#{@nodeType}: Emitting RegPushMemAddr (#{@value.offset}) since this is a variable")
             context.emitRegPushMemAddr(@value.offset)
           else
-            logging.debug("#{@nodeType}: Emitting RegPushMem since this is a constant")
+            debugger
+            logging.debug("#{@nodeType}: Emitting RegPushMem (#{@value.offset}) since this is a constant")
             context.emitRegPushMem(@value.offset)
 
       return undefined
@@ -223,6 +247,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass5: (context) =>
       super()
+      logging.debug("#{@nodeType}: Emitting RegPushImm(#{@value})")
       context.emitRegPushImm(@value)
 
   module.PrimaryFloatExpression = class extends ExpressionBase
@@ -249,8 +274,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass5: (context) =>
       super()
+      debugger
       @expression.scanPass5(context)
-      context.emitGack([@expression.type])
+      context.emitGack([@expression.types])
 
   module.PrimaryStringExpression= class extends ExpressionBase
     constructor: (value) ->
@@ -297,6 +323,62 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @base.scanPass5(context)
       @indices.scanPass5(context)
       context.emitArrayAccess(@type)
+
+  module.FuncCallExpression = class extends ExpressionBase
+    constructor: (base, args) ->
+      super("FuncCallExpression")
+      @func = base
+      @args = args
+
+    scanPass1: =>
+      super()
+      @func.scanPass1()
+      if @args?
+        @args.scanPass1()
+
+    scanPass2: =>
+      super()
+      @func.scanPass2()
+      if @args?
+        @args.scanPass2()
+
+    scanPass3: =>
+      super()
+      @func.scanPass3()
+      if @args?
+        @args.scanPass3()
+
+    scanPass4: (context) =>
+      super(context)
+      logging.debug("#{@nodeType} scanPass4: Checking type of @func")
+      @type = @func.scanPass4(context)
+      if @args?
+        @args.scanPass4(context)
+      # Find method overload
+      funcGroup = @func.value.value
+      @_ckFunc = funcGroup.findOverload(@args._expressions)
+      logging.debug("#{@nodeType} scanPass4: Got function overload #{@_ckFunc.name} with return type
+ #{funcGroup.retType.name}")
+      funcGroup.retType
+
+    scanPass5: (context) =>
+      super(context)
+      if @args?
+        debugger
+        logging.debug("#{@nodeType}: Emitting arguments")
+        @args.scanPass5(context)
+
+      logging.debug("#{@nodeType}: Emitting function #{@_ckFunc.name}")
+      context.emitDotStaticFunc(@_ckFunc)
+
+      # TODO: Calculate current frame offset
+      context.emitRegPushImm(0)
+      if @_ckFunc.isMember
+        logging.debug("#{@nodeType}: Emitting instance method call")
+        context.emitFuncCallMember()
+      else
+        logging.debug("#{@nodeType}: Emitting static method call")
+        context.emitFuncCallStatic()
 
   module.DurExpression = class extends ExpressionBase
     constructor: (base, unit) ->
@@ -350,7 +432,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     check: (lhs, rhs, context) =>
       if lhs.type == rhs.type
-        if types.isPrimitive(lhs.type) || lhs.type == types.String
+        if typesModule.isPrimitive(lhs.type) || lhs.type == types.String
           if rhs._meta == "variable"
             # Assign to variable
             rhs._emitVar = true
@@ -610,10 +692,18 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       return
 
     scanPass4: (context) =>
+      logging.debug("#{@nodeType} scanPass4")
       @base.scanPass4(context)
-      @type = @base.type.findValue(@id).type
-      logging.debug("DotMemberExpression, type: #{@type.name}")
-      return
+      baseStatic = @base.type.actualType?
+      if baseStatic
+        logging.debug("#{@nodeType} scanPass4: This is a static member expression")
+        debugger
+      baseType = if baseStatic then @base.type.actualType else @base.type
+      logging.debug("#{@nodeType} scanPass4: Finding member '#{@id}' in base type #{baseType.name}")
+      @value = baseType.findValue(@id)
+      @type = @value.type
+      logging.debug("#{@nodeType} scanPass4: Member type is #{@type.name}")
+      @type
 
     scanPass5: (context) =>
       @base.scanPass5(context)

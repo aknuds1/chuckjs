@@ -62,8 +62,8 @@ grammar = {
     o('Expression SEMICOLON', -> new ExpressionStatement($1))
   ],
   Expression: [
-    o('ChuckExpression'),
-    o('ChuckExpression COMMA expression', -> prependExpression($1, $3))
+    o('ChuckExpression', -> new ExpressionList($1)),
+    o('ChuckExpression COMMA Expression', -> $3.push($1))
   ],
   ChuckExpression: [
     o('ArrowExpression'),
@@ -153,6 +153,7 @@ grammar = {
   PostfixExpression: [
     o('PrimaryExpression'),
     o('PostfixExpression ArrayExpression', -> new PrimaryArrayExpression($1, $2)),
+    o('PostfixExpression LPAREN Expression RPAREN', -> new FuncCallExpression($1, $3)),
     o('PostfixExpression DOT ID', -> new DotMemberExpression($1, $3)),
     o('PostfixExpression PLUSPLUS', -> new PostfixExpression($1, new PostfixPlusPlusOperator()))
   ],

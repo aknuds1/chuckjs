@@ -218,6 +218,7 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
   MATCHERS =
     '\\+\\+': 'PLUSPLUS'
     '\\-\\-': 'MINUSMINUS'
+    ',': 'COMMA'
     '=>': 'CHUCK'
     '=<': 'UNCHUCK'
     '::': 'COLONCOLON'

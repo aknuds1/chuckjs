@@ -4,27 +4,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
   module = {}
   TwoPi = Math.PI*2
 
-  class FunctionArg
-    constructor: (name, typeName) ->
-      @name
-      @typeName = typeName
-
-  class ChuckFunctionBase
-    constructor: (name, args, isMember, func) ->
-      @name = name
-      @_func = func
-      @needThis = isMember
-      @stackDepth = if isMember then 1 else 0
-      @stackDepth += args.length
-
-    apply: (thisObj, args) ->
-      @_func.apply(thisObj, args)
-
-  class ChuckMethod extends ChuckFunctionBase
-    constructor: (name, args, func) ->
-      super(name, args, true, func)
-
-  class ChuckType
+  module.ChuckType = class ChuckType
     constructor: (name, parent, opts, constructorCb) ->
       opts = opts || {}
       @name = name
@@ -41,7 +21,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
 
       opts.namespace = opts.namespace || {}
       for own k, v of opts.namespace
-        memberType = if v instanceof ChuckFunctionBase then module.Function else undefined
+        memberType = if v instanceof ChuckFunctionBase then types.Function else undefined
         @_namespace.addVariable(k, memberType, v)
 
     isOfType: (otherType) =>
@@ -73,18 +53,82 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
       if parent._constructor?
         parent._constructor.call(@, opts)
 
-  module.Function = new ChuckType("Function", undefined)
+  types = module.types = {}
+
+  types.int = new ChuckType("int", undefined, size: 8, preConstructor: undefined)
+  types.float = new ChuckType("float", undefined, size: 8, preConstructor: undefined)
+  types.Time = new ChuckType("time", undefined, size: 8, preConstructor: undefined)
+  types.Dur = new ChuckType("Dur", undefined, size: 8, preConstructor: undefined)
+  types.String = new ChuckType("String", undefined, size: 8, preConstructor: undefined)
+
+  module.FunctionArg = class FunctionArg
+    constructor: (name, type) ->
+      @name = name
+      @type = type
+
+  module.FunctionOverload = class FunctionOverload
+    constructor: (args, func) ->
+      @arguments = args
+      @func = func
+      @stackDepth = args.length
+
+    apply: (obj) =>
+      debugger
+      @func.apply(arguments[0], arguments[1])
+
+  class ChuckFunctionBase
+    constructor: (name, overloads, isMember, typeName, retType) ->
+      @name = name
+      @isMember = isMember
+      @_overloads = overloads
+      @retType = retType
+      i = 0
+      for overload in overloads
+        overload.name = "#{name}@#{i++}"
+        overload.isMember = @isMember
+        if @isMember
+          # Needs 'this' argument
+          ++overload.stackDepth
+        if typeName?
+          overload.name = "#{overload.name}@#{typeName}"
+
+    findOverload: (args) ->
+      for mthd in @_overloads
+        if mthd.arguments.length != args.length
+          continue
+
+        if !_.every(mthd.arguments, (a, index) ->
+          a.type == args[index].type || (a.type == types.float && args[index].type == types.int))
+          continue
+
+        #logging.debug("#{@nodeType} scanPass4: Found matching overload")
+        return mthd
+
+      #logging.debug("#{@nodeType} scanPass4: Couldn't find matching method overload")
+      null
+
+  module.ChuckMethod = class ChuckMethod extends ChuckFunctionBase
+    constructor: (name, overloads, typeName, retType) ->
+      super(name, overloads, true, typeName, retType)
+
+  module.ChuckStaticMethod = class ChuckStaticMethod extends ChuckFunctionBase
+    constructor: (name, overloads, typeName, retType) ->
+      super(name, overloads, false, typeName, retType)
+      @isStatic = true
+
+  types.Function = new ChuckType("Function", null, null)
   constructObject = ->
-  module.Object = new ChuckType("Object", undefined, preConstructor: constructObject, (opts) ->
+  types.Object = new ChuckType("Object", undefined, preConstructor: constructObject, (opts) ->
     @hasConstructor = opts.preConstructor?
     @preConstructor = opts.preConstructor
     @size = opts.size
   )
+  module.Class = new ChuckType("Class", types.Object)
   ugenNamespace =
-    gain: new ChuckMethod("gain", [new FunctionArg("value", "float")], (value) ->
+    gain: new ChuckMethod("gain", [new FunctionOverload([new FunctionArg("value", types.float)], (value) ->
       @setGain(value)
-    )
-  module.UGen = new ChuckType("UGen", module.Object, size: 8, numIns: 1, numOuts: 1, preConstructor: undefined,
+    )], "UGen", types.float)
+  types.UGen = new ChuckType("UGen", types.Object, size: 8, numIns: 1, numOuts: 1, preConstructor: undefined,
   namespace: ugenNamespace, ugenTick: undefined
   (opts) ->
     @ugenNumIns = opts.numIns
@@ -98,9 +142,9 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
       @width = 0.5
       @phase = 0
   oscNamespace =
-    freq: new ChuckMethod("freq", [new FunctionArg("value", "float")], (value) ->
+    freq: new ChuckMethod("freq", [new FunctionOverload([new FunctionArg("value", types.float)], (value) ->
       @setFrequency(value)
-    )
+    )], "Osc", types.float)
   constructOsc = ->
     @data = new OscData()
     @setFrequency = (value) ->
@@ -108,7 +152,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
       return value
     @setFrequency(220)
 
-  module.Osc = new ChuckType("Osc", module.UGen, numIns: 1, numOuts: 1, preConstructor: constructOsc,
+  types.Osc = new ChuckType("Osc", types.UGen, numIns: 1, numOuts: 1, preConstructor: constructOsc,
   namespace: oscNamespace)
   tickSinOsc = ->
     out = Math.sin(@data.phase * TwoPi)
@@ -118,22 +162,17 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
     else if @data.phase < 0
       @data.phase += 1
     out
-  module.SinOsc = new ChuckType("SinOsc", module.Osc, preConstructor: undefined, ugenTick: tickSinOsc)
-  module.UGenStereo = new ChuckType("Ugen_Stereo", module.UGen, numIns: 2, numOuts: 2, preConstructor: undefined)
+  types.SinOsc = new ChuckType("SinOsc", types.Osc, preConstructor: undefined, ugenTick: tickSinOsc)
+  types.UGenStereo = new ChuckType("Ugen_Stereo", types.UGen, numIns: 2, numOuts: 2, preConstructor: undefined)
   constructDac = ->
     @_node = audioContextService.outputNode
-  module.Dac = new ChuckType("Dac", module.UGenStereo, preConstructor: constructDac)
-  module.int = new ChuckType("int", undefined, size: 8, preConstructor: undefined)
-  module.float = new ChuckType("float", undefined, size: 8, preConstructor: undefined)
-  module.Time = new ChuckType("time", undefined, size: 8, preConstructor: undefined)
-  module.Dur = new ChuckType("Dur", undefined, size: 8, preConstructor: undefined)
-  module.String = new ChuckType("String", undefined, size: 8, preConstructor: undefined)
+  types.Dac = new ChuckType("Dac", types.UGenStereo, preConstructor: constructDac)
 
   module.isObj = (type) ->
     return !module.isPrimitive(type)
 
   module.isPrimitive = (type) ->
-    return type == module.Dur || type == module.Time || type == module.int || type == module.float
+    return type == types.Dur || type == types.Time || type == types.int || type == types.float
 
   return module
 )

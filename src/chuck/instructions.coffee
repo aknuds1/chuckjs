@@ -1,7 +1,7 @@
 define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ugen, logging, typesModule) ->
   module = {}
 
-  callMember = (vm) ->
+  callMethod = (vm) ->
     localDepth = vm.popFromReg()
     logging.debug("Popped local depth from stack: #{localDepth}")
     func = vm.popFromReg()
@@ -14,10 +14,12 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
       logging.debug("Popping argument #{i} from stack: #{args[0]}")
       ++i
     thisObj = undefined
-    if func.needThis
+    if func.isMember
       logging.debug("Function is a method, passing 'this' to it")
       thisObj = args.pop()
-    func.apply(thisObj, args)
+    retVal = func.apply(thisObj, args)
+    logging.debug("Pushing return value #{retVal} to stack")
+    vm.pushToReg(retVal)
 
   class Instruction
     constructor: (name, params, execute) ->
@@ -63,7 +65,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
       vm.pushToReg(@type.preConstructor)
       vm.pushToReg(@stackOffset)
 
-      callMember(vm)
+      callMethod(vm)
     )
 
   module.assignObject = ->
@@ -135,14 +137,27 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     vm.pushToReg(func)
     vm.pushToReg(localDepth)
     logging.debug("Calling instance method '#{func.name}'")
-    callMember(vm)
+    callMethod(vm)
   )
+
+  module.funcCallStatic = -> new Instruction("FuncCallStatic", {}, (vm) ->
+    localDepth = vm.popFromReg()
+    logging.debug("Popped local depth from stack: #{localDepth}")
+    func = vm.popFromReg()
+    stackDepth = func.stackDepth
+    logging.debug("Calling static method '#{func.name}'")
+    vm.pushToReg(func)
+    vm.pushToReg(localDepth)
+    callMethod(vm)
+  )
+
+  module.funcToCode = -> new Instruction("")
 
   module.regPushMemAddr = (offset) -> return new Instruction("RegPushMemAddr", {}, (vm) ->
     vm.pushMemAddrToReg(offset)
     return
   )
-  module.regPushMem = (offset) -> return new Instruction("RegPushMem", {}, (vm) ->
+  module.regPushMem = (offset) -> if !offset? then debugger; return new Instruction("RegPushMem", {}, (vm) ->
     vm.pushToRegFromMem(offset)
     return
   )
@@ -158,6 +173,12 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     obj = vm.popFromReg()
     logging.debug("DotMemberFunc: Pushing method #{id} of type #{obj.type.name} to stack")
     func = obj.type.findValue(id).value
+    vm.pushToReg(func)
+    return
+  )
+
+  module.dotStaticFunc = (func) -> new Instruction("DotStaticFunc", {}, (vm) ->
+    logging.debug("DotStaticFunc: Pushing static method to stack:", func)
     vm.pushToReg(func)
     return
   )

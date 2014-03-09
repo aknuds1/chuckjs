@@ -102,7 +102,7 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], (types, logging) ->
 
   module.Dac = class Dac extends UGen
     constructor: ->
-      super(types.Dac)
+      super(types.types.Dac)
 
     tick: (now, frame) =>
       super(now)

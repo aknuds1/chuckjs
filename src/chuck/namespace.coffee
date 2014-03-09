@@ -2,13 +2,15 @@ define("chuck/namespace", [], ->
   module = {}
 
   module.Namespace = class
-    constructor: (name) ->
+    constructor: (name, parent) ->
       @name = name
       @_scope = new Scope()
       @_types = new Scope()
+      @_parent = parent
 
     addType: (type) =>
       @_types.addType(type)
+      return
 
     findType: (name) =>
       type = @_types.findType(name)
@@ -17,8 +19,12 @@ define("chuck/namespace", [], ->
 
       return if @_parent then @_parent.findType(name) else undefined
 
-    findValue: (name) =>
-      return @_scope.findValue(name)
+    findValue: (name, climb = false) =>
+      val = @_scope.findValue(name, climb)
+      if val?
+        return val
+      if climb && @_parent?
+        @_parent.findValue(name, climb)
 
     addVariable: (name, type, value) =>
       return @_scope.addVariable(name, type, @, value)
@@ -26,6 +32,7 @@ define("chuck/namespace", [], ->
     commit: =>
       for scope in [@_scope, @_types]
         scope.commit()
+      return
 
   class ChuckValue
     constructor: (type, varName, namespace, isContextGlobal, value) ->

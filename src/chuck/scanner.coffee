@@ -1,5 +1,6 @@
-define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "chuck/namespace", "chuck/logging"],
-(nodes, types, instructions, namespaceModule, logging) ->
+define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "chuck/namespace", "chuck/logging",
+"chuck/libs/math"],
+(nodes, types, instructions, namespaceModule, logging, mathLib) ->
   module = {}
 
   class ChuckLocal
@@ -52,8 +53,13 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     constructor: ->
       @code = new ChuckCode()
       @_globalNamespace = new namespaceModule.Namespace("global")
-      for own k, type of types
-        @_globalNamespace.addType(type)
+      for lib in [types, mathLib]
+        for own k, type of lib.types
+          @_globalNamespace.addType(type)
+          typeType = _.extend({}, types.Class)
+          typeType.actualType = type
+          @_globalNamespace.addVariable(type.name, typeType, type)
+
       @_globalNamespace.commit()
       @_namespaceStack = [@_globalNamespace]
       @_currentNamespace = @_globalNamespace
@@ -65,7 +71,12 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       return type
 
     findValue: (name) =>
-      return @_currentNamespace.findValue(name)
+      # Look locally first
+      val = @_currentNamespace.findValue(name)
+      if val?
+        return val
+      # Look globally
+      val = @_currentNamespace.findValue(name, true)
 
     addVariable: (name, typeName) =>
       return @_currentNamespace.addVariable(name, typeName)
@@ -141,6 +152,10 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instructions.funcCallMember())
       return
 
+    emitFuncCallStatic: =>
+      @code.append(instructions.funcCallStatic())
+      return
+
     emitRegPushMemAddr: (offset) =>
       @code.append(instructions.regPushMemAddr(offset))
       return
@@ -154,6 +169,10 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     emitDotMemberFunc: (id) =>
       @code.append(instructions.dotMemberFunc(id))
+      return
+
+    emitDotStaticFunc: (func) =>
+      @code.append(instructions.dotStaticFunc(func))
       return
 
     emitTimesNumber: =>
