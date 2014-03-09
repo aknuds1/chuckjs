@@ -1,10 +1,11 @@
-define(['chuck', "q", "spec/helpers", "chuck/types"], (chuckModule, q, helpers, chuckTypes) ->
+define(['chuck', "q", "spec/helpers", "chuck/types"], (chuckModule, q, helpers, typesModule) ->
   describe("Chuck", ->
     {executeCode, verify} = helpers
+    {types} = typesModule
 
     beforeEach(->
       helpers.beforeEach()
-      spyOn(chuckTypes.SinOsc, "ugenTick")
+      spyOn(types.SinOsc, "ugenTick")
       spyOn(console, 'log')
     )
 

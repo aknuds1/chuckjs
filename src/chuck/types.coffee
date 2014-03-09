@@ -85,6 +85,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
       for overload in overloads
         overload.name = "#{name}@#{i++}"
         overload.isMember = @isMember
+        overload.retType = retType
         if @isMember
           # Needs 'this' argument
           ++overload.stackDepth
@@ -166,6 +167,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
   constructDac = ->
     @_node = audioContextService.outputNode
   types.Dac = new ChuckType("Dac", types.UGenStereo, preConstructor: constructDac)
+  types.void = new ChuckType("void")
 
   module.isObj = (type) ->
     return !module.isPrimitive(type)

@@ -1,5 +1,6 @@
 define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ugen, logging, typesModule) ->
   module = {}
+  {types} = typesModule
 
   callMethod = (vm) ->
     localDepth = vm.popFromReg()
@@ -18,8 +19,9 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
       logging.debug("Function is a method, passing 'this' to it")
       thisObj = args.pop()
     retVal = func.apply(thisObj, args)
-    logging.debug("Pushing return value #{retVal} to stack")
-    vm.pushToReg(retVal)
+    if func.retType != types.void
+      logging.debug("Pushing return value #{retVal} to stack")
+      vm.pushToReg(retVal)
 
   class Instruction
     constructor: (name, params, execute) ->
@@ -60,8 +62,9 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
       # Push 'this' reference
       vm.pushToReg(vm.peekReg())
       # Signal that this function needs a 'this' reference
-      @type.preConstructor.needThis = true
+      @type.preConstructor.isMember = true
       @type.preConstructor.stackDepth = 1
+      @type.preConstructor.retType = types.void
       vm.pushToReg(@type.preConstructor)
       vm.pushToReg(@stackOffset)
 
@@ -266,7 +269,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
   module.hack = (type) -> new Instruction("Hack", {}, (vm) ->
     obj = vm.peekReg()
     logging.debug("Printing object of type #{type.name}:", obj)
-    if type == typesModule.String
+    if type == types.String
       console.log("\"#{obj}\" : (#{type.name})")
     else
       console.log("#{obj} : (#{type.name})")
