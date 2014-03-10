@@ -235,6 +235,15 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     return
   )
 
+  module.timesNumber = -> new Instruction("TimesNUmber", {}, (vm) ->
+    rhs = vm.popFromReg()
+    lhs = vm.popFromReg()
+    number = lhs*rhs
+    logging.debug("#{@instructionName}: Multiplying #{lhs} with #{rhs} resulted in: #{number}")
+    vm.pushToReg(number)
+    return
+  )
+
   module.ltNumber = -> new Instruction("LtNumber", {}, (vm) ->
     rhs = vm.popFromReg()
     lhs = vm.popFromReg()

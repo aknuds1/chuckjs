@@ -234,6 +234,7 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
     '\\.': 'DOT'
     '\\+': 'PLUS'
     '-': 'MINUS'
+    '\\*': 'TIMES'
     '<': 'LT'
     '>': 'GT'
     '\\[': 'LBRACK'

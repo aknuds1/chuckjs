@@ -47,5 +47,15 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
         )
       )
     )
+
+    describe("multiplication", ->
+      it("can multiply two floats", ->
+        executeCode("""<<<2.1*2.0>>>;""")
+
+        verify(->
+          expect(console.log).toHaveBeenCalledWith("4.2 : (float)")
+        )
+      )
+    )
   )
 )

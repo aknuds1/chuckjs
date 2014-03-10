@@ -195,6 +195,9 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instructions.subtractNumber())
       return
 
+    emitTimesNumber: =>
+      @code.append(instructions.timesNumber())
+
     emitLtNumber: =>
       @code.append(instructions.ltNumber())
       return

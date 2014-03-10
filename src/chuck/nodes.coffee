@@ -544,6 +544,16 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: ->
       @name = "MinusMinusOperator"
 
+  module.TimesOperator = class TimesOperator
+    constructor: -> @name = "TimesOperator"
+
+    check: (lhs, rhs, context) =>
+      if lhs.type == types.float && rhs.type == types.float
+        types.float
+
+    emit: (context) =>
+      context.emitTimesNumber()
+
   class GtLtOperatorBase
     check: (lhs, rhs) =>
       if lhs.type == rhs.type
