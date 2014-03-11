@@ -10,7 +10,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
       helpers.afterEach()
     )
 
-    describe("For", ->
+    describe("of 'for' kind", ->
       it("can iterate until a condition is false", ->
         executeCode("""\
 for (0 => int i; i < 2; ++i) {
@@ -23,6 +23,15 @@ for (0 => int i; i < 2; ++i) {
           expect(console.log.calls[0].args[0]).toBe("0 : (int)")
           expect(console.log.calls[1].args[0]).toBe("1 : (int)")
         )
+      )
+
+      it("can have an empty body", ->
+        executeCode("""\
+for (0 => int i; i < 5; i++) {
+}
+""")
+
+        verify()
       )
     )
   )

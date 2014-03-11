@@ -38,6 +38,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @_scanPass(5, context)
 
     _scanPass: (pass, context) =>
+      if !@_child
+        return
+
       if _(@_child).isArray()
         return @_scanArray(@_child, pass, context)
       else
