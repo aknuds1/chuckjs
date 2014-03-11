@@ -99,6 +99,10 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     getNextIndex: => @code.getNextIndex()
 
+    enterScope: => @_currentNamespace.enterScope()
+
+    exitScope: => enterScope: => @_currentNamespace.exitScope()
+
     emitAssignment: (type, varDecl) =>
       {value, array} = varDecl
       if array?

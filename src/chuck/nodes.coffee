@@ -645,11 +645,14 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @body.scanPass2(context)
 
     scanPass3: (context) =>
+      logging.debug("#{@nodeType}")
+      context.enterScope()
       @c1.scanPass3(context)
       @c2.scanPass3(context)
       if @c3?
         @c3.scanPass3(context)
       @body.scanPass3(context)
+      context.exitScope
 
     scanPass4: (context) =>
       @c1.scanPass4(context)

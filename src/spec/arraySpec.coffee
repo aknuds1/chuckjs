@@ -10,13 +10,14 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
       helpers.afterEach()
     )
 
-    it("can be instantiated with a size", ->
+    it("can be instantiated with a size", (done) ->
       executeCode("""int array[1];
 <<<array[0]>>>;
 """)
-
-      verify(->
-        expect(console.log).toHaveBeenCalledWith("0 : (int)")
+      .done(->
+        verify(->
+          expect(console.log).toHaveBeenCalledWith("0 : (int)")
+        , done)
       )
     )
 
@@ -28,11 +29,11 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
 
       verify(->
         expect(console.log).toHaveBeenCalledWith("0 : (int)")
-      )
+      , done)
     )
 
     describe("of UGens", ->
-      it("elements can be connected to destinations", ->
+      it("elements can be connected to destinations", (done) ->
         executeCode("""\
 SinOsc oscs[2];
 oscs[0] => dac;

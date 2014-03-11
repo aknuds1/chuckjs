@@ -1,4 +1,4 @@
-define("chuck/namespace", [], ->
+define("chuck/namespace", ["chuck/logging"], (logging) ->
   module = {}
 
   module.Namespace = class
@@ -34,6 +34,9 @@ define("chuck/namespace", [], ->
         scope.commit()
       return
 
+    enterScope: => @_scope.push()
+    exitScope: => @_scope.pop()
+
   class ChuckValue
     constructor: (type, varName, namespace, isContextGlobal, value) ->
       @type = type
@@ -51,6 +54,9 @@ define("chuck/namespace", [], ->
     push: =>
       @_scopes.push({})
 
+    pop: =>
+      @_scopes.pop()
+
     findType: (name) =>
       i = @_scopes.length-1
       while i >= 0
@@ -63,7 +69,7 @@ define("chuck/namespace", [], ->
 
     addVariable: (name, type, namespace, value) =>
       chuckValue = new ChuckValue(type, name, namespace, undefined, value)
-
+      logging.debug("Scope: Adding variable #{name} to scope #{@_scopes.length-1}")
       @_addValue(chuckValue)
       return chuckValue
 

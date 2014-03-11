@@ -8,8 +8,8 @@ for(0 => int i; i<5; i++) {
   Math.pow(2, i) * 110.0 => oscarray[i].freq;
 }
 
-for(0 => int i; i<5; i++) {
-  oscarray[i] =< dac;
+for(0 => int j; j<5; j++) {
+  oscarray[j] =< dac;
   1::second => now;
 }
 """

@@ -33,6 +33,23 @@ for (0 => int i; i < 5; i++) {
 
         verify()
       )
+
+      it("shouldd create a new scope for each loop", ->
+        executeCode("""\
+0 => int x;
+for (0 => int i; i < 1; ++i) {
+    ++x;
+}
+for (0 => int i; i < 2; ++i) {
+    ++x;
+}
+<<<x>>>;
+""")
+
+        verify(->
+          expect(console.log.toHaveBeenCalledWith("3 : (int)"))
+        )
+      )
     )
   )
 )
