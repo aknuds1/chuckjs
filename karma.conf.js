@@ -65,6 +65,15 @@ module.exports = function (config) {
                 bare: true,
                 sourceMap: false
             }
-        }
+        },
+
+        plugins: [
+            'karma-phantomjs-launcher',
+            'karma-jasmine',
+            'karma-chrome-launcher',
+            'karma-growler-reporter',
+            'karma-requirejs',
+            'karma-coffee-preprocessor'
+        ]
     });
 };
