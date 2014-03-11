@@ -313,14 +313,19 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass4: (context) =>
       super(context)
+      logging.debug("#{@nodeType} scanPass4: Base")
       baseType = @base.scanPass4(context)
+      logging.debug("#{@nodeType} scanPass4: Indices")
       @indices.scanPass4(context)
+      logging.debug("#{@nodeType} scanPass4: Type determined to be #{baseType.name}")
       @type = baseType
 
     scanPass5: (context) =>
+      logging.debug("#{@nodeType} emitting")
       super(context)
       @base.scanPass5(context)
       @indices.scanPass5(context)
+      logging.debug("#{@nodeType}: Emitting ArrayAccess")
       context.emitArrayAccess(@type)
 
   module.FuncCallExpression = class extends ExpressionBase
@@ -743,6 +748,10 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: (exp) ->
       super("ArraySub")
       @exp = exp
+
+    scanPass4: (context) =>
+      logging.debug("#{@nodeType} scanPass4")
+      @exp.scanPass4(context)
 
     scanPass5: (context) =>
       logging.debug("#{@nodeType}: Emitting array indices")

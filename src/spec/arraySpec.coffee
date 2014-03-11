@@ -20,6 +20,17 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
       )
     )
 
+    it("can be indexed with integer variables", ->
+      executeCode("""int array[3];
+1 => int i;
+<<<array[i]>>>;
+""")
+
+      verify(->
+        expect(console.log).toHaveBeenCalledWith("0 : (int)")
+      )
+    )
+
     describe("of UGens", ->
       it("elements can be connected to destinations", ->
         executeCode("""\
