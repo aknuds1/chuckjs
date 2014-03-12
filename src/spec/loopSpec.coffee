@@ -32,6 +32,19 @@ for (0 => int i; i < 5; i++) {
 
         verify(promise, done)
       )
+
+      it("can access an array", (done) ->
+        promise = executeCode("""\
+int array[2];
+for (0 => int i; i < 2; i++) {
+  <<<array[i]>>>;
+}
+""")
+
+        verify(promise, done, ->
+          expect(console.log.calls.allArgs()).toEqual([["0 : (int)"], ["0 : (int)"]])
+        )
+      )
     )
   )
 )

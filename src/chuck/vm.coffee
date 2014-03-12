@@ -122,7 +122,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
 
     pushToRegFromMem: (offset) =>
       value = @memStack[offset]
-      logging.debug("Pushing memory stack value @#{offset} to regular stack")
+      logging.debug("Pushing memory stack value @#{offset} to regular stack:", value)
       @regStack.push(value)
 
     popFromReg: =>

@@ -70,9 +70,9 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       type = @_currentNamespace.findType(typeName)
       return type
 
-    findValue: (name) =>
+    findValue: (name, climb=false) =>
       # Look locally first
-      val = @_currentNamespace.findValue(name)
+      val = @_currentNamespace.findValue(name, climb)
       if val?
         return val
       # Look globally

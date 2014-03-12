@@ -80,13 +80,21 @@ define("chuck/namespace", ["chuck/logging"], (logging) ->
       @addValue(chuckValue)
       return chuckValue
 
-    findValue: (name) =>
-      lastScope = @_scopes[@_scopes.length-1]
-      value = lastScope[name]
-      if value?
-        return value
+    findValue: (name, climb) =>
+      if !climb
+        lastScope = @_scopes[@_scopes.length-1]
+        value = lastScope[name]
+        if value?
+          return value
 
-      if lastScope == @_scopes[0] then @_commitMap[name] else null
+        if lastScope == @_scopes[0] then @_commitMap[name] else null
+      else
+        for scope in @_scopes.reverse()
+          value = scope[name]
+          if value?
+            return value
+
+        @_commitMap[name]
 
     addType: (type) =>
       @addValue(type)

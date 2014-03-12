@@ -160,6 +160,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     scanPass4: (context) =>
       super()
       for varDecl in @varDecls
+        logging.debug("#{@nodeType} Checking variable #{varDecl.name}")
         varDecl.value.isDeclChecked = true
         context.addValue(varDecl.value)
       return
@@ -168,9 +169,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       super()
       for varDecl in @varDecls
         if varDecl.array?
-          logging.debug("DeclarationExpression instantiating array", varDecl)
+          logging.debug("#{@nodeType}: Instantiating array", varDecl)
         else
-          logging.debug("DeclarationExpression emitting Assignment for value #{varDecl.value}")
+          logging.debug("#{@nodeType}: Emitting Assignment for value #{varDecl.value}")
       context.emitAssignment(@type, varDecl)
 
       return
@@ -210,6 +211,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           @type = types.int
         else
           @value = context.findValue(@name)
+          if !@value?
+            context.findValue(@name, true)
           @type = @value.type
           logging.debug("Primary variable of type #{@type.name}")
           @type
