@@ -13,13 +13,12 @@ define("spec/helpers", ['chuck', "q"], (chuckModule, q) ->
     info: ->
       console.info.apply(undefined, arguments)
 
-  err = undefined
   chuck = undefined
   origAudioContext = window.AudioContext || window.webkitAudioContext
 
   module.beforeEach = ->
     chuckModule.setLogger(new Logger())
-    jasmine.Clock.useMock();
+    jasmine.clock().install();
     # Disable too eager logging of supposedly unhandled promise rejections
     q.stopUnhandledRejectionTracking()
 
@@ -28,7 +27,7 @@ define("spec/helpers", ['chuck', "q"], (chuckModule, q) ->
     module.fakeAudioContext.sampleRate = 48000
     module.fakeAudioContext.destination = {name: "destination"}
     module.fakeScriptProcessor = jasmine.createSpyObj("scriptProcessor", ["connect", "disconnect"])
-    module.fakeAudioContext.createScriptProcessor.andCallFake(-> module.fakeScriptProcessor)
+    module.fakeAudioContext.createScriptProcessor.and.callFake(-> module.fakeScriptProcessor)
 
     # Fake AudioContext constructor
     window.AudioContext = ->
@@ -37,68 +36,39 @@ define("spec/helpers", ['chuck', "q"], (chuckModule, q) ->
       module.fakeAudioContext = this
 
     chuck = new chuckModule.Chuck()
-    err = undefined
 
-  module.afterEach = ->
+  module.afterEach = (done) ->
     window.AudioContext = origAudioContext
 
-    # Reset shared state
-    err = undefined
-
-    runs(->
-      chuck.stop()
-      .done(->
-          err = false
-        ,
-        (e) ->
-          err = e
-        )
+    p = chuck.stop()
+    .then(done
+    , (e) ->
+      done(new Error("Failed to stop ChucK: #{e}"))
     )
-    waitsFor(->
-      err?
-    , 10)
-    runs(->
-      if err
-        throw new Error("Failed to stop ChucK: #{err}")
-
+    .fin(->
       chuck = undefined
     )
+    .done()
 
-  # Execute code asynchronously; when execution has finished define the 'err' variable
+  # Execute code asynchronously
   module.executeCode = (code) ->
-    runs(->
-      chuck.execute(code)
-      .done(->
-          err = false
-          return
-        ,
-        (e) ->
-          err = e
-          return
-        )
-      # The execution itself starts asynchronously - trigger it
-      jasmine.Clock.tick(1)
-      return
-    )
-    return
+    promise = chuck.execute(code)
+    # The execution itself starts asynchronously via setTimeout - trigger it
+    jasmine.clock().tick(1)
+    promise
 
-  module.verify = (verifyCb, waitTime = undefined) ->
+  # Verify (asynchronous) ending of execution
+  module.verify = (promise, done, verifyCb, waitTime = undefined) ->
     if waitTime?
-      runs(->
-        module.processAllAudio(waitTime)
-      )
+      module.processAllAudio(waitTime)
 
-    waitsFor(->
-      err?
-    , "Execution should finish", 10)
-
-    runs(->
-      if err
-        throw new Error("An exception was thrown asynchronously\n#{err.stack}")
-
+    promise.done(->
       expect(chuck.isExecuting()).toBe(false, "isExecuting should be false")
+
       if verifyCb?
         verifyCb()
+
+      done()
     )
 
   module.isChuckExecuting = -> chuck.isExecuting()

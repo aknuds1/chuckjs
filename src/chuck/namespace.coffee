@@ -1,4 +1,4 @@
-define("chuck/namespace", [], ->
+define("chuck/namespace", ["chuck/logging"], (logging) ->
   module = {}
 
   module.Namespace = class
@@ -27,12 +27,22 @@ define("chuck/namespace", [], ->
         @_parent.findValue(name, climb)
 
     addVariable: (name, type, value) =>
-      return @_scope.addVariable(name, type, @, value)
+      @_scope.addVariable(name, type, @, value)
+
+    addValue: (value) =>
+      @_scope.addValue(value)
 
     commit: =>
       for scope in [@_scope, @_types]
         scope.commit()
       return
+
+    enterScope: =>
+      logging.debug("Namespace entering nested scope")
+      @_scope.push()
+    exitScope: =>
+      logging.debug("Namespace exiting nested scope")
+      @_scope.pop()
 
   class ChuckValue
     constructor: (type, varName, namespace, isContextGlobal, value) ->
@@ -51,6 +61,9 @@ define("chuck/namespace", [], ->
     push: =>
       @_scopes.push({})
 
+    pop: =>
+      @_scopes.pop()
+
     findType: (name) =>
       i = @_scopes.length-1
       while i >= 0
@@ -63,18 +76,20 @@ define("chuck/namespace", [], ->
 
     addVariable: (name, type, namespace, value) =>
       chuckValue = new ChuckValue(type, name, namespace, undefined, value)
-
-      @_addValue(chuckValue)
+      logging.debug("Scope: Adding variable #{name} to scope #{@_scopes.length-1}")
+      @addValue(chuckValue)
       return chuckValue
 
     findValue: (name) =>
-      value = @_scopes[0][name]
+      lastScope = @_scopes[@_scopes.length-1]
+      value = lastScope[name]
       if value?
         return value
-      return @_commitMap[name]
+
+      if lastScope == @_scopes[0] then @_commitMap[name] else null
 
     addType: (type) =>
-      @_addValue(type)
+      @addValue(type)
 
     commit: =>
       scope = @_scopes[0]
@@ -83,7 +98,7 @@ define("chuck/namespace", [], ->
 
       @_commitMap = []
 
-    _addValue: (value) =>
+    addValue: (value) =>
       name = value.name
       lastScope = @_scopes[@_scopes.length-1]
       if @_scopes[0] != lastScope
