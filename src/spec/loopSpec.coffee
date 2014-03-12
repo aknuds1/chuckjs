@@ -6,49 +6,31 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
       helpers.beforeEach()
       spyOn(console, 'log')
     )
-    afterEach(->
-      helpers.afterEach()
+    afterEach((done) ->
+      helpers.afterEach(done)
     )
 
     describe("of 'for' kind", ->
-      it("can iterate until a condition is false", ->
-        executeCode("""\
+      it("can iterate until a condition is false", (done) ->
+        promise = executeCode("""\
 for (0 => int i; i < 2; ++i) {
   <<<i>>>;
 }
 """)
 
-        verify(->
-          expect(console.log.calls.length).toBe(2)
-          expect(console.log.calls[0].args[0]).toBe("0 : (int)")
-          expect(console.log.calls[1].args[0]).toBe("1 : (int)")
+        verify(promise, done, ->
+          expect(console.log.calls.count()).toBe(2)
+          expect(console.log.calls.allArgs()).toEqual([["0 : (int)"], ["1 : (int)"]])
         )
       )
 
-      it("can have an empty body", ->
-        executeCode("""\
+      it("can have an empty body", (done) ->
+        promise = executeCode("""\
 for (0 => int i; i < 5; i++) {
 }
 """)
 
-        verify()
-      )
-
-      it("shouldd create a new scope for each loop", ->
-        executeCode("""\
-0 => int x;
-for (0 => int i; i < 1; ++i) {
-    ++x;
-}
-for (0 => int i; i < 2; ++i) {
-    ++x;
-}
-<<<x>>>;
-""")
-
-        verify(->
-          expect(console.log.toHaveBeenCalledWith("3 : (int)"))
-        )
+        verify(promise, done)
       )
     )
   )

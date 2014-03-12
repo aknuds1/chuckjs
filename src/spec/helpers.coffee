@@ -13,7 +13,6 @@ define("spec/helpers", ['chuck', "q"], (chuckModule, q) ->
     info: ->
       console.info.apply(undefined, arguments)
 
-  err = undefined
   chuck = undefined
   origAudioContext = window.AudioContext || window.webkitAudioContext
 
@@ -28,7 +27,6 @@ define("spec/helpers", ['chuck', "q"], (chuckModule, q) ->
     module.fakeAudioContext.sampleRate = 48000
     module.fakeAudioContext.destination = {name: "destination"}
     module.fakeScriptProcessor = jasmine.createSpyObj("scriptProcessor", ["connect", "disconnect"])
-    debugger
     module.fakeAudioContext.createScriptProcessor.and.callFake(-> module.fakeScriptProcessor)
 
     # Fake AudioContext constructor
@@ -38,55 +36,40 @@ define("spec/helpers", ['chuck', "q"], (chuckModule, q) ->
       module.fakeAudioContext = this
 
     chuck = new chuckModule.Chuck()
-    err = undefined
 
-  module.afterEach = ->
+  module.afterEach = (done) ->
     window.AudioContext = origAudioContext
 
-    # Reset shared state
-    err = undefined
-
-    chuck.stop()
-    .then(->
-      err = false
+    p = chuck.stop()
+    .then(done
     , (e) ->
-      throw new Error("Failed to stop ChucK: #{err}")
+      done(new Error("Failed to stop ChucK: #{e}"))
     )
-    .always(->
+    .fin(->
       chuck = undefined
     )
+    .done()
 
-  # Execute code asynchronously; when execution has finished define the 'err' variable
+  # Execute code asynchronously
   module.executeCode = (code) ->
     promise = chuck.execute(code)
-    .then(->
-      err = false
-      return
-    ,
-    (e) ->
-      err = e
-      return
-    )
-    # The execution itself starts asynchronously - trigger it
+    # The execution itself starts asynchronously via setTimeout - trigger it
     jasmine.clock().tick(1)
     promise
 
-  module.verify = (verifyCb, done, waitTime = undefined) ->
+  # Verify (asynchronous) ending of execution
+  module.verify = (promise, done, verifyCb, waitTime = undefined) ->
     if waitTime?
       module.processAllAudio(waitTime)
 
-#    waitsFor(->
-#      err?
-#    , "Execution should finish", 10)
+    promise.done(->
+      expect(chuck.isExecuting()).toBe(false, "isExecuting should be false")
 
-    if err
-      throw new Error("An exception was thrown asynchronously\n#{err.stack}")
+      if verifyCb?
+        verifyCb()
 
-    expect(chuck.isExecuting()).toBe(false, "isExecuting should be false")
-    if verifyCb?
-      verifyCb()
-
-    done()
+      done()
+    )
 
   module.isChuckExecuting = -> chuck.isExecuting()
   module.stopChuck = -> chuck.stop()

@@ -81,6 +81,9 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     addVariable: (name, typeName) =>
       return @_currentNamespace.addVariable(name, typeName)
 
+    addValue: (value) =>
+      @_currentNamespace.addValue(value)
+
     pushToBreakStack: (statement) =>
       @_breakStack.push(statement)
 
@@ -100,8 +103,10 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     getNextIndex: => @code.getNextIndex()
 
     enterScope: => @_currentNamespace.enterScope()
+    exitScope: => @_currentNamespace.exitScope()
 
-    exitScope: => enterScope: => @_currentNamespace.exitScope()
+    emitScopeEntrance: =>
+    emitScopeExit: =>
 
     emitAssignment: (type, varDecl) =>
       {value, array} = varDecl

@@ -60,7 +60,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
   module.ExpressionStatement = class extends ParentNodeBase
     constructor: (exp) ->
-      super(exp)
+      super(exp, "ExpressionStatement")
 
     scanPass5: (context, opts) =>
       opts = opts || {}
@@ -117,8 +117,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @groupSize = 0
       ++@groupSize
 
-  module.ExpressionList = class
+  module.ExpressionList = class ExpressionList extends ExpressionBase
     constructor: (expression) ->
+      super("ExpressionList")
       @_expressions = [expression]
 
     prepend: (expression) =>
@@ -156,10 +157,11 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         varDecl.value = context.addVariable(varDecl.name, @type)
       return undefined
 
-    scanPass4: =>
+    scanPass4: (context) =>
       super()
       for varDecl in @varDecls
         varDecl.value.isDeclChecked = true
+        context.addValue(varDecl.value)
       return
 
     scanPass5: (context) =>
@@ -643,6 +645,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       if @c3?
         @c3.scanPass2(context)
       @body.scanPass2(context)
+      return
 
     scanPass3: (context) =>
       logging.debug("#{@nodeType}")
@@ -652,31 +655,43 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       if @c3?
         @c3.scanPass3(context)
       @body.scanPass3(context)
-      context.exitScope
+      context.exitScope()
+      return
 
     scanPass4: (context) =>
+      logging.debug("#{@nodeType}")
+      context.enterScope()
+      logging.debug("#{@nodeType}: Checking the initial")
       @c1.scanPass4(context)
+      logging.debug("#{@nodeType}: Checking the condition")
       @c2.scanPass4(context)
       if @c3?
+        logging.debug("#{@nodeType}: Checking the post")
         @c3.scanPass4(context)
+      logging.debug("#{@nodeType}: Checking the body")
       @body.scanPass4(context)
+      context.exitScope()
+      return
 
     scanPass5: (context) =>
-      logging.debug("ForStatement: Emitting the initial")
+      logging.debug("#{@nodeType}: Emitting the initial")
+      context.emitScopeEntrance()
       @c1.scanPass5(context)
       startIndex = context.getNextIndex()
       # The condition
-      logging.debug("ForStatement: Emitting the condition")
+      logging.debug("#{@nodeType}: Emitting the condition")
       @c2.scanPass5(context, pop: false)
       context.emitRegPushImm(false)
-      logging.debug("ForStatement: Emitting BranchEq")
+      logging.debug("#{@nodeType}: Emitting BranchEq")
       branchEq = context.emitBranchEq()
       # The body
-      logging.debug("ForStatement: Emitting the body")
+      context.emitScopeEntrance()
+      logging.debug("#{@nodeType}: Emitting the body")
       @body.scanPass5(context)
+      context.emitScopeExit()
 
       if @c3?
-        logging.debug("ForStatement: Emitting the post")
+        logging.debug("#{@nodeType}: Emitting the post")
         @c3.scanPass5(context)
         context.emitPopWord()
 
@@ -688,6 +703,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         branchEq.jmp = breakJmp
 
       context.evaluateBreaks()
+
+      context.emitScopeExit()
 
       return
 
