@@ -30,10 +30,11 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     allocateLocal: (type, value) =>
       local = new ChuckLocal(type.size, @frame.currentOffset, value.name)
+      logging.debug("Allocating local #{value.name} of type #{type.name} at offset #{local.offset}")
       @frame.currentOffset += 1
       @frame.stack.push(local)
       value.offset = local.offset
-      return local
+      local
 
     finish: =>
       stack = @frame.stack
@@ -96,6 +97,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @_emitPreConstructor(type)
 
     allocateLocal: (type, value) =>
+      logging.debug("Allocating local")
       logging.debug("Emitting AllocWord instruction")
       local = @code.allocateLocal(type, value)
       @code.append(instructions.allocWord(local.offset))
@@ -219,8 +221,9 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instructions.timeAdvance())
       return
 
-    emitOpAtChuck: =>
-      @code.append(instructions.assignObject())
+    emitOpAtChuck: (isArray) =>
+      logging.debug("Emitting AssignObject (isArray: #{isArray})")
+      @code.append(instructions.assignObject(isArray))
       return
 
     emitGack: (types) =>
@@ -238,8 +241,8 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instr)
       @_breakStack.push(instr)
 
-    emitArrayAccess: (type) =>
-      @code.append(instructions.arrayAccess(type))
+    emitArrayAccess: (type, emitAddr) =>
+      @code.append(instructions.arrayAccess(type, emitAddr))
 
     evaluateBreaks: =>
       while @_breakStack.length

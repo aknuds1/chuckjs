@@ -137,7 +137,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
       return @regStack[@regStack.length-(1+offset)]
 
     insertIntoMemory: (index, value) =>
-      logging.debug("Inserting value #{value} into memory stack at index #{index}")
+      logging.debug("Inserting value #{value} (#{typeof value}) into memory stack at index #{index}")
       @memStack[index] = value
       return
 

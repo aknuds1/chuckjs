@@ -5,18 +5,14 @@ define("chuck/logging", [], ->
 
   # Default no-op logging
   for name in methods
-    module[name] = -> return undefined
-
-  loggerProxy = (logger, level, others...) ->
-    return logger[level].apply(logger, others)
+    module[name] = -> undefined
 
   module.setLogger = (logger) ->
     for name in methods
-      if !_(logger[name]).isFunction()
+      if !_.isFunction(logger[name])
         throw new Error("Logger lacks method #{name}")
 
-      module[name] = _(logger[name]).bind(logger)
-
+      module[name] = _.bind(logger[name], logger)
 
   return module
 )

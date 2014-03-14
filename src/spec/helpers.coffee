@@ -17,7 +17,7 @@ define("spec/helpers", ['chuck', "q"], (chuckModule, q) ->
   origAudioContext = window.AudioContext || window.webkitAudioContext
 
   module.beforeEach = ->
-    chuckModule.setLogger(new Logger())
+#    chuckModule.setLogger(new Logger())
     jasmine.clock().install();
     # Disable too eager logging of supposedly unhandled promise rejections
     q.stopUnhandledRejectionTracking()

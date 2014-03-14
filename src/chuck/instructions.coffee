@@ -71,11 +71,18 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
       callMethod(vm)
     )
 
-  module.assignObject = ->
-    return new Instruction("AssignObject", {}, (vm) ->
+  module.assignObject = (isArray) ->
+    new Instruction("AssignObject", {}, (vm) ->
       memStackIndex = vm.popFromReg()
       obj = vm.popFromReg()
-      vm.insertIntoMemory(memStackIndex, obj)
+      if !isArray
+        logging.debug("#{@instructionName}: Assigning object (#{obj}) to memory stack index #{memStackIndex}")
+        vm.insertIntoMemory(memStackIndex, obj)
+      else
+        [array, index] = memStackIndex
+        logging.debug("#{@instructionName}: Assigning object (#{obj}) to array, index #{index}")
+        array[index] = obj
+
       vm.pushToReg(obj)
       return
     )
@@ -303,12 +310,16 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     return
   )
 
-  module.arrayAccess = (type) -> new Instruction("ArrayAccess", {}, (vm) ->
+  module.arrayAccess = (type, emitAddr) -> new Instruction("ArrayAccess", {}, (vm) ->
     logging.debug("#{@instructionName}: Accessing array of type #{type.name}")
     [idx, array] = [vm.popFromReg(), vm.popFromReg()]
-    val = array[idx]
-    logging.debug("Pushing array[#{idx}] (#{val}) to regular stack")
-    vm.pushToReg(val)
+    if !emitAddr
+      val = array[idx]
+      logging.debug("Pushing array[#{idx}] (#{val}) to regular stack")
+      vm.pushToReg(val)
+    else
+      logging.debug("Pushing array (#{array}) and index (#{idx}) to regular stack")
+      vm.pushToReg([array, idx])
     return
   )
 

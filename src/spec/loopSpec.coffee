@@ -1,5 +1,5 @@
 define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
-  describe("Loops", ->
+  describe("A loop", ->
     {executeCode, verify} = helpers
 
     beforeEach(->
@@ -10,7 +10,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
       helpers.afterEach(done)
     )
 
-    describe("of 'for' kind", ->
+    describe("of the 'for' kind", ->
       it("can iterate until a condition is false", (done) ->
         promise = executeCode("""\
 for (0 => int i; i < 2; ++i) {
@@ -36,7 +36,7 @@ for (0 => int i; i < 5; i++) {
       it("can access an array", (done) ->
         promise = executeCode("""\
 int array[2];
-for (0 => int i; i < 2; i++) {
+for (0 => int i; i < 2; ++i) {
   <<<array[i]>>>;
 }
 """)

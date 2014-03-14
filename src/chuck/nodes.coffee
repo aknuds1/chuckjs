@@ -333,8 +333,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       super(context)
       @base.scanPass5(context)
       @indices.scanPass5(context)
-      logging.debug("#{@nodeType}: Emitting ArrayAccess")
-      context.emitArrayAccess(@type)
+      logging.debug("#{@nodeType}: Emitting ArrayAccess (as variable: #{@_emitVar})")
+      context.emitArrayAccess(@type, @_emitVar)
 
   module.FuncCallExpression = class extends ExpressionBase
     constructor: (base, args) ->
@@ -479,8 +479,12 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         context.emitFuncCallMember()
       # Assignment
       else if lhs.type.isOfType(rhs.type)
-        logging.debug("ChuckOperator emitting OpAtChuck to assign one object to another")
-        return context.emitOpAtChuck()
+        isArray = rhs.indices?
+        if isArray
+          logging.debug("ChuckOperator emitting OpAtChuck to assign one object to another")
+        else
+          logging.debug("ChuckOperator emitting OpAtChuck to assign an object to an array element")
+        return context.emitOpAtChuck(isArray)
 
       return
 

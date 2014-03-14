@@ -1,5 +1,5 @@
 define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
-  describe("Arrays", ->
+  describe("An array", ->
     {executeCode, verify} = helpers
 
     beforeEach(->
@@ -30,8 +30,22 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
       )
     )
 
+    it("has elements which can be assigned to", (done) ->
+      promise = executeCode("""\
+int array[2];
+1 => array[0];
+2 => array[1];
+<<<array[0]>>>;
+<<<array[1]>>>;
+""")
+
+      verify(promise, done, ->
+        expect(console.log.calls.allArgs()).toEqual([["1 : (int)"], ["2 : (int)"]])
+      )
+    )
+
     describe("of UGens", ->
-      it("elements can be connected to destinations", (done) ->
+      it("has elements which can be connected to destinations", (done) ->
         promise = executeCode("""\
 SinOsc oscs[2];
 oscs[0] => dac;
