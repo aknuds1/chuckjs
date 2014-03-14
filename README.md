@@ -3,6 +3,8 @@
 JavaScript ([CoffeeScript](http://coffeescript.org/)) parser for the [ChucK](http://chuck.cs.princeton.edu/) music
 programming language, for execution within browser supporting the Web Audio API (e.g. Chrome).
 
+[![Build Status](https://travis-ci.org/aknuds1/chuckjs.png?branch=master)](https://travis-ci.org/aknuds1/chuckjs)
+
 This project is merely in its infancy at this stage, so don't expect too much at this point. I've currently implemented
 parsing of a very small part of the grammar, and a VM capable of executing corresponding code to the point of
 generating sound.
