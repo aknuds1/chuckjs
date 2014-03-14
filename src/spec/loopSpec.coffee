@@ -45,6 +45,21 @@ for (0 => int i; i < 2; ++i) {
           expect(console.log.calls.allArgs()).toEqual([["0 : (int)"], ["0 : (int)"]])
         )
       )
+
+      it("creates a scope for the start of the loop", (done) ->
+        promise = executeCode("""\
+for (0 => int i; i < 1; ++i) {
+    <<<i>>>;
+}
+for (0 => int i; i < 1; ++i) {
+    <<<i>>>;
+}
+""")
+
+        verify(promise, done, ->
+          expect(console.log.calls.allArgs()).toEqual([["0 : (int)"], ["0 : (int)"]])
+        )
+      )
     )
   )
 )

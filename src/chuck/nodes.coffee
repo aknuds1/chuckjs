@@ -480,7 +480,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       # Assignment
       else if lhs.type.isOfType(rhs.type)
         isArray = rhs.indices?
-        if isArray
+        if !isArray
           logging.debug("ChuckOperator emitting OpAtChuck to assign one object to another")
         else
           logging.debug("ChuckOperator emitting OpAtChuck to assign an object to an array element")
@@ -681,8 +681,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       return
 
     scanPass5: (context) =>
-      logging.debug("#{@nodeType}: Emitting the initial")
       context.emitScopeEntrance()
+      logging.debug("#{@nodeType}: Emitting the initial")
       @c1.scanPass5(context)
       startIndex = context.getNextIndex()
       # The condition

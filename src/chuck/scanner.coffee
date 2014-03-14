@@ -22,7 +22,17 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @pushScope()
 
     pushScope: =>
-      @frame.stack.push(undefined)
+      @frame.stack.push(null)
+      return
+
+    popScope: =>
+      while @frame.stack.length > 0 && @frame.stack[@frame.stack.length-1]?
+        @frame.stack.pop()
+        --@frame.currentOffset
+      # Pop sentinel
+      @frame.stack.pop()
+      logging.debug("After popping scope, current stack offset is #{@frame.currentOffset}")
+      return
 
     append: (instruction) =>
       @instructions.push(instruction)
@@ -108,7 +118,14 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     exitScope: => @_currentNamespace.exitScope()
 
     emitScopeEntrance: =>
+      logging.debug("Emitting entrance of nested scope")
+      @code.pushScope()
+      return
+
     emitScopeExit: =>
+      logging.debug("Emitting exit of nested scope")
+      @code.popScope()
+      return
 
     emitAssignment: (type, varDecl) =>
       {value, array} = varDecl
