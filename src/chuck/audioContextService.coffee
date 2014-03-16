@@ -1,4 +1,4 @@
-define("chuck/audioContextService", ["q", "chuck/logging"], (q, logging) ->
+define("chuck/audioContextService", ["chuck/logging"], (logging) ->
   class AudioContextService
     createOscillator: =>
       return @_audioContext.createOscillator()
@@ -26,7 +26,7 @@ define("chuck/audioContextService", ["q", "chuck/logging"], (q, logging) ->
       if @_scriptProcessor?
         @_scriptProcessor.disconnect(0)
 
-      deferred = q.defer()
+      deferred = Q.defer()
       deferred.resolve()
       return deferred.promise
 

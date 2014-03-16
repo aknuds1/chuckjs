@@ -7,17 +7,20 @@ module.exports = function (config) {
         basePath: 'src',
 
         // frameworks to use
-        frameworks: ['jasmine', 'requirejs'],
+        frameworks: ['jasmine'],
 
         // list of files / patterns to load in the browser
         files: [
+            // Load q before require, since we don't want it to register itself as a module
+            'lib/q.js',
+            '../node_modules/requirejs/require.js',
+            '../node_modules/karma-requirejs/lib/adapter.js',
             'test-main.coffee',
             {pattern: '**/*.coffee', included: false},
             {pattern: '**/*.js', included: false},
             '../lib/chuck/parser.js',
             '../node_modules/underscore/underscore.js',
-            '../node_modules/underscore.string/lib/underscore.string.js',
-            {pattern: 'lib/q.js', included: false}
+            '../node_modules/underscore.string/lib/underscore.string.js'
         ],
 
         // list of files to exclude

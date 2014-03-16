@@ -1,5 +1,5 @@
-define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/audioContextService"],
-(logging, ugen, types, q, audioContextService) ->
+define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioContextService"],
+(logging, ugen, types, audioContextService) ->
   module = {}
 
   class Vm
@@ -21,7 +21,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "q", "chuck/au
       @_pc = 0
       @isExecuting = true
 
-      deferred = q.defer()
+      deferred = Q.defer()
       setTimeout(=>
         if !@_compute(byteCode, deferred)
           logging.debug("Ending VM execution")
