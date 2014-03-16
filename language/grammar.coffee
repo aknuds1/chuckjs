@@ -1,5 +1,5 @@
 {Parser} = require('jison')
-_ = require('underscore')
+_ = require('lodash')
 
 # Since we're going to be wrapped in a function by Jison in any case, if our
 # action immediately returns a value, we can optimize by removing the function
@@ -202,7 +202,7 @@ for name, alternatives of grammar
     theseAlternatives = alt[0].split(' ')
 #    console.log("Alternative: '#{theseAlternatives}'")
     for token in theseAlternatives
-      if !grammar[token] && !_(tokens).some((t) -> t == token)
+      if !grammar[token] && !_.some(tokens, (t) -> t == token)
 #        console.log("Terminal token: '#{token}'")
         tokens.push(token)
       else

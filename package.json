@@ -5,7 +5,7 @@
     "url": "https://github.com/aknuds1/chuckjs.git"
   },
   "dependencies": {
-    "underscore": "~1.5",
+    "lodash": "~2.3",
     "underscore.string": "~2.3"
   },
   "devDependencies": {

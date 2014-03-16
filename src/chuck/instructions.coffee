@@ -26,7 +26,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
   class Instruction
     constructor: (name, params, execute) ->
       @instructionName = name
-      _(@).extend(params)
+      _.extend(@, params)
       @_executeCb = execute
 
     execute: (vm) =>

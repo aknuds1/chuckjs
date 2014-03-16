@@ -31,7 +31,7 @@ define("spec/helpers", ['chuck', "q"], (chuckModule, q) ->
 
     # Fake AudioContext constructor
     window.AudioContext = ->
-      _(this).extend(module.fakeAudioContext)
+      _.extend(this, module.fakeAudioContext)
       # Keep the constructed AudioContext
       module.fakeAudioContext = this
 

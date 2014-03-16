@@ -1,5 +1,5 @@
 define("chuck/parserService", ["chuck/lexer", "chuck/nodes", "chuck/logging"], (lexer, nodes, logging) ->
-  yy = _({}).extend(nodes)
+  yy = _.extend({}, nodes)
 
   yy.addLocationDataFn = (first, last) ->
     return (obj) ->

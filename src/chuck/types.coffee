@@ -48,7 +48,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
       if !parent?
         return
 
-      opts = _({}).chain().extend(parent._opts).extend(opts).value()
+      opts = _({}).extend(parent._opts).extend(opts).value()
       @_constructParent(parent.parent, opts)
       if parent._constructor?
         parent._constructor.call(@, opts)

@@ -41,7 +41,7 @@ module.exports = function (grunt) {
                     {
                         expand: true, cwd: 'node_modules', flatten: true, dest: 'lib/', filter: 'isFile',
                         src: [
-                            'underscore/underscore.js',
+                            'lodash/lodash.js',
                             'underscore.string/lib/underscore.string.js',
                             'almond/almond.js'
                         ]
@@ -68,7 +68,7 @@ module.exports = function (grunt) {
             minify: {
                 options: { failOnError: true, stdout: true, stderr: true },
                 command: 'node node_modules/requirejs/bin/r.js -o baseUrl=lib name=almond include=' +
-                    'chuck,underscore,underscore.string,chuck/parser wrap=false optimize=none ' +
+                    'chuck,lodash,underscore.string,chuck/parser wrap=false optimize=none ' +
                     'out=examples/js/chuck.js'
             }
         },

@@ -41,14 +41,14 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       if !@_child
         return
 
-      if _(@_child).isArray()
+      if _.isArray(@_child)
         return @_scanArray(@_child, pass, context)
       else
         return @_child["scanPass#{pass}"](context)
 
     _scanArray: (array, pass, context) =>
       for c in array
-        if _(c).isArray()
+        if _.isArray(c)
           @_scanArray(c, pass, context)
         else
           c["scanPass#{pass}"](context)

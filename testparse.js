@@ -7,7 +7,7 @@
 
   helpers = require('./lib/helpers');
 
-  _ = require('underscore');
+  _ = require('lodash');
 
   _.str = require('underscore.string');
 
@@ -66,7 +66,7 @@
       var variables;
       this.typeDecl = typeDecl;
       this.varDecl = varDecl;
-      variables = _(this.varDecl.declarations).map(function(decl) {
+      variables = _.map(this.varDecl.declarations, function(decl) {
         return decl.name;
       });
       variables = _.str.join(", ", variables);

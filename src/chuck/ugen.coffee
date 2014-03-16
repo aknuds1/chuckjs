@@ -43,7 +43,7 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], (types, logging) ->
       @numIns = @type.ugenNumIns
       @numOuts = @type.ugenNumOuts
       @_channels = (new UGenChannel() for i in [0...@numIns])
-      @_tick = if type.ugenTick? then _(type.ugenTick).bind(@) else (input) -> input
+      @_tick = if type.ugenTick? then _.bind(type.ugenTick, @) else (input) -> input
       @_now = -1
       @_destList = []
       @_gain = 1

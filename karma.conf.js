@@ -13,14 +13,14 @@ module.exports = function (config) {
         files: [
             // Load q before require, since we don't want it to register itself as a module
             'lib/q.js',
+            '../node_modules/lodash/lodash.js',
+            '../node_modules/underscore.string/lib/underscore.string.js',
             '../node_modules/requirejs/require.js',
             '../node_modules/karma-requirejs/lib/adapter.js',
             'test-main.coffee',
             {pattern: '**/*.coffee', included: false},
             {pattern: '**/*.js', included: false},
-            '../lib/chuck/parser.js',
-            '../node_modules/underscore/underscore.js',
-            '../node_modules/underscore.string/lib/underscore.string.js'
+            '../lib/chuck/parser.js'
         ],
 
         // list of files to exclude
