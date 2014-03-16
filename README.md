@@ -38,7 +38,7 @@ addition to these, ChucKJS is automatically tested via [Karma](http://karma-runn
 
 ## Donating
 
-Support this project and [others by Arve Knudsen](https://www.gittip.com/Arve%20Knudsen/) via Gittip.
+Support this project and [others by Arve Knudsen](https://www.gittip.com/Arve%20Knudsen/) on Gittip.
 
 [![Support via Gittip](http://img.shields.io/gittip/Arve%20Knudsen.png)](https://www.gittip.com/Arve%20Knudsen/)
 
