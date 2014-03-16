@@ -1,4 +1,4 @@
-define("spec/helpers", ['chuck', "q"], (chuckModule, q) ->
+define("spec/helpers", ['chuck', "q", "chuck/audioContextService"], (chuckModule, q, audioContextService) ->
   module = {}
 
   class Logger
@@ -17,6 +17,9 @@ define("spec/helpers", ['chuck', "q"], (chuckModule, q) ->
   origAudioContext = window.AudioContext || window.webkitAudioContext
 
   module.beforeEach = ->
+    # Delete any cached AudioContext
+    audioContextService._audioContext = undefined
+
     #chuckModule.setLogger(new Logger())
     jasmine.clock().install()
     # Disable too eager logging of supposedly unhandled promise rejections

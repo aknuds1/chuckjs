@@ -11,11 +11,16 @@ define("chuck/audioContextService", ["chuck/logging"], (logging) ->
     getCurrentTime: => @_audioContext.currentTime * @_audioContext.sampleRate
 
     prepareForExecution: =>
+      if @_audioContext?
+        logging.debug("Re-using AudioContext")
+        return
+
       logging.debug("Initializing audio context")
       AudioContext = window.AudioContext  || window.webkitAudioContext
       # Note that we re-create the audio context for each execution, e.g. in order to have a clean slate for each
       # test
       @_audioContext = new AudioContext()
+      return
 
     createScriptProcessor: =>
       @_scriptProcessor = @_audioContext.createScriptProcessor(16384, 0, 2)
