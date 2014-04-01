@@ -10,7 +10,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
       helpers.afterEach(done)
     )
 
-    describe('Subtraction', ->
+    describe('subtraction', ->
       it('can subtract two constant ints', (done) ->
         promise = executeCode("""\
 4 - 2 => int i;
@@ -32,6 +32,18 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
         verify(promise, done, ->
           expect(console.log).toHaveBeenCalledWith("2.5 : (float)")
           return
+        )
+      )
+
+      it('can subtract and assign by chucking', (done) ->
+        promise = executeCode("""\
+2 => int x;
+2 -=> x;
+<<< x >>>;
+""")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("0 : (int)")
         )
       )
     )

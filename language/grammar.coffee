@@ -189,6 +189,7 @@ grammar = {
   ],
   ChuckOperator: [
     o('CHUCK', -> new ChuckOperator()),
+    o('MINUS_CHUCK', -> new MinusChuckOperator())
     o('UNCHUCK', -> new UnchuckOperator())
   ]
 }

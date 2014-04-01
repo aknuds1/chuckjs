@@ -87,6 +87,17 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
       return
     )
 
+  module.minusAssign = ->
+    new Instruction("MinusAssign", {}, (vm) ->
+        memStackIndex = vm.popFromReg()
+        rhs = vm.popFromReg()
+        lhs = vm.getFromMemory(memStackIndex)
+        result = lhs - rhs
+        vm.insertIntoMemory(memStackIndex, result)
+        vm.pushToReg(result)
+        return
+    )
+
   module.allocateArray = (type) ->
     new Instruction("AllocateArray", {}, (vm) ->
       sz = vm.popFromReg()

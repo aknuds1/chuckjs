@@ -156,6 +156,10 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
         @code.append(instructions.assignObject())
       return
 
+    emitMinusAssign: =>
+      @code.append(instructions.minusAssign())
+      return
+
     emitDac: =>
       @code.append(instructions.dac())
       return

@@ -503,6 +503,21 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
       return
 
+  module.MinusChuckOperator = class
+    constructor: ->
+      @name = "MinusChuckOperator"
+
+    check: (lhs, rhs, context) =>
+      if lhs.type == rhs.type
+        if typesModule.isPrimitive(lhs.type) || lhs.type == types.String
+          if rhs._meta == "variable"
+            # Assign to variable
+            rhs._emitVar = true
+          return rhs.type
+
+    emit: (context, lhs, rhs) =>
+      return context.emitMinusAssign()
+
   class AdditiveSubtractiveOperatorBase
     check: (lhs, rhs) =>
       if (lhs.type == types.Dur && rhs.type == types.Time) || (lhs.type == types.Time && rhs.type == types.Dur)
