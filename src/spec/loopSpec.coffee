@@ -61,5 +61,22 @@ for (0 => int i; i < 1; ++i) {
         )
       )
     )
+
+    describe("of the 'while' kind", ->
+      it("creates a scope for the body of the loop", (done) ->
+        promise = executeCode("""\
+0 => int i;
+while (i++ < 2) {
+    0 => int y;
+    <<<y>>>;
+    1 => y;
+}
+""")
+
+        verify(promise, done, ->
+          expect(console.log.calls.allArgs()).toEqual([["0 : (int)"], ["0 : (int)"]])
+        )
+      )
+    )
   )
 )

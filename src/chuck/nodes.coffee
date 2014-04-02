@@ -620,9 +620,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @body.scanPass1()
       return
 
-    scanPass2: =>
-      @condition.scanPass2()
-      @body.scanPass2()
+    scanPass2: (context) =>
+      @condition.scanPass2(context)
+      @body.scanPass2(context)
       return
 
     scanPass3: (context) =>

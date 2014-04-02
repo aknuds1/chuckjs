@@ -175,5 +175,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
   module.isPrimitive = (type) ->
     return type == types.Dur || type == types.Time || type == types.int || type == types.float
 
+  types.Gain = new ChuckType("Gain", types.UGenStereo)
+
   return module
 )
