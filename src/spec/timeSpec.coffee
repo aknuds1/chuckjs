@@ -21,7 +21,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
       )
     )
 
-    it('can loop until a certain time', (done) ->
+    it('can loop until a certain time in seconds', (done) ->
       promise = executeCode("""1::second + now => time later;
 while (now < later)
 {
@@ -42,6 +42,31 @@ while (now < later)
       verify(promise, done, ->
         expect(console.log.calls.count()).toEqual(2)
         expect(console.log).toHaveBeenCalledWith("#{helpers.fakeAudioContext.sampleRate} : (time)")
+      )
+    )
+
+    it('can loop until a certain time in milliseconds', (done) ->
+      promise = executeCode("""1::ms + now => time later;
+while (now < later)
+{
+  <<<now>>>;
+  1::ms => now;
+}
+<<<now>>>;
+""")
+      # Verify the first iteration, which'll sleep one millisecond
+      expect(console.log.calls.count()).toBe(1)
+      expect(console.log).toHaveBeenCalledWith("0 : (time)")
+      # Simulate that 1 millisecond has passed
+      helpers.processAudio(0.001)
+      # Let the VM terminate
+      helpers.processAudio(1)
+
+      # Verify the post-loop statement, after letting 1 millisecond pass
+      verify(promise, done, ->
+        expect(console.log.calls.count()).toEqual(2)
+        expect(console.log).toHaveBeenCalledWith("#{helpers.fakeAudioContext.sampleRate/1000} : (time)")
+        return
       )
     )
   )
