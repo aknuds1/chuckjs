@@ -69,5 +69,30 @@ while (now < later)
         return
       )
     )
+
+    it('can loop until a certain time in samples', (done) ->
+      promise = executeCode("""1::samp + now => time later;
+while (now < later)
+{
+  <<<now>>>;
+  1::samp => now;
+}
+<<<now>>>;
+""")
+      # Verify the first iteration, which'll sleep one millisecond
+      expect(console.log.calls.count()).toBe(1)
+      expect(console.log).toHaveBeenCalledWith("0 : (time)")
+      # Simulate that 1 sample has passed
+      helpers.processAudio(1/helpers.fakeAudioContext.sampleRate)
+      # Let the VM terminate
+      helpers.processAudio(1)
+
+      # Verify the post-loop statement, after letting 1 sample pass
+      verify(promise, done, ->
+        expect(console.log.calls.count()).toEqual(2)
+        expect(console.log).toHaveBeenCalledWith("1 : (time)")
+        return
+      )
+    )
   )
 )

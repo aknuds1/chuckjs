@@ -190,13 +190,6 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     return
   )
 
-  module.dotMemberFunc = (func) -> new Instruction("DotMemberFunc", {}, (vm) ->
-    obj = vm.popFromReg()
-    logging.debug("DotMemberFunc: Pushing method #{func.name} of type #{obj.type.name} to stack")
-    vm.pushToReg(func)
-    return
-  )
-
   module.dotStaticFunc = (func) -> new Instruction("DotStaticFunc", {}, (vm) ->
     logging.debug("DotStaticFunc: Pushing static method to stack:", func)
     vm.pushToReg(func)
@@ -253,7 +246,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     return
   )
 
-  module.timesNumber = -> new Instruction("TimesNUmber", {}, (vm) ->
+  module.timesNumber = -> new Instruction("TimesNumber", {}, (vm) ->
     rhs = vm.popFromReg()
     lhs = vm.popFromReg()
     number = lhs*rhs

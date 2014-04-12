@@ -181,6 +181,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       return
 
     emitFuncCallMember: =>
+      # The top of the stack should be the 'this' reference
       @code.append(instructions.funcCallMember())
       return
 
@@ -197,10 +198,6 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     emitRegDupLast: =>
       @code.append(instructions.regDupLast())
-      return
-
-    emitDotMemberFunc: (func) =>
-      @code.append(instructions.dotMemberFunc(func))
       return
 
     emitDotStaticFunc: (func) =>

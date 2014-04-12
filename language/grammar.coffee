@@ -155,6 +155,7 @@ grammar = {
     o('PrimaryExpression'),
     o('PostfixExpression ArrayExpression', -> new PrimaryArrayExpression($1, $2)),
     o('PostfixExpression LPAREN Expression RPAREN', -> new FuncCallExpression($1, $3)),
+    o('PostfixExpression LPAREN RPAREN', -> new FuncCallExpression($1)),
     o('PostfixExpression DOT ID', -> new DotMemberExpression($1, $3)),
     o('PostfixExpression PLUSPLUS', -> new PostfixExpression($1, new PostfixPlusPlusOperator()))
   ],

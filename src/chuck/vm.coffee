@@ -49,7 +49,6 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
 
           logging.debug("Audio callback processing #{event.outputBuffer.length} samples")
           for i in [0...event.outputBuffer.length]
-            ++@_nowSystem
             # Detect if the VM should be awoken
             if @_wakeTime <= (@_nowSystem + 0.5)
               @_now = @_wakeTime
@@ -69,6 +68,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
 
           if @_shouldStop
             logging.debug("Audio callback: In the process of stopping, flushing buffers")
+          logging.debug("Audio callback finished processing, currently at #{@_nowSystem} samples in total")
           return
       , 0)
       return deferred.promise
@@ -98,7 +98,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
           return true
         else
           @_shouldStop = true
-          logging.debug("VM execution has ended at #{@_nowSystem} samples", @_shouldStop)
+          logging.debug("VM execution has ended after #{@_nowSystem} samples", @_shouldStop)
           return false
       catch err
         deferred.reject(err)
@@ -166,7 +166,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
       return
 
     suspendUntil: (time) =>
-      logging.debug("Suspending VM execution until #{time}")
+      logging.debug("Suspending VM execution until #{time} (now: #{@_now})")
       @_wakeTime = time
       return
 

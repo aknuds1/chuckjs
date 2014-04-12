@@ -206,6 +206,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         when "ms"
           @type = types.Dur
           break
+        when "samp"
+          @type = types.Dur
+          break
         when "now"
           @type = types.Time
           break
@@ -233,6 +236,10 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         when "ms"
           # Push the value corresponding to a millisecond
           context.emitRegPushImm(audioContextService.getSampleRate()/1000)
+          break
+        when "samp"
+          # Push the value corresponding to a sample
+          context.emitRegPushImm(1)
           break
         when "now"
           context.emitRegPushNow()
@@ -375,22 +382,25 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         @args.scanPass4(context)
       # Find method overload
       funcGroup = @func.value.value
-      @_ckFunc = funcGroup.findOverload(@args._expressions)
+      @_ckFunc = funcGroup.findOverload(if @args? then @args._expressions else null)
       @type = funcGroup.retType
       logging.debug("#{@nodeType} scanPass4: Got function overload #{@_ckFunc.name} with return type
  #{@type.name}")
       @type
 
     scanPass5: (context) =>
+      logging.debug("#{@nodeType} scanPass5")
       super(context)
       if @args?
         logging.debug("#{@nodeType}: Emitting arguments")
         @args.scanPass5(context)
 
+      @func.scanPass5(context)
+
       logging.debug("#{@nodeType}: Emitting function #{@_ckFunc.name}")
       context.emitDotStaticFunc(@_ckFunc)
 
-      # TODO: Calculate current frame offset
+      # # TODO: Calculate current frame offset
       context.emitRegPushImm(0)
       if @_ckFunc.isMember
         logging.debug("#{@nodeType}: Emitting instance method call")
@@ -777,9 +787,11 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @type
 
     scanPass5: (context) =>
+      logging.debug("#{@nodeType} scanPass5")
+      logging.debug("#{@nodeType} scanPass5: Emitting base expression")
       @base.scanPass5(context)
+      logging.debug("#{@nodeType} scanPass5: Duplicating 'this' reference on stack")
       context.emitRegDupLast()
-      context.emitDotMemberFunc(@_ckFunc)
       return
 
   module.PostfixExpression = class extends NodeBase

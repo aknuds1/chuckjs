@@ -68,6 +68,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
 
   module.FunctionOverload = class FunctionOverload
     constructor: (args, func) ->
+      args = if args? then args else []
       @arguments = args
       @func = func
       @stackDepth = args.length
@@ -93,6 +94,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
           overload.name = "#{overload.name}@#{typeName}"
 
     findOverload: (args) ->
+      args = if args? then args else []
       for mthd in @_overloads
         if mthd.arguments.length != args.length
           continue
@@ -101,7 +103,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
           a.type == args[index].type || (a.type == types.float && args[index].type == types.int))
           continue
 
-        #logging.debug("#{@nodeType} scanPass4: Found matching overload")
+        # logging.debug("#{@nodeType} scanPass4: Found matching overload with #{args.length} argument(s)")
         return mthd
 
       #logging.debug("#{@nodeType} scanPass4: Couldn't find matching method overload")
@@ -176,6 +178,31 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
     return type == types.Dur || type == types.Time || type == types.int || type == types.float
 
   types.Gain = new ChuckType("Gain", types.UGenStereo)
+
+  constructEnvelope = ->
+    @data =
+      target: 0
+      value: 0
+  types.Envelope = new ChuckType("Envelope", types.UGen, preConstructor: constructEnvelope)
+
+  adsrNamespace =
+    set: new ChuckMethod("set", [new FunctionOverload([
+      new FunctionArg("attack", types.Dur), new FunctionArg("decay", types.Dur),
+      new FunctionArg("sustain", types.float), new FunctionArg("release", types.Dur)], ->
+      )], "ADSR", types.void)
+    noteOn: new ChuckMethod("noteOn", [new FunctionOverload([], ->
+    )], "ADSR", types.void)
+    noteOff: new ChuckMethod("noteOff", [new FunctionOverload([], ->
+    )], "ADSR", types.void)
+  constructAdsr = ->
+    @data.attackRate = 0.001
+    @data.decayRate = 0.001
+    @data.sustainLevel = 0.5
+    @data.releaseRate = 0.01
+    @data.decayTime = -1
+    @data.releaseTime = -1
+    @data.state = "done"
+  types.Adsr = new ChuckType("ADSR", types.Envelope, preConstructor: constructAdsr, namespace: adsrNamespace)
 
   return module
 )

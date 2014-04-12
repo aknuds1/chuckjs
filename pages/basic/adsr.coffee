@@ -1,5 +1,5 @@
 code = """\
-SinOsc s => dac;
+SinOsc s => ADSR e => dac;
 
 // set a, d, s, and r
 e.set( 10::ms, 8::ms, .5, 500::ms );

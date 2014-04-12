@@ -20,7 +20,7 @@ define("spec/helpers", ['chuck', "q", "chuck/audioContextService"], (chuckModule
     # Delete any cached AudioContext
     audioContextService._audioContext = undefined
 
-    # chuckModule.setLogger(new Logger())
+    chuckModule.setLogger(new Logger())
     jasmine.clock().install()
     # Disable too eager logging of supposedly unhandled promise rejections
     q.stopUnhandledRejectionTracking()
@@ -89,7 +89,9 @@ define("spec/helpers", ['chuck', "q", "chuck/audioContextService"], (chuckModule
   # Process a number of audio samples (expressed in seconds), during which execution should finish, and make a
   # second audio callback call to allow for audio termination
   module.processAllAudio = (seconds) ->
-    module.processAudio(seconds)
+    # Process one extra sample to resume and finish execution
+    module.processAudio(seconds + 1/module.fakeAudioContext.sampleRate)
+    # Allow buffer flushing
     module.processAudio(0)
     return
 
