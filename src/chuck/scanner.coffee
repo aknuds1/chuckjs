@@ -204,6 +204,10 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instructions.dotStaticFunc(func))
       return
 
+    emitDotMemberFunc: (func) =>
+      @code.append(instructions.dotMemberFunc(func))
+      return
+
     emitTimesNumber: =>
       @code.append(instructions.timesNumber())
       return

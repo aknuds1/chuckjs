@@ -10,7 +10,7 @@ define(["chuck", "spec/helpers", "chuck/logging"], (chuckModule, helpers, loggin
       helpers.afterEach(done)
     )
 
-    iit('can apply an envelope to a signal', (done) ->
+    it('can apply an envelope to a signal', (done) ->
       promise = executeCode("""\
 SinOsc sin => ADSR e => dac;
 e.set(1::second, 1::second, 0.5, 1::second);

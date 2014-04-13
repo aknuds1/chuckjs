@@ -398,7 +398,10 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @func.scanPass5(context)
 
       logging.debug("#{@nodeType}: Emitting function #{@_ckFunc.name}")
-      context.emitDotStaticFunc(@_ckFunc)
+      if @_ckFunc.isMember
+        context.emitDotMemberFunc(@_ckFunc)
+      else
+        context.emitDotStaticFunc(@_ckFunc)
 
       # # TODO: Calculate current frame offset
       context.emitRegPushImm(0)
@@ -477,10 +480,11 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         # TODO: Make lhs into an ExpressionList
         rhs._ckFunc = funcGroup.findOverload([lhs])
         @type = funcGroup.retType
-        logging.debug("#{@name} check: Got function overload #{rhs._ckFunc.name} with return type #{@type.name}")
+        logging.debug("#{@nodeType} check: Got function overload #{rhs._ckFunc.name} with return type #{@type.name}")
         @type
 
     emit: (context, lhs, rhs) =>
+      logging.debug("#{@nodeType} scanPass5")
       # UGen => UGen
       if lhs.type.isOfType(types.UGen) && rhs.type.isOfType(types.UGen)
         context.emitUGenLink()
@@ -491,6 +495,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           context.emitTimeAdvance()
       # Function call
       else if rhs.type.isOfType(types.Function)
+        logging.debug("#{@nodeType}: Emitting function #{rhs._ckFunc.name}")
+        context.emitDotMemberFunc(rhs._ckFunc)
+        logging.debug("#{@nodeType} emitting instance method call")
         # FIXME
         context.emitRegPushImm(8)
         context.emitFuncCallMember()

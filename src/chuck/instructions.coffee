@@ -190,6 +190,14 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     return
   )
 
+  module.dotMemberFunc = (func) -> new Instruction("DotMemberFunc", {}, (vm) ->
+    logging.debug("#{@instructionName}: Popping instance from stack")
+    vm.popFromReg()
+    # TODO: Get implementation of function from object's vtable    
+    logging.debug("#{@instructionName}: Pushing instance method to stack:", func)
+    vm.pushToReg(func)
+  )
+
   module.dotStaticFunc = (func) -> new Instruction("DotStaticFunc", {}, (vm) ->
     logging.debug("DotStaticFunc: Pushing static method to stack:", func)
     vm.pushToReg(func)

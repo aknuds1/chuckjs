@@ -15,8 +15,9 @@ define("spec/helpers", ['chuck', "q", "chuck/audioContextService"], (chuckModule
 
   chuck = undefined
   origAudioContext = window.AudioContext || window.webkitAudioContext
+  module.receivedAudio = null
 
-  module.beforeEach = ->
+  module.beforeEach = (opts={}) ->
     # Delete any cached AudioContext
     audioContextService._audioContext = undefined
 
@@ -24,6 +25,9 @@ define("spec/helpers", ['chuck', "q", "chuck/audioContextService"], (chuckModule
     jasmine.clock().install()
     # Disable too eager logging of supposedly unhandled promise rejections
     q.stopUnhandledRejectionTracking()
+
+    if opts.registerAudio
+      module.receivedAudio = [[], []]
 
     module.fakeAudioContext = jasmine.createSpyObj("AudioContext", ["createScriptProcessor"])
     module.fakeAudioContext.currentTime = 0
@@ -49,6 +53,7 @@ define("spec/helpers", ['chuck', "q", "chuck/audioContextService"], (chuckModule
       done(new Error("Failed to stop ChucK: #{e}"))
     )
     .fin(->
+      module.receivedAudio = null
       chuck = undefined
     )
     .done()
@@ -79,11 +84,15 @@ define("spec/helpers", ['chuck', "q", "chuck/audioContextService"], (chuckModule
 
   # Simulate processing of an audio buffer of a certain length
   module.processAudio = (seconds) ->
+    channelData = [[], []]
     event =
       outputBuffer:
-        getChannelData: -> []
+        getChannelData: (channel) -> channelData[channel]
         length: seconds * module.fakeAudioContext.sampleRate
     chuck._vm._scriptProcessor.onaudioprocess(event)
+    if module.receivedAudio?
+      for i in [0...2]
+        module.receivedAudio[i] = module.receivedAudio[i].concat(channelData[i])
     return
 
   # Process a number of audio samples (expressed in seconds), during which execution should finish, and make a

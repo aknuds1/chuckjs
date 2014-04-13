@@ -1,6 +1,6 @@
 # ChucK type library
-define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
-(audioContextService, namespace) ->
+define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/logging"],
+(audioContextService, namespace, logging) ->
   module = {}
   TwoPi = Math.PI*2
 
@@ -61,7 +61,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
   types.Dur = new ChuckType("Dur", undefined, size: 8, preConstructor: undefined)
   types.String = new ChuckType("String", undefined, size: 8, preConstructor: undefined)
 
-  module.FunctionArg = class FunctionArg
+  module.FuncArg = class FuncArg
     constructor: (name, type) ->
       @name = name
       @type = type
@@ -127,7 +127,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
   )
   module.Class = new ChuckType("Class", types.Object)
   ugenNamespace =
-    gain: new ChuckMethod("gain", [new FunctionOverload([new FunctionArg("value", types.float)], (value) ->
+    gain: new ChuckMethod("gain", [new FunctionOverload([new FuncArg("value", types.float)], (value) ->
       @setGain(value)
     )], "UGen", types.float)
   types.UGen = new ChuckType("UGen", types.Object, size: 8, numIns: 1, numOuts: 1, preConstructor: undefined,
@@ -144,7 +144,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
       @width = 0.5
       @phase = 0
   oscNamespace =
-    freq: new ChuckMethod("freq", [new FunctionOverload([new FunctionArg("value", types.float)], (value) ->
+    freq: new ChuckMethod("freq", [new FunctionOverload([new FuncArg("value", types.float)], (value) ->
       @setFrequency(value)
     )], "Osc", types.float)
   constructOsc = ->
@@ -153,9 +153,9 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
       @data.num = (1/audioContextService.getSampleRate()) * value
       return value
     @setFrequency(220)
-
   types.Osc = new ChuckType("Osc", types.UGen, numIns: 1, numOuts: 1, preConstructor: constructOsc,
   namespace: oscNamespace)
+
   tickSinOsc = ->
     out = Math.sin(@data.phase * TwoPi)
     @data.phase += @data.num
@@ -179,6 +179,16 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
 
   types.Gain = new ChuckType("Gain", types.UGenStereo)
 
+  stepNamespace =
+    next: new ChuckMethod("next", [new FunctionOverload([new FuncArg("value", types.float)], (value) ->
+      logging.debug("Step Oscillator: Setting value #{value} for next")
+      @data.phase = value
+    )], "Step", types.float)
+  tickStep = ->
+    @data.phase
+  types.Step = new ChuckType("Step", types.Osc, namespace: stepNamespace, preConstructor: null,
+  ugenTick: tickStep)
+
   constructEnvelope = ->
     @data =
       target: 0
@@ -187,8 +197,8 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace"],
 
   adsrNamespace =
     set: new ChuckMethod("set", [new FunctionOverload([
-      new FunctionArg("attack", types.Dur), new FunctionArg("decay", types.Dur),
-      new FunctionArg("sustain", types.float), new FunctionArg("release", types.Dur)], ->
+      new FuncArg("attack", types.Dur), new FuncArg("decay", types.Dur),
+      new FuncArg("sustain", types.float), new FuncArg("release", types.Dur)], ->
       )], "ADSR", types.void)
     noteOn: new ChuckMethod("noteOn", [new FunctionOverload([], ->
     )], "ADSR", types.void)
