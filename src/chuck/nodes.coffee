@@ -395,7 +395,11 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         logging.debug("#{@nodeType}: Emitting arguments")
         @args.scanPass5(context)
 
-      @func.scanPass5(context)
+      if @_ckFunc.isMember
+        logging.debug("#{@nodeType}: Emitting method instance")
+        @func.scanPass5(context)
+        logging.debug("#{@nodeType}: Emitting duplication of 'this' reference on stack")
+        context.emitRegDupLast()
 
       logging.debug("#{@nodeType}: Emitting function #{@_ckFunc.name}")
       if @_ckFunc.isMember
@@ -783,10 +787,10 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     scanPass4: (context) =>
       logging.debug("#{@nodeType} scanPass4")
       @base.scanPass4(context)
-      baseStatic = @base.type.actualType?
-      if baseStatic
+      @isStatic = @base.type.actualType?
+      if @isStatic
         logging.debug("#{@nodeType} scanPass4: This is a static member expression")
-      baseType = if baseStatic then @base.type.actualType else @base.type
+      baseType = if @isStatic then @base.type.actualType else @base.type
       logging.debug("#{@nodeType} scanPass4: Finding member '#{@id}' in base type #{baseType.name}")
       @value = baseType.findValue(@id)
       @type = @value.type
@@ -797,8 +801,6 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       logging.debug("#{@nodeType} scanPass5")
       logging.debug("#{@nodeType} scanPass5: Emitting base expression")
       @base.scanPass5(context)
-      logging.debug("#{@nodeType} scanPass5: Duplicating 'this' reference on stack")
-      context.emitRegDupLast()
       return
 
   module.PostfixExpression = class extends NodeBase
