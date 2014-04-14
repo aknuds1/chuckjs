@@ -1,17 +1,11 @@
 code = """\
 SinOsc s => ADSR e => dac;
-e.keyOn();
-e.set( 10::ms, 8::ms, .5, 500::ms );
-3::second => now;
-e.keyOff();
-
 // set a, d, s, and r
-//e.set( 10::ms, 8::ms, .5, 500::ms );
+e.set( 10::ms, 8::ms, .5, 500::ms );
 // set gain
-//.5 => s.gain;
+.5 => s.gain;
 
 // infinite time-loop
-/*
 while( true )
 {
     // choose freq
@@ -25,5 +19,5 @@ while( true )
     e.keyOff();
     // advance time by 800 ms
     800::ms => now;
-}*/
+}
 """

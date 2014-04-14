@@ -22,7 +22,8 @@ module.exports = function (grunt) {
           'lib/chuck/ugen.js': 'src/chuck/ugen.coffee',
           'lib/chuck/vm.js': 'src/chuck/vm.coffee',
           'lib/chuck/namespace.js': 'src/chuck/namespace.coffee',
-          'lib/chuck/libs/math.js': 'src/chuck/libs/math.coffee'
+          'lib/chuck/libs/math.js': 'src/chuck/libs/math.coffee',
+          'lib/chuck/libs/std.js': 'src/chuck/libs/std.coffee'
         }
       },
       compileExamples: {

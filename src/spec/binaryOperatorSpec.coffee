@@ -1,5 +1,5 @@
 define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
-  describe("Binary operator", ->
+  describe("Binary operators:", ->
     {executeCode, verify} = helpers
 
     beforeEach(->
@@ -8,6 +8,18 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
     )
     afterEach((done) ->
       helpers.afterEach(done)
+    )
+
+    describe("Chuck", ->
+      it("can call a static method", (done) ->
+        promise = executeCode("""\
+<<<90 => Std.mtof>>>;
+""")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("1479.9776908465376 : (float)")
+        )
+      )
     )
 
     describe('Unchuck', ->

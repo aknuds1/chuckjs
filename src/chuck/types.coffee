@@ -181,7 +181,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
 
   stepNamespace =
     next: new ChuckMethod("next", [new FunctionOverload([new FuncArg("value", types.float)], (value) ->
-      logging.debug("Step Oscillator: Setting value #{value} for next")
+      # logging.debug("Step Oscillator: Setting value #{value} for next")
       @data.next = value
     )], "Step", types.float)
   constructStep = ->
@@ -208,7 +208,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
         d.decayRate = computeRate(1-sustainLevel, decay)
         d.releaseRate = computeRate(sustainLevel, release)
         d.sustainLevel = sustainLevel
-        logging.debug("Having set ADSR parameters, at attack state: #{d.attackRate}, #{d.decayRate}, #{d.sustainLevel}, #{d.releaseRate}")
+        # logging.debug("Having set ADSR parameters, at attack state: #{d.attackRate}, #{d.decayRate}, #{d.sustainLevel}, #{d.releaseRate}")
       )], "ADSR", types.void)
     keyOn: new ChuckMethod("keyOn", [new FunctionOverload([], ->
       logging.debug("keyOn state")
@@ -235,7 +235,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
     switch d.state
       when "attack"
         d.value += d.rate
-        logging.debug("Attack state: value set to #{d.value}")
+        # logging.debug("Attack state: value set to #{d.value}")
         if d.value >= d.target
           d.value = d.target
           d.rate = d.decayRate
@@ -244,21 +244,21 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
           logging.debug("Transitioned to decay state, value: #{d.value}")
       when "decay"
         d.value -= d.decayRate
-        logging.debug("Decay state: value set to #{d.value}")
+        # logging.debug("Decay state: value set to #{d.value}")
         if d.value <= d.sustainLevel
           d.value = d.sustainLevel
           d.rate = 0
           d.state = "sustain"
-          logging.debug("Transitioned to sustain state, value: #{d.value}")
+          # logging.debug("Transitioned to sustain state, value: #{d.value}")
       when "release"
         d.value -= d.rate
-        logging.debug("Release state: value set to #{d.value}")
+        # logging.debug("Release state: value set to #{d.value}")
         if d.value <= 0
           d.value = 0
           d.state = "done"
-          logging.debug("Transitioned to done state, value: #{d.value}")
+          # logging.debug("Transitioned to done state, value: #{d.value}")
 
-    logging.debug("State At end")
+    # logging.debug("State At end")
     input*d.value
 
   types.Adsr = new ChuckType("ADSR", types.Envelope, preConstructor: constructAdsr, namespace: adsrNamespace,

@@ -407,7 +407,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       else
         context.emitDotStaticFunc(@_ckFunc)
 
-      # # TODO: Calculate current frame offset
+      # TODO: Calculate current frame offset
       context.emitRegPushImm(0)
       if @_ckFunc.isMember
         logging.debug("#{@nodeType}: Emitting instance method call")
@@ -499,14 +499,22 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           context.emitTimeAdvance()
       # Function call
       else if rhs.type.isOfType(types.Function)
-        logging.debug("#{@name}: Emitting duplication of 'this' reference on stack")
-        context.emitRegDupLast()
-        logging.debug("#{@nodeType}: Emitting function #{rhs._ckFunc.name}")
-        context.emitDotMemberFunc(rhs._ckFunc)
-        logging.debug("#{@nodeType} emitting instance method call")
+        if rhs._ckFunc.isMember
+          logging.debug("#{@name}: Emitting duplication of 'this' reference on stack")
+          context.emitRegDupLast()
+          logging.debug("#{@nodeType}: Emitting instance method #{rhs._ckFunc.name}")
+          context.emitDotMemberFunc(rhs._ckFunc)
+          logging.debug("#{@nodeType} emitting instance method call")
+        else
+          logging.debug("#{@nodeType}: Emitting static method #{rhs._ckFunc.name}")
+          context.emitDotStaticFunc(rhs._ckFunc)
+          logging.debug("#{@nodeType} emitting static method call")
         # FIXME
         context.emitRegPushImm(8)
-        context.emitFuncCallMember()
+        if rhs._ckFunc.isMember
+          context.emitFuncCallMember()
+        else
+          context.emitFuncCallStatic()
       # Assignment
       else if lhs.type.isOfType(rhs.type)
         isArray = rhs.indices?
@@ -801,8 +809,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass5: (context) =>
       logging.debug("#{@nodeType} scanPass5")
-      logging.debug("#{@nodeType} scanPass5: Emitting base expression")
-      @base.scanPass5(context)
+      if !@isStatic
+        logging.debug("#{@nodeType} scanPass5: Emitting base expression")
+        @base.scanPass5(context)
       return
 
   module.PostfixExpression = class extends NodeBase

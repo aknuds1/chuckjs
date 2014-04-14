@@ -81,7 +81,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
     # Push value to regular stack
     pushToReg: (value) =>
       if !value?
-        throw new Error('value is undefined')
+        throw new Error('pushToReg: value is undefined')
       @regStack.push(value)
       return
 
@@ -123,7 +123,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
 
     pushToMem: (value) =>
       if !value?
-        throw new Error('value is undefined')
+        throw new Error('pushToMem: value is undefined')
       @memStack.push(value)
 
     pushDac: =>
