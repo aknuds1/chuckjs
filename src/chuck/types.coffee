@@ -182,11 +182,13 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
   stepNamespace =
     next: new ChuckMethod("next", [new FunctionOverload([new FuncArg("value", types.float)], (value) ->
       logging.debug("Step Oscillator: Setting value #{value} for next")
-      @data.phase = value
+      @data.next = value
     )], "Step", types.float)
+  constructStep = ->
+    @data.next = 1
   tickStep = ->
-    @data.phase
-  types.Step = new ChuckType("Step", types.Osc, namespace: stepNamespace, preConstructor: null,
+    @data.next
+  types.Step = new ChuckType("Step", types.Osc, namespace: stepNamespace, preConstructor: constructStep,
   ugenTick: tickStep)
 
   constructEnvelope = ->
@@ -198,21 +200,69 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
   adsrNamespace =
     set: new ChuckMethod("set", [new FunctionOverload([
       new FuncArg("attack", types.Dur), new FuncArg("decay", types.Dur),
-      new FuncArg("sustain", types.float), new FuncArg("release", types.Dur)], ->
+      new FuncArg("sustain", types.float), new FuncArg("release", types.Dur)],
+      (attack, decay, sustainLevel, release)  ->
+        computeRate = (target, time) -> target / time
+        d = @data
+        d.attackRate = computeRate(1, attack)
+        d.decayRate = computeRate(1-sustainLevel, decay)
+        d.releaseRate = computeRate(sustainLevel, release)
+        d.sustainLevel = sustainLevel
+        logging.debug("Having set ADSR parameters, at attack state: #{d.attackRate}, #{d.decayRate}, #{d.sustainLevel}, #{d.releaseRate}")
       )], "ADSR", types.void)
-    noteOn: new ChuckMethod("noteOn", [new FunctionOverload([], ->
+    keyOn: new ChuckMethod("keyOn", [new FunctionOverload([], ->
+      logging.debug("keyOn state")
+      @data.target = 1
+      @data.rate = @data.attackRate
+      @data.state = "attack"
     )], "ADSR", types.void)
-    noteOff: new ChuckMethod("noteOff", [new FunctionOverload([], ->
+    keyOff: new ChuckMethod("keyOff", [new FunctionOverload([], ->
+      logging.debug("keyOff state")
+      @data.rate = @data.releaseRate
+      @data.target = 0
+      @data.state = "release"
     )], "ADSR", types.void)
   constructAdsr = ->
     @data.attackRate = 0.001
     @data.decayRate = 0.001
     @data.sustainLevel = 0.5
     @data.releaseRate = 0.01
-    @data.decayTime = -1
-    @data.releaseTime = -1
-    @data.state = "done"
-  types.Adsr = new ChuckType("ADSR", types.Envelope, preConstructor: constructAdsr, namespace: adsrNamespace)
+    @data.state = "attack"
+    @data.rate = 1
+    @data.value = 0
+  tickAdsr = (input) ->
+    d = @data
+    switch d.state
+      when "attack"
+        d.value += d.rate
+        logging.debug("Attack state: value set to #{d.value}")
+        if d.value >= d.target
+          d.value = d.target
+          d.rate = d.decayRate
+          d.target = d.sustainLevel
+          d.state = "decay"
+          logging.debug("Transitioned to decay state, value: #{d.value}")
+      when "decay"
+        d.value -= d.decayRate
+        logging.debug("Decay state: value set to #{d.value}")
+        if d.value <= d.sustainLevel
+          d.value = d.sustainLevel
+          d.rate = 0
+          d.state = "sustain"
+          logging.debug("Transitioned to sustain state, value: #{d.value}")
+      when "release"
+        d.value -= d.rate
+        logging.debug("Release state: value set to #{d.value}")
+        if d.value <= 0
+          d.value = 0
+          d.state = "done"
+          logging.debug("Transitioned to done state, value: #{d.value}")
+
+    logging.debug("State At end")
+    input*d.value
+
+  types.Adsr = new ChuckType("ADSR", types.Envelope, preConstructor: constructAdsr, namespace: adsrNamespace,
+  ugenTick: tickAdsr)
 
   return module
 )

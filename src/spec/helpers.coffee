@@ -98,8 +98,9 @@ define("spec/helpers", ['chuck', "q", "chuck/audioContextService"], (chuckModule
   # Process a number of audio samples (expressed in seconds), during which execution should finish, and make a
   # second audio callback call to allow for audio termination
   module.processAllAudio = (seconds) ->
-    # Process one extra sample to resume and finish execution
-    module.processAudio(seconds + 1/module.fakeAudioContext.sampleRate)
+    if seconds > 0
+      # Process one extra sample to resume and finish execution
+      module.processAudio(seconds + 1/module.fakeAudioContext.sampleRate)
     # Allow buffer flushing
     module.processAudio(0)
     return
@@ -114,6 +115,8 @@ define("spec/helpers", ['chuck', "q", "chuck/audioContextService"], (chuckModule
     expect(sinOsc.data.num).toBe((1/module.fakeAudioContext.sampleRate)*frequency,
       "Frequency should be correctly set")
     expect(sinOsc._gain).toBe(gain, "Gain should be correctly set")
+
+  module.getSampleInSeconds = -> 1/module.fakeAudioContext.sampleRate
 
   return module
 )

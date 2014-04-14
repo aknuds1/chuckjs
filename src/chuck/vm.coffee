@@ -98,7 +98,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
           return true
         else
           @_shouldStop = true
-          logging.debug("VM execution has ended after #{@_nowSystem} samples", @_shouldStop)
+          logging.debug("VM execution has ended after #{@_nowSystem} samples:", @_shouldStop)
           return false
       catch err
         deferred.reject(err)

@@ -3,7 +3,7 @@ define(["chuck", "spec/helpers", "chuck/logging"], (chuckModule, helpers, loggin
 
   describe('An ADSR UGen', ->
     beforeEach(->
-      helpers.beforeEach()
+      helpers.beforeEach(registerAudio: true)
       spyOn(console, 'log')
     )
     afterEach((done) ->
@@ -12,14 +12,16 @@ define(["chuck", "spec/helpers", "chuck/logging"], (chuckModule, helpers, loggin
 
     it('can apply an envelope to a signal', (done) ->
       promise = executeCode("""\
-SinOsc sin => ADSR e => dac;
-e.set(1::second, 1::second, 0.5, 1::second);
-e.noteOn();
-// Progress to sustain stage
-2::second => now;
+Step step => ADSR e => dac;
+e.set(2::samp, 1::samp, 0.5, 1::samp);
+e.keyOn();
+// Progress to decay stage
+1::samp => now;
+// Progress to sustain stage, then allow for a sample of sustain before releasing the key
+3::samp => now;
 // Let release do its thing, and let there be some time to verify that signal is muted
-e.noteOff();
-2::second => now;
+e.keyOff();
+1::samp => now;
 """)
 
       dac = helpers.getDac()
@@ -29,16 +31,32 @@ e.noteOff();
       expect(dac._channels[1].sources).toEqual([adsr], "ADSR should be connected to DAC")
       expect(adsr._channels[0].sources.length).toBe(1, "SinOsc should be connected to ADSR")
 
-      # Verify attack stage
-      helpers.processAudio(1)
+      # Verify attack start
+      helpers.processAudio(helpers.getSampleInSeconds())
+      for channel in helpers.receivedAudio
+        expect(channel[0]).toEqual(0.5, "ADSR should amplify signal correctly")
 
-      # Verify sustain stage
-      helpers.processAudio(1)
+      # Verify decay start
+      helpers.processAudio(helpers.getSampleInSeconds())
+      for channel in helpers.receivedAudio
+        expect(channel[1]).toEqual(1, "ADSR should amplify signal correctly")
 
-      # Verify release stage
-      helpers.processAudio(1)
+      # Verify sustain start
+      helpers.processAudio(helpers.getSampleInSeconds())
+      for channel in helpers.receivedAudio
+        expect(channel[2]).toEqual(0.5, "ADSR should amplify signal correctly")
 
-      verify(promise, done, null, 1)
+      # Verify sustain end
+      helpers.processAudio(helpers.getSampleInSeconds())
+      for channel in helpers.receivedAudio
+        expect(channel[3]).toEqual(0.5, "ADSR should amplify signal correctly")
+
+      # Verify release
+      helpers.processAudio(helpers.getSampleInSeconds())
+      for channel in helpers.receivedAudio
+        expect(channel[4]).toEqual(0, "ADSR should amplify signal correctly")
+
+      verify(promise, done, null, helpers.getSampleInSeconds())
     )
   )
 )
