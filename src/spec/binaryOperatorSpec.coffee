@@ -20,6 +20,17 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
           expect(console.log).toHaveBeenCalledWith("1479.9776908465376 : (float)")
         )
       )
+
+      it("can assign ints to floats", (done) ->
+        promise = executeCode("""\
+880 => float f;
+<<<f>>>;
+""")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("880 : (float)")
+        )
+      )
     )
 
     describe('Unchuck', ->

@@ -492,20 +492,25 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         rhs._ckFunc = funcGroup.findOverload([lhs])
         @type = funcGroup.retType
         logging.debug("#{@name} check: Got function overload #{rhs._ckFunc.name} with return type #{@type.name}")
-        @type
+        return @type
+      if lhs.type == types.int && rhs.type == types.float
+        lhs.castTo = rhs.type
+        return types.float
 
     emit: (context, lhs, rhs) =>
       logging.debug("#{@name} scanPass5")
+      lType = if lhs.castTo? then lhs.castTo else lhs.type
+      rType = if rhs.castTo? then rhs.castTo else rhs.type
       # UGen => UGen
-      if lhs.type.isOfType(types.UGen) && rhs.type.isOfType(types.UGen)
+      if lType.isOfType(types.UGen) && rType.isOfType(types.UGen)
         context.emitUGenLink()
       # Time advance
-      else if lhs.type.isOfType(types.Dur) && rhs.type.isOfType(types.Time)
+      else if lType.isOfType(types.Dur) && rType.isOfType(types.Time)
         context.emitAddNumber()
         if rhs.name == "now"
           context.emitTimeAdvance()
       # Function call
-      else if rhs.type.isOfType(types.Function)
+      else if rType.isOfType(types.Function)
         if rhs._ckFunc.isMember
           logging.debug("#{@name}: Emitting duplication of 'this' reference on stack")
           context.emitRegDupLast()
@@ -523,7 +528,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         else
           context.emitFuncCallStatic()
       # Assignment
-      else if lhs.type.isOfType(rhs.type)
+      else if lType.isOfType(rType)
         isArray = rhs.indices?
         if !isArray
           logging.debug("ChuckOperator emitting OpAtChuck to assign one object to another")
