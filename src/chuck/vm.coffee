@@ -181,13 +181,15 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
 #            else
 #              logging.debug("VM is not yet ready to wake up (#{@_wakeTime}, #{@_nowSystem})")
 
+        # Is it correct to advance system time before producing frame? This entails that the time of the
+        # first frame will be 1 rather than 0; this is how the original ChucK does it however.
+        ++@_nowSystem
+
         frame = [0, 0]
         if !@_shouldStop
           @_dac.tick(@_nowSystem, frame)
         samplesLeft[i] = frame[0] * @_gain
         samplesRight[i] = frame[1] * @_gain
-
-        ++@_nowSystem
 
       if @_shouldStop
         logging.debug("Audio callback: In the process of stopping, flushing buffers")
