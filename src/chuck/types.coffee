@@ -58,7 +58,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
   types.int = new ChuckType("int", undefined, size: 8, preConstructor: undefined)
   types.float = new ChuckType("float", undefined, size: 8, preConstructor: undefined)
   types.Time = new ChuckType("time", undefined, size: 8, preConstructor: undefined)
-  types.Dur = new ChuckType("Dur", undefined, size: 8, preConstructor: undefined)
+  types.Dur = new ChuckType("dur", undefined, size: 8, preConstructor: undefined)
   types.String = new ChuckType("String", undefined, size: 8, preConstructor: undefined)
 
   module.FuncArg = class FuncArg

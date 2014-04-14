@@ -71,7 +71,7 @@ while (now < later)
 }
 <<<now>>>;
 """)
-      # Verify the first iteration, which'll sleep one millisecond
+      # Verify the first iteration, which'll sleep one sample
       expect(console.log.calls.count()).toBe(1)
       expect(console.log).toHaveBeenCalledWith("0 : (time)")
 
@@ -81,6 +81,30 @@ while (now < later)
         expect(console.log).toHaveBeenCalledWith("1 : (time)")
         return
       , 1/helpers.fakeAudioContext.sampleRate)
+    )
+
+    it("can add a sample duration to a time and assign the result to a time variable", (done) ->
+      promise = executeCode("""\
+1::samp => dur d;
+now + d => time t;
+<<<t>>>;
+""")
+
+      verify(promise, done, ->
+        expect(console.log).toHaveBeenCalledWith("1 : (time)")
+      )
+    )
+
+    it("can add an hour duration to a time and assign the result to a time variable", (done) ->
+      promise = executeCode("""\
+1::hour => dur d;
+now + d => time t;
+<<<t>>>;
+""")
+
+      verify(promise, done, ->
+        expect(console.log).toHaveBeenCalledWith("#{helpers.getSampleRate()*60*60} : (time)")
+      )
     )
   )
 )

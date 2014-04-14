@@ -209,6 +209,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         when "samp"
           @type = types.Dur
           break
+        when "hour"
+          @type = types.Dur
+          break
         when "now"
           @type = types.Time
           break
@@ -240,6 +243,10 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         when "samp"
           # Push the value corresponding to a sample
           context.emitRegPushImm(1)
+          break
+        when "hour"
+          # Push the value corresponding to an hour
+          context.emitRegPushImm(audioContextService.getSampleRate()*60*60)
           break
         when "now"
           context.emitRegPushNow()

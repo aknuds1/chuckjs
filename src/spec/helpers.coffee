@@ -118,5 +118,7 @@ define("spec/helpers", ['chuck', "q", "chuck/audioContextService"], (chuckModule
 
   module.getSampleInSeconds = -> 1/module.fakeAudioContext.sampleRate
 
+  module.getSampleRate = -> module.fakeAudioContext.sampleRate
+
   return module
 )
