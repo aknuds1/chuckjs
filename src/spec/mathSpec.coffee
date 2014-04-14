@@ -1,7 +1,7 @@
 define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
   {executeCode, verify} = helpers
 
-  describe('Mathematics', ->
+  describe('Mathematics:', ->
     beforeEach(->
       helpers.beforeEach()
       spyOn(console, 'log')
@@ -48,6 +48,16 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
       )
     )
 
+    describe("multiplication", ->
+      it("can multiply two floats", (done) ->
+        promise = executeCode("""<<<2.1*2.0>>>;""")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("4.2 : (float)")
+        )
+      )
+    )
+
     describe('pow', ->
       it('can return the value of x to the power of y', (done) ->
         promise = executeCode("""\
@@ -60,12 +70,20 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
       )
     )
 
-    describe("multiplication", ->
-      it("can multiply two floats", (done) ->
-        promise = executeCode("""<<<2.1*2.0>>>;""")
+    describe("Math.random2", ->
+      returnedRand = 0.6
+      beforeEach(->
+        spyOn(Math, "random").and.returnValue(returnedRand)
+      )
 
+      it("returns a random int between a lower and upper bound", (done) ->
+        min = 1
+        max = 20
+        promise = executeCode("<<<Math.random2(#{min}, #{max})>>>;")
+
+        expRand = Math.floor(returnedRand * (max-min+1)) + min
         verify(promise, done, ->
-          expect(console.log).toHaveBeenCalledWith("4.2 : (float)")
+          expect(console.log).toHaveBeenCalledWith("#{expRand} : (int)")
         )
       )
     )
