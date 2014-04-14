@@ -33,42 +33,12 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
         logging.debug("Starting audio processing")
         @_scriptProcessor = audioContextService.createScriptProcessor()
         @_scriptProcessor.onaudioprocess = (event) =>
-          # Compute each sample
-
-          samplesLeft = event.outputBuffer.getChannelData(0)
-          samplesRight = event.outputBuffer.getChannelData(1)
-
-          if @_shouldStop
-            logging.debug("Audio callback finishing execution after processing #{@_nowSystem} samples")
-            for i in [0...event.outputBuffer.length]
-              samplesLeft[i] = 0
-              samplesRight[i] = 0
+          try
+            @_processAudio(event, byteCode, deferred)
+          catch error
             @_terminateProcessing()
-            deferred.resolve()
-            return
+            deferred.reject("Caught exception in audio processing callback after #{@_nowSystem} samples: #{error}")
 
-          logging.debug("Audio callback processing #{event.outputBuffer.length} samples")
-          for i in [0...event.outputBuffer.length]
-            # Detect if the VM should be awoken
-            if @_wakeTime <= (@_nowSystem + 0.5)
-              @_now = @_wakeTime
-              @_wakeTime = undefined
-              logging.debug("Letting VM compute sample, now: #{@_now}")
-              @_compute(byteCode, deferred)
-#            else
-#              logging.debug("VM is not yet ready to wake up (#{@_wakeTime}, #{@_nowSystem})")
-
-            frame = [0, 0]
-            if !@_shouldStop
-              @_dac.tick(@_nowSystem, frame)
-            samplesLeft[i] = frame[0] * @_gain
-            samplesRight[i] = frame[1] * @_gain
-
-            ++@_nowSystem
-
-          if @_shouldStop
-            logging.debug("Audio callback: In the process of stopping, flushing buffers")
-          logging.debug("Audio callback finished processing, currently at #{@_nowSystem} samples in total")
           return
       , 0)
       return deferred.promise
@@ -184,6 +154,45 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
 
     _isRunning: =>
       return !@_wakeTime? && !@_shouldStop
+
+    _processAudio: (event, byteCode, deferred) =>
+      # Compute each sample
+
+      samplesLeft = event.outputBuffer.getChannelData(0)
+      samplesRight = event.outputBuffer.getChannelData(1)
+
+      if @_shouldStop
+        logging.debug("Audio callback finishing execution after processing #{@_nowSystem} samples")
+        for i in [0...event.outputBuffer.length]
+          samplesLeft[i] = 0
+          samplesRight[i] = 0
+        @_terminateProcessing()
+        deferred.resolve()
+        return
+
+      logging.debug("Audio callback processing #{event.outputBuffer.length} samples")
+      for i in [0...event.outputBuffer.length]
+        # Detect if the VM should be awoken
+        if @_wakeTime <= (@_nowSystem + 0.5)
+          @_now = @_wakeTime
+          @_wakeTime = undefined
+          logging.debug("Letting VM compute sample, now: #{@_now}")
+          @_compute(byteCode, deferred)
+#            else
+#              logging.debug("VM is not yet ready to wake up (#{@_wakeTime}, #{@_nowSystem})")
+
+        frame = [0, 0]
+        if !@_shouldStop
+          @_dac.tick(@_nowSystem, frame)
+        samplesLeft[i] = frame[0] * @_gain
+        samplesRight[i] = frame[1] * @_gain
+
+        ++@_nowSystem
+
+      if @_shouldStop
+        logging.debug("Audio callback: In the process of stopping, flushing buffers")
+      logging.debug("Audio callback finished processing, currently at #{@_nowSystem} samples in total")
+      return
 
   module.Vm = Vm
 
