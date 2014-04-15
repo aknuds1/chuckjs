@@ -163,8 +163,9 @@ grammar = {
     o('ID', -> new PrimaryVariableExpression($1)),
     o('NUMBER', -> new PrimaryIntExpression($1)),
     o('FLOAT', -> new PrimaryFloatExpression($1)),
-    o('STRING_LIT', -> new PrimaryStringExpression($1))
-    o('L_HACK Expression R_HACK', -> new PrimaryHackExpression($2))
+    o('STRING_LIT', -> new PrimaryStringExpression($1)),
+    o('L_HACK Expression R_HACK', -> new PrimaryHackExpression($2)),
+    o('LPAREN Expression RPAREN', -> $2)
   ],
   LoopStatement: [
     o('WHILE LPAREN Expression RPAREN Statement', -> new WhileStatement($3, $5)),

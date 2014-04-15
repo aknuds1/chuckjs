@@ -139,6 +139,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     scanPass5: (context) =>
       @_scanPass(5, context)
       @types = (exp.type for exp in @_expressions)
+      @type = @types[0]
 
   module.DeclarationExpression = class extends ExpressionBase
     constructor: (typeDecl, varDecls) ->
@@ -298,13 +299,18 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass4: (context) =>
       super(context)
+      logging.debug("#{@nodeType} scanPass4: Checking child expression")
       @expression.scanPass4(context)
+      logging.debug("#{@nodeType} scanPass4: Child expression's types:", (t.name for t in @expression.types))
+      return
 
     scanPass5: (context) =>
       super()
+      logging.debug("#{@nodeType}: Emitting child expression")
       @expression.scanPass5(context)
       logging.debug("#{@nodeType}: Emitting Gack, types:", (t.name for t in @expression.types))
       context.emitGack(@expression.types)
+      return
 
   module.PrimaryStringExpression= class extends ExpressionBase
     constructor: (value) ->

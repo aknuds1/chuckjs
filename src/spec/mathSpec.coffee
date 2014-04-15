@@ -50,10 +50,19 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
 
     describe("multiplication", ->
       it("can multiply two floats", (done) ->
-        promise = executeCode("""<<<2.1*2.0>>>;""")
+        promise = executeCode("""2.1*2.0;""")
 
         verify(promise, done, ->
           expect(console.log).toHaveBeenCalledWith("4.2 : (float)")
+        )
+      )
+    )
+
+    describe("division", ->
+      it("can divide a dur expression in parentheses by another dur", (done) ->
+        promise = executeCode("""<<<(4-2)>>>;""")
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("2 : (time)")
         )
       )
     )
