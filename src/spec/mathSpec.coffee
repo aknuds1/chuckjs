@@ -35,6 +35,18 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
         )
       )
 
+      it("can subtract two constant durs", (done) ->
+        promise = executeCode("""\
+4::samp - 2::samp => dur d;
+<<<d>>>;
+""")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("2 : (dur)")
+          return
+        )
+      )
+
       it('can subtract and assign by chucking', (done) ->
         promise = executeCode("""\
 2 => int x;
@@ -60,7 +72,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
 
     describe("division", ->
       it("can divide a dur expression in parentheses by another dur", (done) ->
-        promise = executeCode("""<<<(4-2)>>>;""")
+        promise = executeCode("""4::samp-2::samp;""")
         verify(promise, done, ->
           expect(console.log).toHaveBeenCalledWith("2 : (time)")
         )

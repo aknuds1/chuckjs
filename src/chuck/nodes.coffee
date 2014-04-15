@@ -575,9 +575,11 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
   class AdditiveSubtractiveOperatorBase
     check: (lhs, rhs) =>
+      if lhs.type == rhs.type
+        return lhs.type
       if (lhs.type == types.Dur && rhs.type == types.Time) || (lhs.type == types.Time && rhs.type == types.Dur)
         return types.Time
-      if (lhs.type == types.int && rhs.type == types.int)
+      if lhs.type == types.int && rhs.type == types.int
         return types.int
       if (lhs.type == types.float && rhs.type == types.float) || (lhs.type == types.int && rhs.type == types.float) ||
       (lhs.type == types.float && rhs.type == types.int)
