@@ -134,12 +134,13 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     scanPass1: _.partial(@prototype._scanPass, 1)
     scanPass2: _.partial(@prototype._scanPass, 2)
     scanPass3: _.partial(@prototype._scanPass, 3)
-    scanPass4: _.partial(@prototype._scanPass, 4)
 
-    scanPass5: (context) =>
-      @_scanPass(5, context)
+    scanPass4: (context) =>
+      @_scanPass(4, context)
       @types = (exp.type for exp in @_expressions)
       @type = @types[0]
+
+    scanPass5: _.partial(@prototype._scanPass, 5)
 
   module.DeclarationExpression = class extends ExpressionBase
     constructor: (typeDecl, varDecls) ->

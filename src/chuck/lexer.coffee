@@ -20,7 +20,7 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
         consumed =
           @floatToken()      or
           @intToken()        or
-          @commentToken()    or          
+          @commentToken()    or
           @_matchToken()     or
           @identifierToken() or
           @whitespaceToken() or
