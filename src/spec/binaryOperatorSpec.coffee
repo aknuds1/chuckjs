@@ -17,7 +17,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
 """)
 
         verify(promise, done, ->
-          expect(console.log).toHaveBeenCalledWith("1479.9776908465376 : (float)")
+          expect(console.log).toHaveBeenCalledWith("1479.977691 :(float)")
         )
       )
 
@@ -28,7 +28,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
 """)
 
         verify(promise, done, ->
-          expect(console.log).toHaveBeenCalledWith("880 : (float)")
+          expect(console.log).toHaveBeenCalledWith("880.000000 :(float)")
         )
       )
     )

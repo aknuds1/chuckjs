@@ -1,5 +1,5 @@
 define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
-  describe("Numbers", ->
+  describe("Numbers:", ->
     {executeCode, verify} = helpers
 
     beforeEach(->
@@ -15,7 +15,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
         promise = executeCode("<<<.1>>>;")
 
         verify(promise, done, ->
-          expect(console.log).toHaveBeenCalledWith("0.1 : (float)")
+          expect(console.log).toHaveBeenCalledWith("0.100000 :(float)")
         )
       )
 
@@ -23,7 +23,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
         promise = executeCode("<<<10.1>>>;")
 
         verify(promise, done, ->
-          expect(console.log).toHaveBeenCalledWith("10.1 : (float)")
+          expect(console.log).toHaveBeenCalledWith("10.100000 :(float)")
         )
       )
 
@@ -31,7 +31,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
         promise = executeCode("<<<10.>>>;")
 
         verify(promise, done, ->
-          expect(console.log).toHaveBeenCalledWith("10 : (float)")
+          expect(console.log).toHaveBeenCalledWith("10.000000 :(float)")
         )
       )
     )

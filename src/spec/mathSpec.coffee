@@ -30,7 +30,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
 """)
 
         verify(promise, done, ->
-          expect(console.log).toHaveBeenCalledWith("2.5 : (float)")
+          expect(console.log).toHaveBeenCalledWith("2.500000 :(float)")
           return
         )
       )
@@ -65,7 +65,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
         promise = executeCode("""<<<2.1*2.0>>>;""")
 
         verify(promise, done, ->
-          expect(console.log).toHaveBeenCalledWith("4.2 : (float)")
+          expect(console.log).toHaveBeenCalledWith("4.200000 :(float)")
         )
       )
     )
@@ -75,15 +75,25 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
         promise = executeCode("""<<<4::samp / 2::samp>>>;""")
 
         verify(promise, done, ->
-          expect(console.log).toHaveBeenCalledWith("2 : (dur)")
+          expect(console.log).toHaveBeenCalledWith("2.000000 :(float)")
+        )
+      )
+
+      it("can divide a time by a dur", (done) ->
+        promise = executeCode("""\
+now + 2::second => time later;
+<<<later / second>>>;""")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("2.000000 :(float)")
         )
       )
 
       it("can divide a dur expression in parens by another dur", (done) ->
-        promise = executeCode("""<<<(4::samp-2::samp)/2::samp>>>;""")
+        promise = executeCode("""<<<(4::ms-2::ms)/ms>>>;""")
 
         verify(promise, done, ->
-          expect(console.log).toHaveBeenCalledWith("1 : (dur)")
+          expect(console.log).toHaveBeenCalledWith("2.000000 :(float)")
         )
       )
     )
@@ -95,7 +105,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
 """)
 
         verify(promise, done, ->
-          expect(console.log).toHaveBeenCalledWith("8 : (float)")
+          expect(console.log).toHaveBeenCalledWith("8.000000 :(float)")
         )
       )
     )

@@ -649,12 +649,14 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: -> @name = "DivideOperator"
 
     check: (lhs, rhs, context) =>
+      logging.debug("#{@name} scanPass4")
       type = super(lhs, rhs, context)
       if type?
         return type
 
-      if lhs.type == types.dur && rhs.type == types.dur
-        return types.dur
+      if (lhs.type == types.dur && rhs.type == types.dur) || (lhs.type == types.Time && rhs.type == types.dur)
+        logging.debug("#{@name} scanPass4: Deduced the type to be float")
+        return types.float
 
     emit: (context) =>
       context.emitDivideNumber()

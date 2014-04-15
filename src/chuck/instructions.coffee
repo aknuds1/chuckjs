@@ -307,6 +307,8 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     logging.debug("Printing object of type #{type.name}:", obj)
     if type == types.String
       console.log("\"#{obj}\" : (#{type.name})")
+    else if type == types.float
+      console.log("#{obj.toFixed(6)} :(#{type.name})")
     else
       console.log("#{obj} : (#{type.name})")
     return
