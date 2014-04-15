@@ -301,7 +301,6 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       super(context)
       logging.debug("#{@nodeType} scanPass4: Checking child expression")
       @expression.scanPass4(context)
-      logging.debug("#{@nodeType} scanPass4: Child expression's types:", (t.name for t in @expression.types))
       return
 
     scanPass5: (context) =>
