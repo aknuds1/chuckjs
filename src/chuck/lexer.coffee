@@ -20,9 +20,9 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
         consumed =
           @floatToken()      or
           @intToken()        or
+          @commentToken()    or          
           @_matchToken()     or
           @identifierToken() or
-          @commentToken()    or
           @whitespaceToken() or
           @stringToken()     or
           @literalToken()
@@ -237,6 +237,7 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
     '\\+': 'PLUS'
     '-': 'MINUS'
     '\\*': 'TIMES'
+    '\\/': 'DIVIDE'
     '<': 'LT'
     '>': 'GT'
     '\\[': 'LBRACK'

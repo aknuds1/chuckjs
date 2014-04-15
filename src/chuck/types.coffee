@@ -58,7 +58,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
   types.int = new ChuckType("int", undefined, size: 8, preConstructor: undefined)
   types.float = new ChuckType("float", undefined, size: 8, preConstructor: undefined)
   types.Time = new ChuckType("time", undefined, size: 8, preConstructor: undefined)
-  types.Dur = new ChuckType("dur", undefined, size: 8, preConstructor: undefined)
+  types.dur = new ChuckType("dur", undefined, size: 8, preConstructor: undefined)
   types.String = new ChuckType("String", undefined, size: 8, preConstructor: undefined)
 
   module.FuncArg = class FuncArg
@@ -175,7 +175,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
     return !module.isPrimitive(type)
 
   module.isPrimitive = (type) ->
-    return type == types.Dur || type == types.Time || type == types.int || type == types.float
+    return type == types.dur || type == types.Time || type == types.int || type == types.float
 
   types.Gain = new ChuckType("Gain", types.UGenStereo)
 
@@ -199,8 +199,8 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
 
   adsrNamespace =
     set: new ChuckMethod("set", [new FunctionOverload([
-      new FuncArg("attack", types.Dur), new FuncArg("decay", types.Dur),
-      new FuncArg("sustain", types.float), new FuncArg("release", types.Dur)],
+      new FuncArg("attack", types.dur), new FuncArg("decay", types.dur),
+      new FuncArg("sustain", types.float), new FuncArg("release", types.dur)],
       (attack, decay, sustainLevel, release)  ->
         computeRate = (target, time) -> target / time
         d = @data

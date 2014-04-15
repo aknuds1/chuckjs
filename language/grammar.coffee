@@ -136,6 +136,7 @@ grammar = {
   MultiplicativeExpression: [
     o('TildaExpression'),
     o("MultiplicativeExpression TIMES TildaExpression", -> new BinaryExpression($1, new TimesOperator(), $3))
+    o("MultiplicativeExpression DIVIDE TildaExpression", -> new BinaryExpression($1, new DivideOperator(), $3))
   ],
   TildaExpression: [
     o('CastExpression')

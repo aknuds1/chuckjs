@@ -212,6 +212,10 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instructions.timesNumber())
       return
 
+    emitDivideNumber: =>
+      @code.append(instructions.divideNumber())
+      return
+
     emitRegPushNow: =>
       @code.append(instructions.regPushNow())
       return

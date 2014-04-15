@@ -193,7 +193,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
   module.dotMemberFunc = (func) -> new Instruction("DotMemberFunc", {}, (vm) ->
     logging.debug("#{@instructionName}: Popping instance from stack")
     vm.popFromReg()
-    # TODO: Get implementation of function from object's vtable    
+    # TODO: Get implementation of function from object's vtable
     logging.debug("#{@instructionName}: Pushing instance method to stack:", func)
     vm.pushToReg(func)
   )
@@ -209,6 +209,15 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     rhs = vm.popFromReg()
     number = lhs*rhs
     logging.debug("TimesNumber resulted in: #{number}")
+    vm.pushToReg(number)
+    return
+  )
+
+  module.divideNumber = -> new Instruction("DivideNumber", {}, (vm) ->
+    rhs = vm.popFromReg()
+    lhs = vm.popFromReg()
+    number = lhs/rhs
+    logging.debug("DivideNumber (#{lhs}/#{rhs}) resulted in: #{number}")
     vm.pushToReg(number)
     return
   )

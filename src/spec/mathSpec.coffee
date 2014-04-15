@@ -62,7 +62,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
 
     describe("multiplication", ->
       it("can multiply two floats", (done) ->
-        promise = executeCode("""2.1*2.0;""")
+        promise = executeCode("""<<<2.1*2.0>>>;""")
 
         verify(promise, done, ->
           expect(console.log).toHaveBeenCalledWith("4.2 : (float)")
@@ -71,10 +71,19 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
     )
 
     describe("division", ->
-      it("can divide a dur expression in parentheses by another dur", (done) ->
-        promise = executeCode("""4::samp-2::samp;""")
+      it("can divide a constant dur by another constant dur", (done) ->
+        promise = executeCode("""<<<4::samp / 2::samp>>>;""")
+
         verify(promise, done, ->
-          expect(console.log).toHaveBeenCalledWith("2 : (time)")
+          expect(console.log).toHaveBeenCalledWith("2 : (dur)")
+        )
+      )
+
+      it("can divide a dur expression in parens by another dur", (done) ->
+        promise = executeCode("""<<<(4::samp-2::samp)/2::samp>>>;""")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("1 : (dur)")
         )
       )
     )

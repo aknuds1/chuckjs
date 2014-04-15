@@ -202,16 +202,16 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           @type = types.Dac
           break
         when "second"
-          @type = types.Dur
+          @type = types.dur
           break
         when "ms"
-          @type = types.Dur
+          @type = types.dur
           break
         when "samp"
-          @type = types.Dur
+          @type = types.dur
           break
         when "hour"
-          @type = types.Dur
+          @type = types.dur
           break
         when "now"
           @type = types.Time
@@ -447,7 +447,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass4: =>
       super()
-      @type = types.Dur
+      @type = types.dur
       @base.scanPass4()
       @unit.scanPass4()
 
@@ -485,7 +485,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
             # Assign to variable
             rhs._emitVar = true
           return rhs.type
-      if lhs.type == types.Dur && rhs.type == types.Time && rhs.name == "now"
+      if lhs.type == types.dur && rhs.type == types.Time && rhs.name == "now"
         return rhs.type
       if lhs.type.isOfType(types.UGen) && rhs.type.isOfType(types.UGen)
         return rhs.type
@@ -510,7 +510,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       if lType.isOfType(types.UGen) && rType.isOfType(types.UGen)
         context.emitUGenLink()
       # Time advance
-      else if lType.isOfType(types.Dur) && rType.isOfType(types.Time)
+      else if lType.isOfType(types.dur) && rType.isOfType(types.Time)
         context.emitAddNumber()
         if rhs.name == "now"
           context.emitTimeAdvance()
@@ -577,7 +577,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     check: (lhs, rhs) =>
       if lhs.type == rhs.type
         return lhs.type
-      if (lhs.type == types.Dur && rhs.type == types.Time) || (lhs.type == types.Time && rhs.type == types.Dur)
+      if (lhs.type == types.dur && rhs.type == types.Time) || (lhs.type == types.Time && rhs.type == types.dur)
         return types.Time
       if lhs.type == types.int && rhs.type == types.int
         return types.int
@@ -633,15 +633,30 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: ->
       @name = "MinusMinusOperator"
 
-  module.TimesOperator = class TimesOperator
-    constructor: -> @name = "TimesOperator"
-
+  class TimesDivideOperatorBase
     check: (lhs, rhs, context) =>
       if lhs.type == types.float && rhs.type == types.float
-        types.float
+        return types.float
+
+  module.TimesOperator = class TimesOperator extends TimesDivideOperatorBase
+    constructor: -> @name = "TimesOperator"
 
     emit: (context) =>
       context.emitTimesNumber()
+
+  module.DivideOperator = class DivideOperator extends TimesDivideOperatorBase
+    constructor: -> @name = "DivideOperator"
+
+    check: (lhs, rhs, context) =>
+      type = super(lhs, rhs, context)
+      if type?
+        return type
+
+      if lhs.type == types.dur && rhs.type == types.dur
+        return types.dur
+
+    emit: (context) =>
+      context.emitDivideNumber()
 
   class GtLtOperatorBase
     check: (lhs, rhs) =>
