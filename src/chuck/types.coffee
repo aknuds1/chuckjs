@@ -260,7 +260,6 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
 
     # logging.debug("State At end")
     input*d.value
-
   types.Adsr = new ChuckType("ADSR", types.Envelope, preConstructor: constructAdsr, namespace: adsrNamespace,
   ugenTick: tickAdsr)
 
