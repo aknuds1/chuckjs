@@ -297,8 +297,27 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     return
   )
 
+  formatFloat = (value) -> value.toFixed(6)
+
   module.gack = (types) -> new Instruction("Gack", {}, (vm) ->
-    module.hack(types[0]).execute(vm)
+    if types.length == 1
+      module.hack(types[0]).execute(vm)
+      return
+
+    values = []
+    for i in [0...types.length]
+      values.unshift(vm.popFromReg())
+    str = ""
+    for tp, i in types
+      value = values[i]
+      if tp == types.float
+        str += "#{formatFloat(value)} "
+      else
+        str += "#{value} "
+
+      vm.pushToReg(value)
+
+    console.log(str[0...str.length-1])
     return
   )
 
@@ -308,7 +327,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     if type == types.String
       console.log("\"#{obj}\" : (#{type.name})")
     else if type == types.float
-      console.log("#{obj.toFixed(6)} :(#{type.name})")
+      console.log("#{formatFloat(obj)} :(#{type.name})")
     else
       console.log("#{obj} : (#{type.name})")
     return
