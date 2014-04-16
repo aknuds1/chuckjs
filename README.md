@@ -9,7 +9,7 @@ This project is merely in its infancy at this stage, so don't expect too much at
 parsing of a very small part of the grammar, and a VM capable of executing corresponding code to the point of
 generating sound.
 
-To see ChucKJS (or perhaps more importantly, hear) in practice, please visit our
+To see (or perhaps more importantly, hear) ChucKJS in practice, please visit our
 [ChucK Demos](http://chuckdemos.com) site, which aggregates a number of playable demos taken from the official
 [ChucK sources](https://github.com/spencersalazar/chuck/tree/master/src/examples).
 
