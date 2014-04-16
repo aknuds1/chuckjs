@@ -9,6 +9,10 @@ This project is merely in its infancy at this stage, so don't expect too much at
 parsing of a very small part of the grammar, and a VM capable of executing corresponding code to the point of
 generating sound.
 
+To see ChucKJS (or perhaps more importantly, hear) in practice, please visit our
+[ChucK Demos](http://chuckdemos.com) site, which aggregates a number of playable demos taken from the official
+[ChucK sources](https://github.com/spencersalazar/chuck/tree/master/src/examples).
+
 ## Build
 
 In order to build ChucKJS, you'll need an installation of [Node](http://nodejs.org/) along with
@@ -41,4 +45,3 @@ addition to these, ChucKJS is automatically tested via [Karma](http://karma-runn
 Support this project and [others by Arve Knudsen](https://www.gittip.com/Arve%20Knudsen/) on Gittip.
 
 [![Support via Gittip](http://img.shields.io/gittip/Arve%20Knudsen.png)](https://www.gittip.com/Arve%20Knudsen/)
-
