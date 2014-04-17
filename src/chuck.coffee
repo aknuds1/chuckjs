@@ -13,7 +13,9 @@ define("chuck", ["chuck/parserService", "chuck/scanner", "chuck/vm", "chuck/logg
 
     stop: =>
       if !@isExecuting()
-        return
+        deferred = Q.defer()
+        deferred.resolve()
+        deferred.promise
 
       @_vm.stop()
       return audioContextService.stopOperation()
