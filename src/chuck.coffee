@@ -12,10 +12,16 @@ define("chuck", ["chuck/parserService", "chuck/scanner", "chuck/vm", "chuck/logg
       return @_vm.execute(byteCode)
 
     stop: =>
+      if !@isExecuting()
+        return
+
       @_vm.stop()
       return audioContextService.stopOperation()
 
-    isExecuting: => @_vm.isExecuting
+    isExecuting: =>
+      if !@_vm?
+        return
+      @_vm.isExecuting()
 
   module.setLogger = (logger) ->
     logging.setLogger(logger)
