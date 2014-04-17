@@ -21,7 +21,7 @@ define("chuck", ["chuck/parserService", "chuck/scanner", "chuck/vm", "chuck/logg
     isExecuting: =>
       if !@_vm?
         return
-      @_vm.isExecuting()
+      @_vm.isExecuting
 
   module.setLogger = (logger) ->
     logging.setLogger(logger)
