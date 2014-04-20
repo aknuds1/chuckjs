@@ -220,6 +220,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         when "true"
           @_meta = "value"
           @type = types.int
+        when "me"
+          @_meta = "value"
+          @type = types.shred
         else
           @value = context.findValue(@name)
           if !@value?
@@ -253,6 +256,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         when "now"
           context.emitRegPushNow()
           break
+        when "me"
+          context.emitRegPushMe()
         when "true"
           context.emitRegPushImm(1)
         else

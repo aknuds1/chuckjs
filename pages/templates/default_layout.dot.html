@@ -13,7 +13,8 @@
       $(document).ready(function () {
         var btn = $('#button'),
             pre = $('#code'),
-            logger = log4javascript.getLogger();
+            logger = log4javascript.getLogger(),
+            args = ("{{= it.document.args}}" || "").split(":");
         logger.addAppender(new log4javascript.BrowserConsoleAppender());
         chuckModule.setLogger(logger);
         logger.setLevel(log4javascript.Level.DEBUG);
@@ -21,7 +22,10 @@
         btn.click(function () {
           var chuck = new chuckModule.Chuck();
           console.debug("Executing program");
-          chuck.execute(code)
+          if (args.length > 0) {
+            console.debug("With arguments:", args);
+          }
+          chuck.execute(code, args)
               .done(function () {
                 console.log("The program finished playing");
               });

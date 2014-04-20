@@ -78,6 +78,9 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
 
   class ChuckFunctionBase
     constructor: (name, overloads, isMember, typeName, retType) ->
+      if !retType?
+        throw new Error('retType unspecified')
+
       @name = name
       @isMember = isMember
       @_overloads = overloads
@@ -262,6 +265,15 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
     input*d.value
   types.Adsr = new ChuckType("ADSR", types.Envelope, preConstructor: constructAdsr, namespace: adsrNamespace,
   ugenTick: tickAdsr)
+
+  shredNamespace =
+    args: new ChuckMethod("args", [new FunctionOverload([], ->
+      @args.length
+    )], "Shred", types.int)
+    arg: new ChuckMethod("arg", [new FunctionOverload([new FuncArg("i", types.int)], (i) ->
+      @args[i]
+    )], "Shred", types.String)
+  types.shred = new ChuckType("Shred", types.Object, namespace: shredNamespace)
 
   return module
 )

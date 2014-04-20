@@ -21,7 +21,7 @@ define("spec/helpers", ['chuck', "q", "chuck/audioContextService"], (chuckModule
     # Delete any cached AudioContext
     audioContextService._audioContext = undefined
 
-    # chuckModule.setLogger(new Logger())
+    chuckModule.setLogger(new Logger())
     jasmine.clock().install()
     # Disable too eager logging of supposedly unhandled promise rejections
     q.stopUnhandledRejectionTracking()
@@ -59,8 +59,8 @@ define("spec/helpers", ['chuck', "q", "chuck/audioContextService"], (chuckModule
     .done()
 
   # Execute code asynchronously
-  module.executeCode = (code) ->
-    promise = chuck.execute(code)
+  module.executeCode = (code, args) ->
+    promise = chuck.execute(code, args)
     # The execution itself starts asynchronously via setTimeout - trigger it
     jasmine.clock().tick(1)
     promise

@@ -44,6 +44,8 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
 
   module.allocWord = (offset) ->
     return new Instruction("AllocWord", offset: offset, (vm) ->
+      # TODO: Might want to make this depend on variable type
+      vm.insertIntoMemory(@offset, 0)
       # Push memory stack index of value
       logging.debug("Pushing memory stack index #{@offset} to regular stack")
       vm.pushToReg(@offset)
@@ -224,6 +226,11 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
 
   module.regPushNow = -> return new Instruction("RegPushNow", {}, (vm) ->
     vm.pushNow()
+    return
+  )
+
+  module.regPushMe = -> return new Instruction("RegPushMe", {}, (vm) ->
+    vm.pushMe()
     return
   )
 

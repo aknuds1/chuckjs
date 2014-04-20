@@ -2,8 +2,12 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
 (logging, ugen, types, audioContextService) ->
   module = {}
 
-  class Vm
-    constructor: ->
+  class Shred
+    constructor: (args) ->
+      @args = args || []
+
+  module.Vm = class Vm
+    constructor: (args) ->
       @regStack = []
       @memStack = []
       @isExecuting = false
@@ -14,6 +18,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
       @_nextPc = 1
       @_shouldStop = false
       @_now = 0
+      @_me = new Shred(args)
       @_nowSystem = 0
       @_gain = 1
 
@@ -135,6 +140,11 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
       @regStack.push(@_now)
       return
 
+    pushMe: =>
+      logging.debug("Pushing me to stack:", @_me)
+      @regStack.push(@_me)
+      return
+
     suspendUntil: (time) =>
       logging.debug("Suspending VM execution until #{time} (now: #{@_now})")
       @_wakeTime = time
@@ -195,8 +205,6 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
         logging.debug("Audio callback: In the process of stopping, flushing buffers")
       logging.debug("Audio callback finished processing, currently at #{@_nowSystem} samples in total")
       return
-
-  module.Vm = Vm
 
   return module
 )

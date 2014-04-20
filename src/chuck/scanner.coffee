@@ -220,6 +220,10 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instructions.regPushNow())
       return
 
+    emitRegPushMe: =>
+      @code.append(instructions.regPushMe())
+      return
+
     emitAddNumber: =>
       @code.append(instructions.addNumber())
       return
