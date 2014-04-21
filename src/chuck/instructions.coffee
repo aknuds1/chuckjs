@@ -1,6 +1,7 @@
 define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ugen, logging, typesModule) ->
   module = {}
   {types} = typesModule
+  {uGenAdd, uGenRemove} = ugen
 
   callMethod = (vm) ->
     localDepth = vm.popFromReg()
@@ -134,7 +135,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     dest = vm.popFromReg()
     src = vm.popFromReg()
     logging.debug("UGenLink: Linking node of type #{src.type.name} to node of type #{dest.type.name}")
-    dest.add(src)
+    uGenAdd(dest, src)
     vm.pushToReg(dest)
     return
   )
@@ -143,7 +144,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     dest = vm.popFromReg()
     src = vm.popFromReg()
     logging.debug("#{@instructionName}: Unlinking node of type #{src.type.name} from node of type #{dest.type.name}")
-    dest.remove(src)
+    uGenRemove(dest, src)
     vm.pushToReg(dest)
     return
   )

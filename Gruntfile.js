@@ -19,7 +19,6 @@ module.exports = function (grunt) {
           'lib/chuck/parserService.js': 'src/chuck/parserService.coffee',
           'lib/chuck/scanner.js': 'src/chuck/scanner.coffee',
           'lib/chuck/types.js': 'src/chuck/types.coffee',
-          'lib/chuck/ugen.js': 'src/chuck/ugen.coffee',
           'lib/chuck/vm.js': 'src/chuck/vm.coffee',
           'lib/chuck/namespace.js': 'src/chuck/namespace.coffee',
           'lib/chuck/libs/math.js': 'src/chuck/libs/math.coffee',
@@ -52,6 +51,7 @@ module.exports = function (grunt) {
       lib: {
         files: [
           {expand: true, cwd: 'src/lib/', src: ['q.js'], dest: 'lib/'},
+          {expand: true, cwd: 'src/chuck/', src: ['ugen.js'], dest: 'lib/chuck/'},
           {expand: true, cwd: 'src/chuck/libs/', src: ['stk.js'], dest: 'lib/chuck/libs/'}
         ]
       },
