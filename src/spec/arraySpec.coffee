@@ -56,7 +56,7 @@ int arr[2];
     )
 
     describe("of UGens", ->
-      iit("has elements which can be connected to destinations", (done) ->
+      it("has elements which can be connected to destinations", (done) ->
         promise = executeCode("""\
 SinOsc oscs[2];
 oscs[0] => dac;

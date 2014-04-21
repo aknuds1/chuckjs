@@ -906,7 +906,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       logging.debug("#{@nodeType}: Emitting array indices")
       @exp.scanPass5(context)
 
-    getCount: => @exp.getCount()
+    getCount: => if @exp then @exp.getCount() else 0
 
   module.PrimaryArrayExpression = class PrimaryArrayExpression extends NodeBase
     constructor: (indices) ->
