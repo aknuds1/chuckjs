@@ -664,8 +664,17 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
   class TimesDivideOperatorBase
     check: (lhs, rhs, context) =>
-      if lhs.type == types.float && rhs.type == types.float
+      lhsType = lhs.type
+      rhsType = rhs.type
+      if lhs.type == types.int && rhs.type == types.float
+        lhsType = lhs.castTo = types.float
+      else if lhs.type == types.float && rhs.type == types.int
+        rhsType = rhs.castTo = types.float
+
+      if lhsType == types.float && rhsType == types.float
         return types.float
+      if lhsType == types.int && rhsType == types.int
+        return types.int
 
   module.TimesOperator = class TimesOperator extends TimesDivideOperatorBase
     constructor: -> @name = "TimesOperator"

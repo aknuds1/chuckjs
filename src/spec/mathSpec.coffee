@@ -68,6 +68,22 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
           expect(console.log).toHaveBeenCalledWith("4.200000 :(float)")
         )
       )
+
+      it("can multiply two integers", (done) ->
+        promise = executeCode("<<<2*2>>>;")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("4 :(int)")
+        )
+      )
+
+      it("can multiply an integer and a float", (done) ->
+        promise = executeCode("<<<2*2.2>>>;")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("4.400000 :(float)")
+        )
+      )
     )
 
     describe("division", ->
