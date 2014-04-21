@@ -279,6 +279,9 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
     cap: new ChuckMethod("cap", [new FunctionOverload([], ->
       @.length
     )], "@array", types.int)
+    size: new ChuckMethod("size", [new FunctionOverload([], ->
+      @.length
+    )], "@array", types.int)
   types["@array"] = new ChuckType("@array", types.Object, size: 1, namespace: arrayNamespace)
 
   module.createArrayType = (elemType, depth) ->

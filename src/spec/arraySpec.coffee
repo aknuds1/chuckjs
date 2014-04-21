@@ -55,6 +55,17 @@ int arr[2];
       )
     )
 
+    it("can be queried for its size", (done) ->
+      promise = executeCode("""\
+int arr[2];
+<<<arr.size()>>>;
+""")
+
+      verify(promise, done, ->
+        expect(console.log).toHaveBeenCalledWith("2 :(int)")
+      )
+    )
+
     describe("of UGens", ->
       it("has elements which can be connected to destinations", (done) ->
         promise = executeCode("""\
