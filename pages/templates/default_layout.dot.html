@@ -14,9 +14,11 @@
         var btn = $('#button'),
             pre = $('#code'),
             logger = log4javascript.getLogger(),
-            args = ("{{= it.document.args}}" || "").split(":");
+            args = "{{= it.document.args || ""}}";
+
+        args = args ? args.split(":") : [];
         logger.addAppender(new log4javascript.BrowserConsoleAppender());
-        chuckModule.setLogger(logger);
+        /*chuckModule.setLogger(logger);*/
         logger.setLevel(log4javascript.Level.DEBUG);
         pre.text(code);
         btn.click(function () {

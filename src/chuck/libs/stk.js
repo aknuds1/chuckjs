@@ -8,8 +8,10 @@ define("chuck/libs/stk", ["chuck/types", "chuck/audioContextService"], function 
     float = typesModule.types.float,
     int = typesModule.types.int,
     UGen = typesModule.types.UGen,
+    Osc = typesModule.types.Osc,
     module = {},
-    types = module.types = {};
+    types = module.types = {},
+    TwoPi = Math.PI*2;
 
   function isPrime(number) {
     var i;
@@ -187,6 +189,79 @@ define("chuck/libs/stk", ["chuck/types", "chuck/audioContextService"], function 
       return (d.lastOutput[0] + d.lastOutput[1]) * 0.5;
     }
   });
+
+  function blitSetFrequency(self, frequency) {
+    var sampleRate = audioContextService.getSampleRate(),
+      d = self.data
+
+    d.p = sampleRate / frequency
+    d.rate = Math.PI / d.p
+    d.phase = 0
+    blitUpdateHarmonics(self)
+  }
+  function blitUpdateHarmonics(self) {
+    var d = self.data,
+      maxHarmonics
+
+    if (d.nHarmonics <= 0) {
+      maxHarmonics = Math.floor(0.5 * d.p)
+      d.m = 2 * maxHarmonics + 1
+    }
+    else
+      d.m = 2 * d.nHarmonics + 1
+  }
+  types.Blit = new ChuckType("Blit", Osc, {
+    preConstructor: function() {
+      var self = this,
+        d = self.data
+      d.nHarmonics = 0
+      self.setFrequency = function (frequency) {
+        blitSetFrequency(self, frequency)
+        return frequency
+      }
+      blitSetFrequency(self, 220)
+    },
+    namespace: {
+      harmonics: new ChuckMethod("harmonics", [new FunctionOverload([
+        new FuncArg("nHarmonics", int)],
+        function (nHarmonics) {
+          this.data.nHarmonics = nHarmonics
+          return this.data.nHarmonics
+        })], "Blit", int)
+    },
+    ugenTick: function () {
+      var d = this.data,
+        out,
+        denominator
+      // The code below implements the SincM algorithm of Stilson and
+      // Smith with an additional scale factor of P / M applied to
+      // normalize the output.
+
+      // A fully optimized version of this code would replace the two sin
+      // calls with a pair of fast sin oscillators, for which stable fast
+      // two-multiply algorithms are well known. In the spirit of STK,
+      // which favors clarity over performance, the optimization has not
+      // been made here.
+
+      // Avoid a divide by zero at the sinc peak, which has a limiting
+      // value of 1.0.
+      denominator = Math.sin(d.phase)
+      if (denominator <= Number.EPSILON) {
+        out = 1.0
+      }
+      else {
+        out = Math.sin(d.m * d.phase)
+        out /= d.m * denominator
+      }
+
+      d.phase += d.rate
+      if (d.phase >= Math.PI) {
+        d.phase -= Math.PI
+      }
+
+      return out
+    }
+  })
 
   return module;
 });
