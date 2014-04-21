@@ -8,7 +8,9 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], function(types, logging) 
   }
 
   function uGenChannelTick(self, now) {
-    var i
+    var i,
+      ugen,
+      source
 
     self.current = 0
     if (self.sources.length === 0) {
@@ -44,7 +46,8 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], function(types, logging) 
   }
 
   module.UGen = function UGen(type) {
-    var self = this
+    var self = this,
+      i
     self.type = type
     self.size = self.type.size
     self.pmsg = self.type.ugenPmsg
@@ -60,10 +63,10 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], function(types, logging) 
     self._gain = 1
   }
   module.UGen.prototype.stop = function() {
-    var self = this
-    self._channels.forEach(function (channel) {
-      uGenChannelStop(channel)
-    })
+    var self = this, i
+    for (i = 0; i < self._channels.length; ++i) {
+      uGenChannelStop(self._channels[i])
+    }
 
     if (self._destList.length === 0) {
       return
@@ -73,7 +76,8 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], function(types, logging) 
   }
   module.UGen.prototype.tick = function(now) {
     var self = this,
-      sum = 0
+      sum = 0,
+      i
     if (self._now >= now) {
       return self.current
     }
@@ -81,9 +85,9 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], function(types, logging) 
     self._now = now
 
     // Tick inputs
-    self._channels.forEach(function (channel) {
-      sum += uGenChannelTick(channel, now)
-    })
+    for (i = 0; i < self._channels.length; ++i){
+      sum += uGenChannelTick(self._channels[i], now)
+    }
     sum /= self._channels.length
 
     // Synthesize
@@ -97,17 +101,19 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], function(types, logging) 
   }
 
   module.uGenAdd = function uGenAdd(self, src) {
-    self._channels.forEach(function (channel) {
-      uGenChannelAdd(channel, src)
-    })
+    var i
+    for (i = 0; i < self._channels.length; ++i) {
+      uGenChannelAdd(self._channels[i], src)
+    }
 
     _uGenAddDest(src, self)
   }
 
   module.uGenRemove = function uGenRemove(self, src) {
-    self._channels.forEach(function (channel) {
-      uGenChannelRemove(channel, src)
-    })
+    var i
+    for (i = 0; i < self._channels.length; ++i) {
+      uGenChannelRemove(self._channels[i], src)
+    }
 
     _ugenRemoveDest(src, self)
   }
@@ -134,7 +140,6 @@ define("chuck/ugen", ["chuck/types", "chuck/logging"], function(types, logging) 
     for (i = 0; i < frame.length; ++i) {
       frame[i] = self._channels[i].current
     }
-    return
   }
 
   return module
