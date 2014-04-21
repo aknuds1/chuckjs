@@ -50,5 +50,18 @@ sin =< dac;
         , 1)
       )
     )
+
+    describe("AtChuck", ->
+      it("can assign an array literal to an array declaration", (done) ->
+        promise = executeCode("""\
+[0] @=> int hi[];
+<<<hi>>>;
+""")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("[0] :(int[])")
+        )
+      )
+    )
   )
 )

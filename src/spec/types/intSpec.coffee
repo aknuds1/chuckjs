@@ -16,7 +16,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
 """)
 
       verify(promise, done, ->
-        expect(console.log).toHaveBeenCalledWith("0 : (int)")
+        expect(console.log).toHaveBeenCalledWith("0 :(int)")
       )
     )
   )

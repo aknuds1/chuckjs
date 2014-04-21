@@ -20,7 +20,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
 
         verify(promise, done, ->
           expect(console.log.calls.count()).toBe(2)
-          expect(console.log.calls.allArgs()).toEqual([["1 : (int)"], ["1 : (int)"]])
+          expect(console.log.calls.allArgs()).toEqual([["1 :(int)"], ["1 :(int)"]])
         )
       )
     )
@@ -35,7 +35,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
 
         verify(promise, done, ->
           expect(console.log.calls.count()).toBe(2)
-          expect(console.log.calls.allArgs()).toEqual([["0 : (int)"], ["1 : (int)"]])
+          expect(console.log.calls.allArgs()).toEqual([["0 :(int)"], ["1 :(int)"]])
         )
       )
     )

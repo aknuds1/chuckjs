@@ -15,7 +15,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
 <<<array[0]>>>;
 """)
       verify(promise, done, ->
-        expect(console.log).toHaveBeenCalledWith("0 : (int)")
+        expect(console.log).toHaveBeenCalledWith("0 :(int)")
       )
     )
 
@@ -26,7 +26,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
 """)
 
       verify(promise, done, ->
-        expect(console.log).toHaveBeenCalledWith("0 : (int)")
+        expect(console.log).toHaveBeenCalledWith("0 :(int)")
       )
     )
 
@@ -40,12 +40,23 @@ int array[2];
 """)
 
       verify(promise, done, ->
-        expect(console.log.calls.allArgs()).toEqual([["1 : (int)"], ["2 : (int)"]])
+        expect(console.log.calls.allArgs()).toEqual([["1 :(int)"], ["2 :(int)"]])
+      )
+    )
+
+    it("can be queried for its capacity", (done) ->
+      promise = executeCode("""\
+int arr[2];
+<<<arr.cap()>>>;
+""")
+
+      verify(promise, done, ->
+        expect(console.log).toHaveBeenCalledWith("2 :(int)")
       )
     )
 
     describe("of UGens", ->
-      it("has elements which can be connected to destinations", (done) ->
+      iit("has elements which can be connected to destinations", (done) ->
         promise = executeCode("""\
 SinOsc oscs[2];
 oscs[0] => dac;

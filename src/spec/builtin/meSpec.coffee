@@ -14,7 +14,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
       promise = executeCode("<<<me.args()>>>;")
 
       verify(promise, done, ->
-        expect(console.log).toHaveBeenCalledWith("0 : (int)")
+        expect(console.log).toHaveBeenCalledWith("0 :(int)")
       )
     )
 
@@ -22,7 +22,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
       promise = executeCode("<<<me.args()>>>;", ["foo", "bar"])
 
       verify(promise, done, ->
-        expect(console.log).toHaveBeenCalledWith("2 : (int)")
+        expect(console.log).toHaveBeenCalledWith("2 :(int)")
       )
     )
 

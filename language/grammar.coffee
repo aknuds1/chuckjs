@@ -154,7 +154,7 @@ grammar = {
   ],
   PostfixExpression: [
     o('PrimaryExpression'),
-    o('PostfixExpression ArrayExpression', -> new PrimaryArrayExpression($1, $2)),
+    o('PostfixExpression ArrayExpression', -> new ArrayExpression($1, $2)),
     o('PostfixExpression LPAREN Expression RPAREN', -> new FuncCallExpression($1, $3)),
     o('PostfixExpression LPAREN RPAREN', -> new FuncCallExpression($1)),
     o('PostfixExpression DOT ID', -> new DotMemberExpression($1, $3)),
@@ -166,7 +166,8 @@ grammar = {
     o('FLOAT', -> new PrimaryFloatExpression($1)),
     o('STRING_LIT', -> new PrimaryStringExpression($1)),
     o('L_HACK Expression R_HACK', -> new PrimaryHackExpression($2)),
-    o('LPAREN Expression RPAREN', -> $2)
+    o('LPAREN Expression RPAREN', -> $2),
+    o("ArrayExpression", -> new PrimaryArrayExpression($1))
   ],
   LoopStatement: [
     o('WHILE LPAREN Expression RPAREN Statement', -> new WhileStatement($3, $5)),
@@ -192,6 +193,7 @@ grammar = {
   ],
   ChuckOperator: [
     o('CHUCK', -> new ChuckOperator()),
+    o('AT_CHUCK', -> new AtChuckOperator()),
     o('MINUS_CHUCK', -> new MinusChuckOperator())
     o('UNCHUCK', -> new UnchuckOperator())
   ]

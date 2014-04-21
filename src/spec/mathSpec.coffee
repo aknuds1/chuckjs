@@ -18,7 +18,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
 """)
 
         verify(promise, done, ->
-          expect(console.log).toHaveBeenCalledWith("2 : (int)")
+          expect(console.log).toHaveBeenCalledWith("2 :(int)")
           return
         )
       )
@@ -55,7 +55,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
 """)
 
         verify(promise, done, ->
-          expect(console.log).toHaveBeenCalledWith("0 : (int)")
+          expect(console.log).toHaveBeenCalledWith("0 :(int)")
         )
       )
     )
@@ -123,7 +123,7 @@ now + 2::second => time later;
 
         expRand = Math.floor(returnedRand * (max-min+1)) + min
         verify(promise, done, ->
-          expect(console.log).toHaveBeenCalledWith("#{expRand} : (int)")
+          expect(console.log).toHaveBeenCalledWith("#{expRand} :(int)")
         )
       )
     )

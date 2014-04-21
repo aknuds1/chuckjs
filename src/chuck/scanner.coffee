@@ -135,7 +135,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
         array.scanPass5(@)
         logging.debug("Emitting AllocateArray")
         @code.append(instructions.allocateArray(type))
-        if types.isObj(type)
+        if types.isObj(type.arrayType)
           startIndex = @_nextIndex()
           logging.debug("Emitting PreCtorArrayTop")
           top = @code.append(instructions.preCtorArrayTop(type))
@@ -251,7 +251,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instructions.timeAdvance())
       return
 
-    emitOpAtChuck: (isArray) =>
+    emitOpAtChuck: (isArray=false) =>
       logging.debug("Emitting AssignObject (isArray: #{isArray})")
       @code.append(instructions.assignObject(isArray))
       return
@@ -273,6 +273,8 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     emitArrayAccess: (type, emitAddr) =>
       @code.append(instructions.arrayAccess(type, emitAddr))
+
+    emitArrayInit: (type, count) => @code.append(instructions.arrayInit(type, count))
 
     evaluateBreaks: =>
       while @_breakStack.length

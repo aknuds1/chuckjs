@@ -275,5 +275,18 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
     )], "Shred", types.String)
   types.shred = new ChuckType("Shred", types.Object, namespace: shredNamespace)
 
+  arrayNamespace =
+    cap: new ChuckMethod("cap", [new FunctionOverload([], ->
+      @.length
+    )], "@array", types.int)
+  types["@array"] = new ChuckType("@array", types.Object, size: 1, namespace: arrayNamespace)
+
+  module.createArrayType = (elemType, depth) ->
+    type = new ChuckType(elemType.name, types["@array"])
+    type.depth = depth
+    type.arrayType = elemType
+    type.isArray = true
+    type
+
   return module
 )

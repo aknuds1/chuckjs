@@ -221,6 +221,7 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
     ',': 'COMMA'
     '=>': 'CHUCK'
     '=<': 'UNCHUCK'
+    '@=>': 'AT_CHUCK'    
     '\\+=>': 'PLUS_CHUCK'
     '-=>': 'MINUS_CHUCK'
     '::': 'COLONCOLON'

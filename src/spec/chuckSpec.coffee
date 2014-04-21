@@ -98,7 +98,7 @@ while (b > 0)
 """)
 
           verify(promise, done, ->
-            expect(console.log).toHaveBeenCalledWith("2 : (int)")
+            expect(console.log).toHaveBeenCalledWith("2 :(int)")
           )
           return
         )

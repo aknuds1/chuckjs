@@ -109,7 +109,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
         array[i] = 0
       vm.pushToReg(array)
 
-      if typesModule.isObj(type)
+      if typesModule.isObj(type.arrayType)
         # Push index
         logging.debug("#{@instructionName}: Pushing index to stack")
         vm.pushToReg(0)
@@ -331,10 +331,15 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
   module.hack = (type) -> new Instruction("Hack", {}, (vm) ->
     obj = vm.peekReg()
     logging.debug("Printing object of type #{type.name}:", obj)
-    if type == types.String
+    if _.isArray(obj)
+      arrStr = _.str.join(",", obj)
+      console.log("[#{arrStr}] :(#{type.name}[])")
+    else if type == types.String
       console.log("\"#{obj}\" : (#{type.name})")
     else if type == types.float
       console.log("#{formatFloat(obj)} :(#{type.name})")
+    else if type == types.int
+      console.log("#{obj} :(#{type.name})")
     else
       console.log("#{obj} : (#{type.name})")
     return
@@ -413,6 +418,15 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     logging.debug("#{@instructionName}: Cleaning up, popping index from stack")
     # Pop index
     vm.popFromReg()
+  )
+
+  module.arrayInit = (type, count) -> new Instruction("ArrayInit", {}, (vm) ->
+    logging.debug("#{@instructionName}: Popping #{count} elements from stack")
+    values = []
+    for i in [0...count]
+      values.unshift(vm.popFromReg())
+    logging.debug("#{@instructionName}: Pushing instantiated array to stack", values)
+    vm.pushToReg(values)
   )
 
   return module

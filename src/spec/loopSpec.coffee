@@ -20,7 +20,7 @@ for (0 => int i; i < 2; ++i) {
 
         verify(promise, done, ->
           expect(console.log.calls.count()).toBe(2)
-          expect(console.log.calls.allArgs()).toEqual([["0 : (int)"], ["1 : (int)"]])
+          expect(console.log.calls.allArgs()).toEqual([["0 :(int)"], ["1 :(int)"]])
         )
       )
 
@@ -42,7 +42,7 @@ for (0 => int i; i < 2; ++i) {
 """)
 
         verify(promise, done, ->
-          expect(console.log.calls.allArgs()).toEqual([["0 : (int)"], ["0 : (int)"]])
+          expect(console.log.calls.allArgs()).toEqual([["0 :(int)"], ["0 :(int)"]])
         )
       )
 
@@ -57,7 +57,7 @@ for (0 => int i; i < 1; ++i) {
 """)
 
         verify(promise, done, ->
-          expect(console.log.calls.allArgs()).toEqual([["0 : (int)"], ["0 : (int)"]])
+          expect(console.log.calls.allArgs()).toEqual([["0 :(int)"], ["0 :(int)"]])
         )
       )
     )
@@ -74,7 +74,7 @@ while (i++ < 2) {
 """)
 
         verify(promise, done, ->
-          expect(console.log.calls.allArgs()).toEqual([["0 : (int)"], ["0 : (int)"]])
+          expect(console.log.calls.allArgs()).toEqual([["0 :(int)"], ["0 :(int)"]])
         )
       )
     )
