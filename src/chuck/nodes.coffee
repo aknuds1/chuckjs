@@ -114,8 +114,6 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       super(nodeType)
       @_meta = meta
 
-    scanPass4: =>
-
   module.ExpressionList = class ExpressionList extends ExpressionBase
     constructor: (expression) ->
       super("ExpressionList")
@@ -918,20 +916,19 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     getCount: => if @exp then @exp.getCount() else 0
 
   module.PrimaryArrayExpression = class PrimaryArrayExpression extends NodeBase
-    constructor: (indices) ->
+    constructor: (@exp) ->
       super("PrimaryArrayExpression")
-      @indices = indices
 
     scanPass4: (context) =>
       logging.debug("#{@nodeType} scanPass4")
-      type = @indices.scanPass4(context)
+      type = @exp.scanPass4(context)
       @type = new typesModule.ChuckType(type.name, typesModule["@array"])
 
     scanPass5: (context) =>
       logging.debug("#{@nodeType} scanPass5")
-      @indices.scanPass5(context)
+      @exp.scanPass5(context)
 
-      context.emitArrayInit(@indices.type, @indices.getCount())
+      context.emitArrayInit(@exp.type, @exp.getCount())
 
   return module
 )
