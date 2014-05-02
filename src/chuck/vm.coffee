@@ -53,15 +53,17 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
       @_shouldStop = true
       return
 
-    _compute: (byteCode, deferred) =>
+    _compute: (instructions, deferred) =>
       try
         if @_pc == 0
           logging.debug("VM executing")
         else
           logging.debug("Resuming VM execution")
 
-        while @_pc < byteCode.length && @_isRunning()
-          instr = byteCode[@_pc]
+        @instructions = instructions
+
+        while @_pc < instructions.length && @_isRunning()
+          instr = @instructions[@_pc]
           logging.debug("Executing instruction no. #{@_pc}: #{instr.instructionName}")
           instr.execute(@)
           @_pc = @_nextPc
@@ -130,6 +132,9 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
       if !value?
         throw new Error('pushToMem: value is undefined')
       @memStack.push(value)
+
+    popFromMem: =>
+      @memStack.pop()
 
     pushDac: =>
       @regStack.push(@_dac)

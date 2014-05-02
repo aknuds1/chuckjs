@@ -11,9 +11,10 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     stackDepth = func.stackDepth
     args = []
     i = 0
+    logging.debug("Popping #{stackDepth} arguments from stack")
     while i < stackDepth
+      logging.debug("Popping argument #{i} from stack")
       args.unshift(vm.popFromReg())
-      logging.debug("Popping argument #{i} from stack: #{args[0]}")
       ++i
     thisObj = undefined
     if func.isMember
@@ -175,7 +176,24 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     callMethod(vm)
   )
 
-  module.funcToCode = -> new Instruction("")
+  module.funcCall = => new Instruction("FuncCall", {}, (vm) ->
+    localDepth = vm.popFromReg()
+    func = vm.popFromReg()
+    logging.debug("#{@instructionName}: Calling function #{func.name}")
+
+    vm.pushToMem(vm.instructions)
+    vm.pushToMem(vm._pc + 1)
+    vm._nextPc = 0
+    vm.instructions = func.code.instructions
+  )
+
+  module.funcReturn = -> new Instruction("FuncReturn", {}, (vm) ->
+    logging.debug("#{@instructionName}: Returning from function")
+    pc = vm.popFromMem()
+    instructions = vm.popFromMem()
+    vm._nextPc = pc
+    vm.instructions = instructions
+  )
 
   module.regPushMemAddr = (offset) -> return new Instruction("RegPushMemAddr", {}, (vm) ->
     vm.pushMemAddrToReg(offset)
@@ -376,6 +394,11 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
       logging.debug("Pushing array (#{array}) and index (#{idx}) to regular stack")
       vm.pushToReg([array, idx])
     return
+  )
+
+  module.memSetImm = (offset, value) -> new Instruction("MemSetImm", {}, (vm) ->
+    logging.debug("#{@instructionName}: Setting memory at offset #{offset} to:", value)
+    vm.insertIntoMemory(offset, value)
   )
 
   class UnaryOpInstruction extends Instruction

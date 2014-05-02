@@ -2,7 +2,6 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 "chuck/libs/math", "chuck/libs/std", "chuck/libs/stk"],
 (nodes, types, instructions, namespaceModule, logging, mathLib, stdLib, stkLib) ->
   module = {}
-
   class ChuckLocal
     constructor: (size, offset, name) ->
       @size = size
@@ -76,6 +75,26 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @_currentNamespace = @_globalNamespace
       @_breakStack = []
       @_contStack = []
+      @_codeStack = []
+
+    ###*
+    Replace code object while storing the old one on the stack.
+    ###
+    pushCode: (name) =>
+      logging.debug("Pushing code object")
+      @_codeStack.push(@code)
+      @code = new ChuckCode()
+      @code.name = name
+      @code
+
+    ###*
+    Restore code object at the top of the stack.
+    ###
+    popCode: =>
+      logging.debug("Popping code object")
+      toReturn = @code
+      @code = @_codeStack.pop()
+      toReturn
 
     findType: (typeName) =>
       type = @_currentNamespace.findType(typeName)
@@ -89,11 +108,14 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       # Look globally
       val = @_currentNamespace.findValue(name, true)
 
-    addVariable: (name, typeName) =>
-      return @_currentNamespace.addVariable(name, typeName)
+    addVariable: (name, type) =>
+      @_currentNamespace.addVariable(name, type)
 
-    addValue: (value) =>
-      @_currentNamespace.addValue(value)
+    addConstant: (name, type, value) =>
+      @_currentNamespace.addConstant(name, type, value)
+
+    addValue: (value, name) =>
+      @_currentNamespace.addValue(value, name)
 
     pushToBreakStack: (statement) =>
       @_breakStack.push(statement)
@@ -106,11 +128,13 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instructions.instantiateObject(type))
       @_emitPreConstructor(type)
 
-    allocateLocal: (type, value) =>
+    allocateLocal: (type, value, emit=true) =>
       logging.debug("Allocating local")
-      logging.debug("Emitting AllocWord instruction")
       local = @code.allocateLocal(type, value)
-      @code.append(instructions.allocWord(local.offset))
+      if emit
+        logging.debug("Emitting AllocWord instruction")
+        @code.append(instructions.allocWord(local.offset))
+      local
 
     getNextIndex: => @code.getNextIndex()
 
@@ -189,6 +213,9 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     emitFuncCallStatic: =>
       @code.append(instructions.funcCallStatic())
       return
+
+    emitFuncCall: =>
+      @code.append(instructions.funcCall())
 
     emitRegPushMemAddr: (offset) =>
       @code.append(instructions.regPushMemAddr(offset))
@@ -277,6 +304,12 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     emitArrayInit: (type, count) => @code.append(instructions.arrayInit(type, count))
 
+    emitMemSetImm: (offset, value) =>
+      @code.append(instructions.memSetImm(offset, value))
+
+    emitFuncReturn: =>
+      @code.append(instructions.funcReturn())
+
     evaluateBreaks: =>
       while @_breakStack.length
         instr = @_breakStack.pop()
@@ -290,6 +323,22 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
       @code.append(instructions.eoc())
       return
+
+    addFunction: (funcDef) =>
+      name = "#{funcDef.name}@0@#{@_currentNamespace.name || ''}"
+      logging.debug("Adding function #{name}")
+      func = new types.FunctionOverload([], null, false, name)
+
+      # TODO: Try to find existing function group
+      # Create corresponding function group
+      logging.debug("Creating function group #{funcDef.name}")
+      type = new types.ChuckType("[function]", types.types.Function)
+      funcGroup = new types.ChuckFunction(funcDef.name, [func], funcDef.retType)
+      type.func = funcGroup
+      funcGroup.value = @addConstant(funcGroup.name, type, funcGroup)
+
+      func.value = @addConstant(name, type, func)
+      func
 
     _emitPreConstructor: (type) =>
       if type.parent?

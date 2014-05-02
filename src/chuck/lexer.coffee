@@ -18,11 +18,11 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
       while @chunk = code[i..]
         #logging.debug("Consuming chunk #{@chunk} at position #{i}")
         consumed =
+          @identifierToken() or
           @floatToken()      or
           @intToken()        or
           @commentToken()    or
           @_matchToken()     or
-          @identifierToken() or
           @whitespaceToken() or
           @stringToken()     or
           @literalToken()
@@ -46,19 +46,25 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
     identifierToken: ->
       return 0 unless match = IDENTIFIER.exec(@chunk)
       id = match[0]
-      logging.debug("Token is an identifier: '#{id}'")
-
-      # Preserve length of id for location data
       idLength = id.length
-      poppedToken = undefined
 
       tag = 'ID'
+      if id of ALIAS_MAP
+        id = ALIAS_MAP[id]
+      if id in KEYWORDS
+        tag = id.toUpperCase()
+        logging.debug("Token is a keyword: '#{id}'")
+      else
+        logging.debug("Token is an identifier: '#{id}'")
+
+      poppedToken = undefined
 
       tagToken = @token tag, id, 0, idLength
       if poppedToken
         [tagToken[2].first_line, tagToken[2].first_column] = [poppedToken[2].first_line, poppedToken[2].first_column]
 
-      return id.length
+      logging.debug("Consumed ID of length #{idLength}")
+      idLength
 
     # Matches integer numbers
     intToken: ->
@@ -109,7 +115,7 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
     whitespaceToken: ->
       return 0 unless (match = WHITESPACE.exec @chunk) or (nline = @chunk.charAt(0) is '\n')
       if match?
-        logging.debug("Consuming whitespace")
+        logging.debug("Consuming whitespace of length #{match[0].length}")
       prev = last @tokens
       prev[if match then 'spaced' else 'newLine'] = true if prev
       return if match then match[0].length else 0
@@ -227,13 +233,10 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
     '::': 'COLONCOLON'
     '<<<': 'L_HACK'
     '>>>': 'R_HACK'
-    'while': 'WHILE'
-    'for': 'FOR'
     '\\(': 'LPAREN'
     '\\)': 'RPAREN'
     '\\{': 'LBRACE'
     '\\}': 'RBRACE'
-    'break': 'BREAK'
     '\\.': 'DOT'
     '\\+': 'PLUS'
     '-': 'MINUS'
@@ -243,6 +246,17 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
     '>': 'GT'
     '\\[': 'LBRACK'
     '\\]': 'RBRACK'
+
+  KEYWORDS = [
+    'function'
+    'while'
+    'for'
+    'break'
+  ]
+
+  ALIAS_MAP = {
+    'fun': 'function'
+  }
 
   return {
     tokenize: (sourceCode) ->

@@ -3,6 +3,7 @@ node_modules/
 .idea/*.iws
 .idea/tasks.xml
 .idea/compiler.xml
+.idea/dictionaries/
 /lib/
 /pages/js/chuck*
 /examples/

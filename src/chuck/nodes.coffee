@@ -233,7 +233,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         else
           @value = context.findValue(@name)
           if !@value?
-            context.findValue(@name, true)
+            @value = context.findValue(@name, true)
           @type = @value.type
           logging.debug("Primary variable of type #{@type.name}")
           @type
@@ -276,7 +276,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
             logging.debug("#{@nodeType}: Emitting RegPushMem (#{@value.offset}) since this is a constant")
             context.emitRegPushMem(@value.offset)
 
-      return undefined
+      return
 
   module.PrimaryIntExpression = class extends ExpressionBase
     constructor: (value) ->
@@ -303,6 +303,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass5: (context) =>
       super()
+      logging.debug("#{@nodeType}: Emitting RegPushImm for #{@value}")
       context.emitRegPushImm(@value)
 
   module.PrimaryHackExpression = class extends ExpressionBase
@@ -384,18 +385,21 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @args = args
 
     scanPass1: =>
+      logging.debug("#{@nodeType}: scanPass1")
       super()
       @func.scanPass1()
       if @args?
         @args.scanPass1()
 
     scanPass2: =>
+      logging.debug("#{@nodeType}: scanPass2")
       super()
       @func.scanPass2()
       if @args?
         @args.scanPass2()
 
     scanPass3: =>
+      logging.debug("#{@nodeType}: scanPass3")
       super()
       @func.scanPass3()
       if @args?
@@ -407,8 +411,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @func.scanPass4(context)
       if @args?
         @args.scanPass4(context)
-      # Find method overload
       funcGroup = @func.value.value
+      # Find method overload
+      logging.debug("#{@nodeType} scanPass4: Finding function overload")
       @_ckFunc = funcGroup.findOverload(if @args? then @args._expressions else null)
       @type = funcGroup.retType
       logging.debug("#{@nodeType} scanPass4: Got function overload #{@_ckFunc.name} with return type
@@ -436,12 +441,16 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
       # TODO: Calculate current frame offset
       context.emitRegPushImm(0)
-      if @_ckFunc.isMember
-        logging.debug("#{@nodeType}: Emitting instance method call")
-        context.emitFuncCallMember()
+      if @_ckFunc.isBuiltIn
+        if @_ckFunc.isMember
+          logging.debug("#{@nodeType}: Emitting instance method call")
+          context.emitFuncCallMember()
+        else
+          logging.debug("#{@nodeType}: Emitting static method call")
+          context.emitFuncCallStatic()
       else
-        logging.debug("#{@nodeType}: Emitting static method call")
-        context.emitFuncCallStatic()
+        logging.debug("#{@nodeType}: Emitting function call")
+        context.emitFuncCall()
 
   module.DurExpression = class extends ExpressionBase
     constructor: (base, unit) ->
@@ -884,6 +893,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       if !@isStatic
         logging.debug("#{@nodeType} scanPass5: Emitting base expression")
         @base.scanPass5(context)
+
       return
 
   module.PostfixExpression = class extends NodeBase
@@ -929,6 +939,45 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @exp.scanPass5(context)
 
       context.emitArrayInit(@exp.type, @exp.getCount())
+
+  module.FunctionDefinition = class FunctionDefinition extends NodeBase
+    constructor: (@funcDecl, @staticDecl, @typeDecl, @name, @args, @code) ->
+      super("FunctionDefinition")
+
+    scanPass2: (context) ->
+      logging.debug("#{@nodeType} scanPass2")
+      @retType = context.findType(@typeDecl.type)
+      logging.debug("#{@nodeType} scanPass3: Return type determined as #{@retType.name}")
+
+    scanPass3: (context) =>
+      logging.debug("#{@nodeType} scanPass3")
+      func = context.addFunction(@)
+      @_ckFunc = func
+
+      context.enterScope()
+      @code.scanPass3(context)
+      context.exitScope()
+      return
+
+    scanPass4: (context) =>
+      logging.debug("#{@nodeType} scanPass4")
+      context.enterScope()
+      @code.scanPass4(context)
+      context.exitScope()
+      return
+
+    scanPass5: (context) =>
+      logging.debug("#{@nodeType} emitting")
+      local = context.allocateLocal(@_ckFunc.value.type, @_ckFunc.value, false)
+      context.emitMemSetImm(local.offset, @_ckFunc)
+      context.pushCode("#{@_ckFunc.name}( ... )")
+      context.emitScopeEntrance()
+      @code.scanPass5(context)
+      context.emitScopeExit()
+      context.emitFuncReturn()
+      @_ckFunc.code = context.popCode()
+
+      return
 
   return module
 )

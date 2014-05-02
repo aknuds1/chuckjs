@@ -1,7 +1,7 @@
 define("chuck/namespace", ["chuck/logging"], (logging) ->
   module = {}
 
-  module.Namespace = class
+  module.Namespace = class Namespace
     constructor: (name, parent) ->
       @name = name
       @_scope = new Scope()
@@ -29,8 +29,11 @@ define("chuck/namespace", ["chuck/logging"], (logging) ->
     addVariable: (name, type, value) =>
       @_scope.addVariable(name, type, @, value)
 
-    addValue: (value) =>
-      @_scope.addValue(value)
+    addConstant: (name, type, value) =>
+      @_scope.addConstant(name, type, @, value)
+
+    addValue: (value, name) =>
+      @_scope.addValue(value, name)
 
     commit: =>
       for scope in [@_scope, @_types]
@@ -45,12 +48,7 @@ define("chuck/namespace", ["chuck/logging"], (logging) ->
       @_scope.pop()
 
   class ChuckValue
-    constructor: (type, varName, namespace, isContextGlobal, value) ->
-      @type = type
-      @name = varName
-      @owner = namespace
-      @isContextGlobal = isContextGlobal
-      @value = value
+    constructor: (@type, @name, @owner, @isContextGlobal, @value, @isConstant=false) ->
 
   class Scope
     constructor: ->
@@ -80,6 +78,12 @@ define("chuck/namespace", ["chuck/logging"], (logging) ->
       @addValue(chuckValue)
       return chuckValue
 
+    addConstant: (name, type, namespace, value) =>
+      chuckValue = new ChuckValue(type, name, namespace, undefined, value, true)
+      logging.debug("Scope: Adding constant #{name} to scope #{@_scopes.length-1}")
+      @addValue(chuckValue)
+      return chuckValue
+
     findValue: (name, climb) =>
       if !climb
         lastScope = @_scopes[@_scopes.length-1]
@@ -106,8 +110,8 @@ define("chuck/namespace", ["chuck/logging"], (logging) ->
 
       @_commitMap = []
 
-    addValue: (value) =>
-      name = value.name
+    addValue: (value, name=null) =>
+      name = if name? then name else value.name
       lastScope = @_scopes[@_scopes.length-1]
       if @_scopes[0] != lastScope
         lastScope[name] = value

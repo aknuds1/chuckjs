@@ -42,10 +42,15 @@ o = (patternString, action, options) ->
 
 grammar = {
   Program: [
-    o('ProgramSection', -> new Program([$1]))
+    o('ProgramSectionList', -> new Program($1))
+  ],
+  ProgramSectionList: [
+    o('ProgramSection', -> [$1])
+    o('ProgramSection ProgramSectionList', -> [$1].concat($2))
   ],
   ProgramSection: [
-    o('StatementList')
+    o('StatementList'),
+    o('FunctionDefinition')
   ],
   StatementList: [
     o('Statement', -> [$1]),
@@ -53,9 +58,9 @@ grammar = {
   ],
   Statement: [
     o('ExpressionStatement'),
-    o('CodeSegment'),
     o('LoopStatement'),
     o('JumpStatement')
+    o('CodeSegment'),
   ],
   ExpressionStatement: [
     o('SEMICOLON', -> return undefined),
@@ -98,6 +103,9 @@ grammar = {
   TypeDeclB: [
     o('LT IdDot GT', -> new TypeDeclaration($2, 0)),
     o('LT IdDot GT AT_SYM', -> new TypeDeclaration($2, 1))
+  ],
+  TypeDecl2: [
+    o('TypeDecl')
   ],
   ConditionalExpression: [
     o('LogicalOrExpression')
@@ -196,7 +204,18 @@ grammar = {
     o('AT_CHUCK', -> new AtChuckOperator()),
     o('MINUS_CHUCK', -> new MinusChuckOperator())
     o('UNCHUCK', -> new UnchuckOperator())
-  ]
+  ],
+  FunctionDefinition: [
+    o('FunctionDeclaration StaticDecl TypeDecl2 ID LPAREN RPAREN CodeSegment', ->
+      new FunctionDefinition($1, $2, $3, $4, null, $7)
+    )
+  ],
+  FunctionDeclaration: [
+    o('FUNCTION', ->)
+  ],
+  StaticDecl: [
+    o('', ->)
+  ],
 }
 
 operators = []

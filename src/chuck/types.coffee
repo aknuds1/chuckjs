@@ -67,7 +67,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
       @type = type
 
   module.FunctionOverload = class FunctionOverload
-    constructor: (args, func) ->
+    constructor: (args, func, @isBuiltIn=true, @name=null) ->
       args = if args? then args else []
       @arguments = args
       @func = func
@@ -120,6 +120,10 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
     constructor: (name, overloads, typeName, retType) ->
       super(name, overloads, false, typeName, retType)
       @isStatic = true
+
+  module.ChuckFunction = class ChuckFunction extends ChuckFunctionBase
+    constructor: (name, overloads, retType) ->
+      super(name, overloads, false, null, retType)
 
   types.Function = new ChuckType("Function", null, null)
   constructObject = ->
