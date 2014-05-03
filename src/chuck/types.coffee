@@ -84,18 +84,22 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
 
       @name = name
       @isMember = isMember
-      @_overloads = overloads
+      @_overloads = []
       @retType = retType
-      i = 0
+      @_typeName = typeName
+
       for overload in overloads
-        overload.name = "#{name}@#{i++}"
-        overload.isMember = @isMember
-        overload.retType = retType
-        if @isMember
-          # Needs 'this' argument
-          ++overload.stackDepth
-        if typeName?
-          overload.name = "#{overload.name}@#{typeName}"
+        @addOverload(overload)
+
+    addOverload: (overload) ->
+      if @_typeName
+        overload.name = "#{overload.name}@#{@_typename}"
+      overload.isMember = @isMember
+      overload.retType = @retType
+      if @isMember
+        # Needs 'this' argument
+        ++overload.stackDepth
+      @_overloads.push(overload)
 
     findOverload: (args) ->
       args = if args? then args else []
@@ -112,6 +116,9 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
 
       #logging.debug("#{@nodeType} scanPass4: Couldn't find matching method overload")
       null
+
+    getNumberOfOverloads: ->
+      @_overloads.length
 
   module.ChuckMethod = class ChuckMethod extends ChuckFunctionBase
     constructor: (name, overloads, typeName, retType) ->

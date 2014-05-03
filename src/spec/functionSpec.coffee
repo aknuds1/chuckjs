@@ -61,5 +61,24 @@ func();
         expect(console.log).toHaveBeenCalledWith("1 :(int)")
       )
     )
+
+    it("can be overloaded", (done) ->
+      promise = executeCode("""fun void func()
+{
+  func(1);
+}
+
+fun void func(int x)
+{
+  <<<x>>>;
+}
+
+func();
+""")
+
+      verify(promise, done, ->
+        expect(console.log).toHaveBeenCalledWith("1 :(int)")
+      )
+    )
   )
 )

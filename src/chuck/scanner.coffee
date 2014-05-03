@@ -351,7 +351,19 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       return
 
     addFunction: (funcDef) =>
-      name = "#{funcDef.name}@0@#{@_currentNamespace.name || ''}"
+      value = @findValue(funcDef.name)
+      if value?
+        funcGroup = value.value
+        logging.debug("Found corresponding function group #{funcDef.name}")
+      else
+        # Create corresponding function group
+        logging.debug("Creating function group #{funcDef.name}")
+        type = new types.ChuckType("[function]", types.types.Function)
+        funcGroup = new types.ChuckFunction(funcDef.name, [], funcDef.retType)
+        type.func = funcGroup
+        funcGroup.value = @addConstant(funcGroup.name, type, funcGroup)
+
+      name = "#{funcDef.name}@#{funcGroup.getNumberOfOverloads()}@#{@_currentNamespace.name || ''}"
       logging.debug("Adding function #{name}")
       args = []
       for arg in funcDef.args
@@ -359,16 +371,9 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
         logging.debug("Adding function argument #{funcArg.name} of type #{funcArg.type.name}")
         args.push(funcArg)
       func = new types.FunctionOverload(args, null, false, name)
+      funcGroup.addOverload(func)
+      func.value = @addConstant(name, funcGroup.value.type, func)
 
-      # TODO: Try to find existing function group
-      # Create corresponding function group
-      logging.debug("Creating function group #{funcDef.name}")
-      type = new types.ChuckType("[function]", types.types.Function)
-      funcGroup = new types.ChuckFunction(funcDef.name, [func], funcDef.retType)
-      type.func = funcGroup
-      funcGroup.value = @addConstant(funcGroup.name, type, funcGroup)
-
-      func.value = @addConstant(name, type, func)
       func
 
     getCurrentOffset: => @code.frame.currentOffset
