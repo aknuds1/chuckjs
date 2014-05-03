@@ -206,9 +206,16 @@ grammar = {
     o('UNCHUCK', -> new UnchuckOperator())
   ],
   FunctionDefinition: [
+    o('FunctionDeclaration StaticDecl TypeDecl2 ID LPAREN ArgList RPAREN CodeSegment', ->
+      new FunctionDefinition($1, $2, $3, $4, $6, $8)
+    ),
     o('FunctionDeclaration StaticDecl TypeDecl2 ID LPAREN RPAREN CodeSegment', ->
-      new FunctionDefinition($1, $2, $3, $4, null, $7)
+      new FunctionDefinition($1, $2, $3, $4, [], $7)
     )
+  ],
+  ArgList: [
+    o("TypeDecl VarDecl", -> [new Arg($1, $2)]),
+    o("TypeDecl VarDecl COMMA ArgList", -> [new Arg($1, $2)].concat($4)),
   ],
   FunctionDeclaration: [
     o('FUNCTION', ->)

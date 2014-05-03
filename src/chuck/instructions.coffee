@@ -44,12 +44,13 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
       vm.pushToReg(ug)
     )
 
-  module.allocWord = (offset) ->
+  module.allocWord = (offset, isGlobal) ->
     return new Instruction("AllocWord", offset: offset, (vm) ->
       # TODO: Might want to make this depend on variable type
-      vm.insertIntoMemory(@offset, 0)
+      vm.insertIntoMemory(@offset, 0, isGlobal)
       # Push memory stack index of value
-      logging.debug("Pushing memory stack index #{@offset} to regular stack")
+      scopeStr = if isGlobal then "global" else "function"
+      logging.debug("Pushing memory stack index #{@offset} (scope: #{scopeStr}) to regular stack")
       vm.pushToReg(@offset)
     )
 
@@ -75,16 +76,18 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
       callMethod(vm)
     )
 
-  module.assignObject = (isArray) ->
+  module.assignObject = (isArray, isGlobal=true) ->
     new Instruction("AssignObject", {}, (vm) ->
       memStackIndex = vm.popFromReg()
       obj = vm.popFromReg()
+      scopeStr = if isGlobal then "global" else "function"
       if !isArray
-        logging.debug("#{@instructionName}: Assigning object (#{obj}) to memory stack index #{memStackIndex}")
-        vm.insertIntoMemory(memStackIndex, obj)
+        logging.debug("#{@instructionName}: Assigning object to memory stack index #{memStackIndex}
+         (scope: #{scopeStr}):", obj)
+        vm.insertIntoMemory(memStackIndex, obj, isGlobal)
       else
         [array, index] = memStackIndex
-        logging.debug("#{@instructionName}: Assigning object (#{obj}) to array, index #{index}")
+        logging.debug("#{@instructionName}: Assigning object to array, index #{index} (scope: #{scopeStr}):", obj)
         array[index] = obj
 
       vm.pushToReg(obj)
@@ -179,28 +182,57 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
   module.funcCall = => new Instruction("FuncCall", {}, (vm) ->
     localDepth = vm.popFromReg()
     func = vm.popFromReg()
-    logging.debug("#{@instructionName}: Calling function #{func.name}")
+    stackDepth = func.stackDepth
+    logging.debug("#{@instructionName}: Calling function #{func.name}, with stackDepth #{stackDepth}")
 
+    logging.debug("#{@instructionName}: Pushing current instructions to memory stack")
     vm.pushToMem(vm.instructions)
+    logging.debug("#{@instructionName}: Pushing current instruction counter to memory stack")
     vm.pushToMem(vm._pc + 1)
     vm._nextPc = 0
     vm.instructions = func.code.instructions
+    vm.enterFunctionScope()
+
+    if func.needThis
+      # Make this the first argument
+      obj = vm.popFromReg()
+      vm.pushToMem(obj, false)
+      --stackDepth
+
+    args = []
+    for i in [0...stackDepth]
+      arg = vm.popFromReg()
+      args.unshift(arg)
+    for arg in args
+      vm.pushToMem(arg, false)
+
+    return
   )
 
   module.funcReturn = -> new Instruction("FuncReturn", {}, (vm) ->
     logging.debug("#{@instructionName}: Returning from function")
+    vm.exitFunctionScope()
+
+    logging.debug("#{@instructionName}: Popping current instructions from memory stack")
     pc = vm.popFromMem()
+    logging.debug("#{@instructionName}: Popping current instruction counter from memory stack")
     instructions = vm.popFromMem()
     vm._nextPc = pc
     vm.instructions = instructions
-  )
 
-  module.regPushMemAddr = (offset) -> return new Instruction("RegPushMemAddr", {}, (vm) ->
-    vm.pushMemAddrToReg(offset)
     return
   )
-  module.regPushMem = (offset) -> return new Instruction("RegPushMem", {}, (vm) ->
-    vm.pushToRegFromMem(offset)
+
+  module.regPushMemAddr = (offset, isGlobal) -> return new Instruction("RegPushMemAddr", {}, (vm) ->
+    globalStr = if isGlobal then " global" else ""
+    logging.debug("#{@instructionName}: Pushing#{globalStr} memory address (@#{offset}) to regular stack")
+    vm.pushMemAddrToReg(offset, isGlobal)
+    return
+  )
+  module.regPushMem = (offset, isGlobal) -> return new Instruction("RegPushMem", {}, (vm) ->
+    globalStr = if isGlobal then " global" else ""
+    logging.debug("#{@instructionName}: Pushing#{globalStr} memory value (@#{offset}) to regular stack")
+    vm.pushToRegFromMem(offset, isGlobal)
     return
   )
 
@@ -396,9 +428,10 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     return
   )
 
-  module.memSetImm = (offset, value) -> new Instruction("MemSetImm", {}, (vm) ->
-    logging.debug("#{@instructionName}: Setting memory at offset #{offset} to:", value)
-    vm.insertIntoMemory(offset, value)
+  module.memSetImm = (offset, value, isGlobal) -> new Instruction("MemSetImm", {}, (vm) ->
+    scopeStr = if isGlobal then "global" else "function"
+    logging.debug("#{@instructionName}: Setting memory at offset #{offset} (scope: #{scopeStr}) to:", value)
+    vm.insertIntoMemory(offset, value, isGlobal)
   )
 
   class UnaryOpInstruction extends Instruction

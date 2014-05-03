@@ -10,6 +10,8 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
     constructor: (args) ->
       @regStack = []
       @memStack = []
+      # Stack holding the stacks of currently called functions
+      @_funcMemStacks = []
       @isExecuting = false
       @_ugens = []
       @_dac = new ugen.Dac()
@@ -92,14 +94,16 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
       @regStack.push(value)
       return
 
-    pushMemAddrToReg: (offset) =>
-      value = @memStack[offset]
-      logging.debug("Pushing memory stack address #{offset} (#{value}) to regular stack")
+    pushMemAddrToReg: (offset, isGlobal) =>
+      value = if isGlobal then @memStack[offset] else @_getFuncMemStack()[offset]
+      scopeStr = if isGlobal then "global" else "function"
+      logging.debug("Pushing memory stack address #{offset} (scope: #{scopeStr}) to regular stack:", value)
       @regStack.push(offset)
 
-    pushToRegFromMem: (offset) =>
-      value = @memStack[offset]
-      logging.debug("Pushing memory stack value @#{offset} to regular stack:", value)
+    pushToRegFromMem: (offset, isGlobal) =>
+      value = if isGlobal then @memStack[offset] else @_getFuncMemStack()[offset]
+      scopeStr = if isGlobal then "global" else "function"
+      logging.debug("Pushing memory stack value @#{offset} (scope: #{scopeStr}) to regular stack:", value)
       @regStack.push(value)
 
     popFromReg: =>
@@ -113,9 +117,13 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
         offset = 0
       return @regStack[@regStack.length-(1+offset)]
 
-    insertIntoMemory: (index, value) =>
-      logging.debug("Inserting value #{value} (#{typeof value}) into memory stack at index #{index}")
-      @memStack[index] = value
+    insertIntoMemory: (index, value, isGlobal) =>
+      scopeStr = if isGlobal then "global" else "function"
+      logging.debug("Inserting value #{value} (#{typeof value}) into memory stack at index #{index} (scope: #{scopeStr})")
+      if isGlobal
+        @memStack[index] = value
+      else
+        @_getFuncMemStack()[index] = value
       return
 
     removeFromMemory: (index) =>
@@ -128,10 +136,15 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
       logging.debug("Getting value from memory stack at index #{index}: #{val}")
       val
 
-    pushToMem: (value) =>
+    pushToMem: (value, isGlobal=true) =>
       if !value?
         throw new Error('pushToMem: value is undefined')
-      @memStack.push(value)
+      if isGlobal
+        logging.debug("Pushing value to global memory stack:", value)
+        @memStack.push(value)
+      else
+        logging.debug("Pushing value to function memory stack:", value)
+        @_getFuncMemStack().push(value)
 
     popFromMem: =>
       @memStack.pop()
@@ -159,6 +172,13 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
       @_nextPc = jmp
       return
 
+    enterFunctionScope: =>
+      logging.debug("Entering new function scope")
+      @_funcMemStacks.push([])
+    exitFunctionScope: =>
+      logging.debug("Exiting current function scope")
+      @_funcMemStacks.pop()
+
     _terminateProcessing: =>
       logging.debug("Terminating processing")
       @_dac.stop()
@@ -166,6 +186,11 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
         @_scriptProcessor.disconnect(0)
         @_scriptProcessor = undefined
       @isExecuting = false
+
+    ###* Get the current function memory stack
+      ###
+    _getFuncMemStack: =>
+      @_funcMemStacks[@_funcMemStacks.length-1]
 
     _isRunning: =>
       return !@_wakeTime? && !@_shouldStop

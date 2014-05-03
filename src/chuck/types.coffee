@@ -13,6 +13,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
       @_constructor = constructorCb
       @_opts = opts
       @_namespace = new namespace.Namespace()
+      @isRef = opts.isRef || false
 
       @_constructParent(parent, @_opts)
 
@@ -59,7 +60,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
   types.float = new ChuckType("float", undefined, size: 8, preConstructor: undefined)
   types.Time = new ChuckType("time", undefined, size: 8, preConstructor: undefined)
   types.dur = new ChuckType("dur", undefined, size: 8, preConstructor: undefined)
-  types.String = new ChuckType("String", undefined, size: 8, preConstructor: undefined)
+  types.String = new ChuckType("String", undefined, size: 8, preConstructor: undefined, isRef: true)
 
   module.FuncArg = class FuncArg
     constructor: (name, type) ->

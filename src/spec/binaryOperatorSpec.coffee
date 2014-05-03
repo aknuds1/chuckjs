@@ -31,6 +31,17 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
           expect(console.log).toHaveBeenCalledWith("880.000000 :(float)")
         )
       )
+
+      it("can assign strings", (done) ->
+        promise = executeCode("""\
+"test" => String str;
+<<<str>>>;
+""")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("\"test\" : (String)")
+        )
+      )
     )
 
     describe('Unchuck', ->

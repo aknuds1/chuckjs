@@ -14,7 +14,8 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
       promise = executeCode("""func();
 
 fun void func() {
-    <<<"fun!">>>;
+    "fun!" => String x;
+    <<<x>>>;
 }
 """)
       verify(promise, done, ->
@@ -26,6 +27,39 @@ fun void func() {
       promise = executeCode("""fun void func() {}
 """)
       verify(promise, done)
+    )
+
+    it("can receive arguments", (done) ->
+      promise = executeCode("""fun void func(float x, int y, String z)
+{
+    <<<x>>>;
+    <<<y>>>;
+    <<<z>>>;
+}
+
+func(1.0, 1, "test");
+""")
+
+      verify(promise, done, ->
+        expect(console.log).toHaveBeenCalledWith("1.000000 :(float)")
+        expect(console.log).toHaveBeenCalledWith("1 :(int)")
+        expect(console.log).toHaveBeenCalledWith("\"test\" : (String)")
+      )
+    )
+
+    it("can refer to global variables", (done) ->
+      promise = executeCode("""1 => int x;
+fun void func()
+{
+  <<<x>>>;
+}
+
+func();
+""")
+
+      verify(promise, done, ->
+        expect(console.log).toHaveBeenCalledWith("1 :(int)")
+      )
     )
   )
 )

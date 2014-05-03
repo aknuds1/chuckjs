@@ -269,12 +269,13 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           context.emitRegPushImm(1)
         else
           # Emit symbol
+          scopeStr = if @value.isContextGlobal then "global" else "function"
           if @_emitVar
-            logging.debug("#{@nodeType}: Emitting RegPushMemAddr (#{@value.offset}) since this is a variable")
-            context.emitRegPushMemAddr(@value.offset)
+            logging.debug("#{@nodeType}: Emitting RegPushMemAddr (#{@value.offset}) since this is a variable (scope: #{scopeStr})")
+            context.emitRegPushMemAddr(@value.offset, @value.isContextGlobal)
           else
-            logging.debug("#{@nodeType}: Emitting RegPushMem (#{@value.offset}) since this is a constant")
-            context.emitRegPushMem(@value.offset)
+            logging.debug("#{@nodeType}: Emitting RegPushMem (#{@value.offset}) since this is a constant (scope: #{scopeStr})")
+            context.emitRegPushMem(@value.offset, @value.isContextGlobal)
 
       return
 
@@ -439,8 +440,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       else
         context.emitDotStaticFunc(@_ckFunc)
 
-      # TODO: Calculate current frame offset
-      context.emitRegPushImm(0)
+      context.emitRegPushImm(context.getCurrentOffset())
       if @_ckFunc.isBuiltIn
         if @_ckFunc.isMember
           logging.debug("#{@nodeType}: Emitting instance method call")
@@ -815,7 +815,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       return
 
     scanPass5: (context) =>
-      context.emitScopeEntrance()
+      context.enterCodeScope()
       logging.debug("#{@nodeType}: Emitting the initial")
       @c1.scanPass5(context)
       startIndex = context.getNextIndex()
@@ -826,10 +826,10 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       logging.debug("#{@nodeType}: Emitting BranchEq")
       branchEq = context.emitBranchEq()
       # The body
-      context.emitScopeEntrance()
+      context.enterCodeScope()
       logging.debug("#{@nodeType}: Emitting the body")
       @body.scanPass5(context)
-      context.emitScopeExit()
+      context.exitCodeScope()
 
       if @c3?
         logging.debug("#{@nodeType}: Emitting the post")
@@ -845,7 +845,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
       context.evaluateBreaks()
 
-      context.emitScopeExit()
+      context.exitCodeScope()
 
       return
 
@@ -948,36 +948,64 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       logging.debug("#{@nodeType} scanPass2")
       @retType = context.findType(@typeDecl.type)
       logging.debug("#{@nodeType} scanPass3: Return type determined as #{@retType.name}")
+      for arg, i in @args
+        arg.type = context.findType(arg.typeDecl.type)
+        logging.debug("#{@nodeType} scanPass3: Type of argument #{i} determined as #{arg.type.name}")
+      context.enterFunctionScope()
+      @code.scanPass2(context)
+      context.exitFunctionScope()
+
+      return
 
     scanPass3: (context) =>
       logging.debug("#{@nodeType} scanPass3")
       func = context.addFunction(@)
       @_ckFunc = func
 
-      context.enterScope()
+      for arg, i in @args
+        logging.debug("#{@nodeType}: Creating value for argument #{i} (#{arg.varDecl.name})")
+        value = context.createValue(arg.type, arg.varDecl.name)
+        value.offset = func.stackDepth
+        arg.varDecl.value = value
+
+      context.enterFunctionScope()
       @code.scanPass3(context)
-      context.exitScope()
+      context.exitFunctionScope()
       return
 
     scanPass4: (context) =>
       logging.debug("#{@nodeType} scanPass4")
-      context.enterScope()
+      context.enterFunctionScope()
+      for arg, i in @args
+        value = arg.varDecl.value
+        logging.debug("#{@nodeType} scanPass4: Adding parameter #{i} (#{value.name}) to function's scope")
+        context.addValue(value)
       @code.scanPass4(context)
-      context.exitScope()
+      context.exitFunctionScope()
       return
 
     scanPass5: (context) =>
       logging.debug("#{@nodeType} emitting")
       local = context.allocateLocal(@_ckFunc.value.type, @_ckFunc.value, false)
-      context.emitMemSetImm(local.offset, @_ckFunc)
+      context.emitMemSetImm(local.offset, @_ckFunc, true)
       context.pushCode("#{@_ckFunc.name}( ... )")
-      context.emitScopeEntrance()
+      context.enterCodeScope()
+      for arg, i in @args
+        value = arg.varDecl.value
+        logging.debug("#{@nodeType} scanPass5: Allocating local variable for parameter #{i} (#{value.name})")
+        local = context.allocateLocal(value.type, value, false)
+        value.offset = local.offset
+
       @code.scanPass5(context)
-      context.emitScopeExit()
+      context.exitCodeScope()
       context.emitFuncReturn()
       @_ckFunc.code = context.popCode()
 
       return
+
+  module.Arg = class Arg extends NodeBase
+    constructor: (@typeDecl, @varDecl) ->
+      super("Arg")
 
   return module
 )

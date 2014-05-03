@@ -39,7 +39,8 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     allocateLocal: (type, value) =>
       local = new ChuckLocal(type.size, @frame.currentOffset, value.name)
-      logging.debug("Allocating local #{value.name} of type #{type.name} at offset #{local.offset}")
+      scopeStr = if @_isGlobal then "global" else "function"
+      logging.debug("Allocating local #{value.name} of type #{type.name} at offset #{local.offset} (scope: #{scopeStr})")
       @frame.currentOffset += 1
       @frame.stack.push(local)
       value.offset = local.offset
@@ -76,11 +77,14 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @_breakStack = []
       @_contStack = []
       @_codeStack = []
+      @_isGlobal = true
+      @_functionLevel = 0
 
     ###*
     Replace code object while storing the old one on the stack.
     ###
     pushCode: (name) =>
+      @enterFunctionScope()
       logging.debug("Pushing code object")
       @_codeStack.push(@code)
       @code = new ChuckCode()
@@ -94,7 +98,24 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       logging.debug("Popping code object")
       toReturn = @code
       @code = @_codeStack.pop()
+      @_isGlobal = @_codeStack.length == 0
+      if @_isGlobal
+        logging.debug("Back at global scope")
+
+      @exitFunctionScope()
+
       toReturn
+
+    enterFunctionScope: =>
+      ++@_functionLevel
+      @_isGlobal = false
+      @enterScope()
+      return
+    exitFunctionScope: =>
+      @exitScope()
+      --@_functionLevel
+      @_isGlobal = @_functionLevel <= 0
+      return
 
     findType: (typeName) =>
       type = @_currentNamespace.findType(typeName)
@@ -109,13 +130,20 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       val = @_currentNamespace.findValue(name, true)
 
     addVariable: (name, type) =>
-      @_currentNamespace.addVariable(name, type)
+      @_currentNamespace.addVariable(name, type, null, @_isGlobal)
 
     addConstant: (name, type, value) =>
-      @_currentNamespace.addConstant(name, type, value)
+      scopeStr = if @_isGlobal then "global" else "function"
+      logging.debug("Adding constant #{name} (scope: #{scopeStr})")
+      @_currentNamespace.addConstant(name, type, value, @_isGlobal)
 
     addValue: (value, name) =>
-      @_currentNamespace.addValue(value, name)
+      scopeStr = if @_isGlobal then "global" else "function"
+      logging.debug("Adding value #{name} (scope: #{scopeStr})")
+      @_currentNamespace.addValue(value, name, @_isGlobal)
+
+    createValue: (type, name) =>
+      new namespaceModule.ChuckValue(type, name, @_currentNamespace)
 
     pushToBreakStack: (statement) =>
       @_breakStack.push(statement)
@@ -129,11 +157,12 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @_emitPreConstructor(type)
 
     allocateLocal: (type, value, emit=true) =>
-      logging.debug("Allocating local")
+      scopeStr = if @_isGlobal then "global" else "function"
+      logging.debug("Allocating local (scope: #{scopeStr})")
       local = @code.allocateLocal(type, value)
       if emit
         logging.debug("Emitting AllocWord instruction")
-        @code.append(instructions.allocWord(local.offset))
+        @code.append(instructions.allocWord(local.offset, @_isGlobal))
       local
 
     getNextIndex: => @code.getNextIndex()
@@ -141,13 +170,13 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     enterScope: => @_currentNamespace.enterScope()
     exitScope: => @_currentNamespace.exitScope()
 
-    emitScopeEntrance: =>
-      logging.debug("Emitting entrance of nested scope")
+    enterCodeScope: =>
+      logging.debug("Entering nested code scope")
       @code.pushScope()
       return
 
-    emitScopeExit: =>
-      logging.debug("Emitting exit of nested scope")
+    exitCodeScope: =>
+      logging.debug("Exiting nested code scope")
       @code.popScope()
       return
 
@@ -172,13 +201,13 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
           @code.append(instructions.preCtorArrayPost())
 
       isObj = types.isObj(type) || array?
-      if isObj && !array?
+      if isObj && !array? && !type.isRef
         @instantiateObject(type)
 
       @allocateLocal(type, value)
-      if isObj
+      if isObj && !type.isRef
         logging.debug("Emitting AssignObject")
-        @code.append(instructions.assignObject())
+        @code.append(instructions.assignObject(false, @_isGlobal))
       return
 
     emitMinusAssign: =>
@@ -217,11 +246,11 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     emitFuncCall: =>
       @code.append(instructions.funcCall())
 
-    emitRegPushMemAddr: (offset) =>
-      @code.append(instructions.regPushMemAddr(offset))
+    emitRegPushMemAddr: (offset, isGlobal) =>
+      @code.append(instructions.regPushMemAddr(offset, isGlobal))
       return
-    emitRegPushMem: (offset) =>
-      @code.append(instructions.regPushMem(offset))
+    emitRegPushMem: (offset, isGlobal) =>
+      @code.append(instructions.regPushMem(offset, isGlobal))
       return
 
     emitRegDupLast: =>
@@ -281,7 +310,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     emitOpAtChuck: (isArray=false) =>
       logging.debug("Emitting AssignObject (isArray: #{isArray})")
-      @code.append(instructions.assignObject(isArray))
+      @code.append(instructions.assignObject(isArray, @_isGlobal))
       return
 
     emitGack: (types) =>
@@ -304,8 +333,8 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     emitArrayInit: (type, count) => @code.append(instructions.arrayInit(type, count))
 
-    emitMemSetImm: (offset, value) =>
-      @code.append(instructions.memSetImm(offset, value))
+    emitMemSetImm: (offset, value, isGlobal) =>
+      @code.append(instructions.memSetImm(offset, value, true))
 
     emitFuncReturn: =>
       @code.append(instructions.funcReturn())
@@ -327,7 +356,12 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     addFunction: (funcDef) =>
       name = "#{funcDef.name}@0@#{@_currentNamespace.name || ''}"
       logging.debug("Adding function #{name}")
-      func = new types.FunctionOverload([], null, false, name)
+      args = []
+      for arg in funcDef.args
+        funcArg = new types.FuncArg(arg.varDecl.name, types.types[arg.typeDecl.type])
+        logging.debug("Adding function argument #{funcArg.name} of type #{funcArg.type.name}")
+        args.push(funcArg)
+      func = new types.FunctionOverload(args, null, false, name)
 
       # TODO: Try to find existing function group
       # Create corresponding function group
@@ -340,12 +374,14 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       func.value = @addConstant(name, type, func)
       func
 
+    getCurrentOffset: => @code.frame.currentOffset
+
     _emitPreConstructor: (type) =>
       if type.parent?
         @_emitPreConstructor(type.parent)
 
       if type.hasConstructor
-        @code.append(instructions.preConstructor(type, @code.frame.currentOffset))
+        @code.append(instructions.preConstructor(type, @getCurrentOffset()))
 
       return
 
