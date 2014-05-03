@@ -70,7 +70,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
 """)
 
         verify(promise, done, ->
-          expect(console.log).toHaveBeenCalledWith("2 : (dur)")
+          expect(console.log).toHaveBeenCalledWith("2.000000 :(dur)")
           return
         )
       )
@@ -110,6 +110,14 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
 
         verify(promise, done, ->
           expect(console.log).toHaveBeenCalledWith("4.400000 :(float)")
+        )
+      )
+
+      it("can multiply a float and a dur", (done) ->
+        promise = executeCode("""<<<2.0 * 2::samp>>>;""")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("4.000000 :(dur)")
         )
       )
     )

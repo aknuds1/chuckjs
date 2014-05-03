@@ -697,6 +697,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         return types.float
       if lhsType == types.int && rhsType == types.int
         return types.int
+      if lhsType == types.float && rhsType == types.dur
+        types.dur
 
   module.TimesOperator = class TimesOperator extends TimesDivideOperatorBase
     constructor: -> @name = "TimesOperator"

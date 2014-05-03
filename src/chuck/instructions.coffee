@@ -398,7 +398,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
       console.log("[#{arrStr}] :(#{type.name}[])")
     else if type == types.String
       console.log("\"#{obj}\" : (#{type.name})")
-    else if type == types.float
+    else if type == types.float || type == types.dur
       console.log("#{formatFloat(obj)} :(#{type.name})")
     else if type == types.int
       console.log("#{obj} :(#{type.name})")
