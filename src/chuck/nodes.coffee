@@ -594,6 +594,21 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       context.emitOpAtChuck()
       return
 
+  module.PlusChuckOperator = class
+    constructor: ->
+      @name = "PlusChuckOperator"
+
+    check: (lhs, rhs) =>
+      if (lhs.type == rhs.type) || (lhs.type == types.int && rhs.type == types.float)
+        if typesModule.isPrimitive(lhs.type) || lhs.type == types.String
+          if rhs._meta == "variable"
+            # Assign to variable
+            rhs._emitVar = true
+          return rhs.type
+
+    emit: (context, lhs, rhs) =>
+      return context.emitPlusAssign(rhs.value.isContextGlobal)
+
   module.MinusChuckOperator = class
     constructor: ->
       @name = "MinusChuckOperator"

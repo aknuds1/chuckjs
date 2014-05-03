@@ -94,6 +94,16 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
       return
     )
 
+  module.plusAssign = (isGlobal) ->
+    new Instruction("PlusAssign", {}, (vm) ->
+      memStackIndex = vm.popFromReg()
+      rhs = vm.popFromReg()
+      lhs = vm.getFromMemory(memStackIndex, isGlobal)
+      result = lhs + rhs
+      vm.insertIntoMemory(memStackIndex, result, isGlobal)
+      vm.pushToReg(result)
+      return
+    )
   module.minusAssign = (isGlobal) ->
     new Instruction("MinusAssign", {}, (vm) ->
         memStackIndex = vm.popFromReg()

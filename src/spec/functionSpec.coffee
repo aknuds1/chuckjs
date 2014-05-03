@@ -80,5 +80,20 @@ func();
         expect(console.log).toHaveBeenCalledWith("1 :(int)")
       )
     )
+
+    it("can advance time", (done) ->
+      promise = executeCode("""func();
+
+fun void func()
+{
+    1::samp => now;
+    <<<now>>>;
+}
+""")
+
+      verify(promise, done, ->
+        expect(console.log).toHaveBeenCalledWith("1 : (time)")
+      , 1)
+    )
   )
 )

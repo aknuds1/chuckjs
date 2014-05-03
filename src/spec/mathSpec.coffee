@@ -10,6 +10,34 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
       helpers.afterEach(done)
     )
 
+    describe("addition", ->
+      describe("can add and assign by chucking", ->
+        it("an int to an int", (done) ->
+          promise = executeCode("""\
+2 => int x;
+2 +=> x;
+<<< x >>>;
+""")
+
+          verify(promise, done, ->
+            expect(console.log).toHaveBeenCalledWith("4 :(int)")
+          )
+        )
+
+        it("an int to a float", (done) ->
+          promise = executeCode("""\
+2. => float x;
+2 +=> x;
+<<< x >>>;
+""")
+
+          verify(promise, done, ->
+            expect(console.log).toHaveBeenCalledWith("4.000000 :(float)")
+          )
+        )
+      )
+    )
+
     describe('subtraction', ->
       it('can subtract two constant ints', (done) ->
         promise = executeCode("""\

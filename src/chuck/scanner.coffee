@@ -207,6 +207,9 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
         @code.append(instructions.assignObject(false, @_isGlobal))
       return
 
+    emitPlusAssign: (isGlobal) =>
+      @code.append(instructions.plusAssign(isGlobal))
+      return
     emitMinusAssign: (isGlobal) =>
       @code.append(instructions.minusAssign(isGlobal))
       return

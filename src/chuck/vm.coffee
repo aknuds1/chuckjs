@@ -27,10 +27,11 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
     execute: (byteCode) =>
       @_pc = 0
       @isExecuting = true
+      @instructions = byteCode
 
       deferred = Q.defer()
       setTimeout(=>
-        if !@_compute(byteCode, deferred)
+        if !@_compute(deferred)
           logging.debug("Ending VM execution")
           @_terminateProcessing()
           deferred.resolve()
@@ -41,7 +42,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
         @_scriptProcessor = audioContextService.createScriptProcessor()
         @_scriptProcessor.onaudioprocess = (event) =>
           try
-            @_processAudio(event, byteCode, deferred)
+            @_processAudio(event, deferred)
           catch error
             @_terminateProcessing()
             deferred.reject("Caught exception in audio processing callback after #{@_nowSystem} samples: #{error}")
@@ -55,16 +56,14 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
       @_shouldStop = true
       return
 
-    _compute: (instructions, deferred) =>
+    _compute: (deferred) =>
       try
         if @_pc == 0
           logging.debug("VM executing")
         else
           logging.debug("Resuming VM execution")
 
-        @instructions = instructions
-
-        while @_pc < instructions.length && @_isRunning()
+        while @_pc < @instructions.length && @_isRunning()
           instr = @instructions[@_pc]
           logging.debug("Executing instruction no. #{@_pc}: #{instr.instructionName}")
           instr.execute(@)
@@ -76,8 +75,8 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
           logging.debug("Halting VM execution for #{(@_wakeTime - @_now)/sampleRate} second(s)")
           return true
         else
-          @_shouldStop = true
           logging.debug("VM execution has ended after #{@_nowSystem} samples:", @_shouldStop)
+          @_shouldStop = true
           return false
       catch err
         deferred.reject(err)
@@ -199,7 +198,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
     _isRunning: =>
       return !@_wakeTime? && !@_shouldStop
 
-    _processAudio: (event, byteCode, deferred) =>
+    _processAudio: (event, deferred) =>
       # Compute each sample
 
       samplesLeft = event.outputBuffer.getChannelData(0)
@@ -221,7 +220,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
           @_now = @_wakeTime
           @_wakeTime = undefined
           logging.debug("Letting VM compute sample, now: #{@_now}")
-          @_compute(byteCode, deferred)
+          @_compute(deferred)
 #            else
 #              logging.debug("VM is not yet ready to wake up (#{@_wakeTime}, #{@_nowSystem})")
 

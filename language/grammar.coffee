@@ -202,6 +202,7 @@ grammar = {
   ChuckOperator: [
     o('CHUCK', -> new ChuckOperator()),
     o('AT_CHUCK', -> new AtChuckOperator()),
+    o('PLUS_CHUCK', -> new PlusChuckOperator())
     o('MINUS_CHUCK', -> new MinusChuckOperator())
     o('UNCHUCK', -> new UnchuckOperator())
   ],
