@@ -495,7 +495,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       logging.debug("UnaryExpression: Emitting expression")
       @exp.scanPass5(context)
       logging.debug("UnaryExpression: Emitting operator")
-      @op.emit(context)
+      @op.emit(context, @exp.value.isContextGlobal)
       return
 
   module.ChuckOperator = class
@@ -607,7 +607,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           return rhs.type
 
     emit: (context, lhs, rhs) =>
-      return context.emitMinusAssign()
+      return context.emitMinusAssign(rhs.value.isContextGlobal)
 
   class AdditiveSubtractiveOperatorBase
     check: (lhs, rhs) =>
@@ -645,17 +645,17 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: ->
       super("PrefixPlusPlusOperator")
 
-    emit: (context) =>
+    emit: (context, isGlobal) =>
       logging.debug("#{@name} emitting PreIncNumber")
-      context.emitPreIncNumber()
+      context.emitPreIncNumber(isGlobal)
 
   module.PostfixPlusPlusOperator = class extends PlusPlusOperatorBase
     constructor: ->
       super("PostfixPlusPlusOperator")
 
-    emit: (context) =>
+    emit: (context, isGlobal) =>
       logging.debug("#{@name} emitting PostIncNumber")
-      context.emitPostIncNumber()
+      context.emitPostIncNumber(isGlobal)
 
   module.MinusOperator = class extends AdditiveSubtractiveOperatorBase
     constructor: ->
@@ -908,7 +908,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass5: (context) =>
       @exp.scanPass5(context)
-      @op.emit(context)
+      @op.emit(context, @exp.value.isContextGlobal)
 
   module.ArraySub = class extends NodeBase
     constructor: (exp) ->
@@ -962,13 +962,14 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       func = context.addFunction(@)
       @_ckFunc = func
 
+      context.enterFunctionScope()
+
       for arg, i in @args
         logging.debug("#{@nodeType}: Creating value for argument #{i} (#{arg.varDecl.name})")
         value = context.createValue(arg.type, arg.varDecl.name)
         value.offset = func.stackDepth
         arg.varDecl.value = value
 
-      context.enterFunctionScope()
       @code.scanPass3(context)
       context.exitFunctionScope()
       return

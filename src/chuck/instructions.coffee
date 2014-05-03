@@ -94,13 +94,13 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
       return
     )
 
-  module.minusAssign = ->
+  module.minusAssign = (isGlobal) ->
     new Instruction("MinusAssign", {}, (vm) ->
         memStackIndex = vm.popFromReg()
         rhs = vm.popFromReg()
-        lhs = vm.getFromMemory(memStackIndex)
+        lhs = vm.getFromMemory(memStackIndex, isGlobal)
         result = lhs - rhs
-        vm.insertIntoMemory(memStackIndex, result)
+        vm.insertIntoMemory(memStackIndex, result, isGlobal)
         vm.pushToReg(result)
         return
     )
@@ -127,9 +127,9 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
       return
     )
 
-  module.releaseObject2 = (offset) ->
+  module.releaseObject2 = (offset, isGlobal) ->
     return new Instruction("ReleaseObject2", offset: offset, (vm) ->
-      vm.removeFromMemory(offset)
+      vm.removeFromMemory(offset, isGlobal)
       return
     )
 
@@ -180,6 +180,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
   )
 
   module.funcCall = => new Instruction("FuncCall", {}, (vm) ->
+    # TODO: Get rid of this
     localDepth = vm.popFromReg()
     func = vm.popFromReg()
     stackDepth = func.stackDepth
@@ -214,9 +215,9 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     vm.exitFunctionScope()
 
     logging.debug("#{@instructionName}: Popping current instructions from memory stack")
-    pc = vm.popFromMem()
+    pc = vm.popFromMem(true)
     logging.debug("#{@instructionName}: Popping current instruction counter from memory stack")
-    instructions = vm.popFromMem()
+    instructions = vm.popFromMem(true)
     vm._nextPc = pc
     vm.instructions = instructions
 
@@ -294,21 +295,21 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     return
   )
 
-  module.preIncNumber = -> new Instruction("PreIncnUmber", {}, (vm) ->
+  module.preIncNumber = (isGlobal) -> new Instruction("PreIncnUmber", {}, (vm) ->
     memStackIndex = vm.popFromReg()
-    val = vm.getFromMemory(memStackIndex)
+    val = vm.getFromMemory(memStackIndex, isGlobal)
     ++val
-    vm.insertIntoMemory(memStackIndex, val)
+    vm.insertIntoMemory(memStackIndex, val, isGlobal)
     vm.pushToReg(val)
     return
   )
 
-  module.postIncNumber = -> new Instruction("PostIncnUmber", {}, (vm) ->
+  module.postIncNumber = (isGlobal) -> new Instruction("PostIncnUmber", {}, (vm) ->
     memStackIndex = vm.popFromReg()
-    val = vm.getFromMemory(memStackIndex)
+    val = vm.getFromMemory(memStackIndex, isGlobal)
     vm.pushToReg(val)
     ++val
-    vm.insertIntoMemory(memStackIndex, val)
+    vm.insertIntoMemory(memStackIndex, val, isGlobal)
     return
   )
 

@@ -3,10 +3,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 (nodes, types, instructions, namespaceModule, logging, mathLib, stdLib, stkLib) ->
   module = {}
   class ChuckLocal
-    constructor: (size, offset, name) ->
-      @size = size
-      @offset = offset
-      @name = name
+    constructor: (@size, @offset, @name, @isContextGlobal) ->
 
   class ChuckFrame
     constructor: ->
@@ -37,8 +34,8 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @instructions.push(instruction)
       return instruction
 
-    allocateLocal: (type, value) =>
-      local = new ChuckLocal(type.size, @frame.currentOffset, value.name)
+    allocateLocal: (type, value, isGlobal) =>
+      local = new ChuckLocal(type.size, @frame.currentOffset, value.name, isGlobal)
       scopeStr = if @_isGlobal then "global" else "function"
       logging.debug("Allocating local #{value.name} of type #{type.name} at offset #{local.offset} (scope: #{scopeStr})")
       @frame.currentOffset += 1
@@ -143,7 +140,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @_currentNamespace.addValue(value, name, @_isGlobal)
 
     createValue: (type, name) =>
-      new namespaceModule.ChuckValue(type, name, @_currentNamespace)
+      new namespaceModule.ChuckValue(type, name, @_currentNamespace, @_isGlobal)
 
     pushToBreakStack: (statement) =>
       @_breakStack.push(statement)
@@ -159,7 +156,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     allocateLocal: (type, value, emit=true) =>
       scopeStr = if @_isGlobal then "global" else "function"
       logging.debug("Allocating local (scope: #{scopeStr})")
-      local = @code.allocateLocal(type, value)
+      local = @code.allocateLocal(type, value, @_isGlobal)
       if emit
         logging.debug("Emitting AllocWord instruction")
         @code.append(instructions.allocWord(local.offset, @_isGlobal))
@@ -210,8 +207,8 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
         @code.append(instructions.assignObject(false, @_isGlobal))
       return
 
-    emitMinusAssign: =>
-      @code.append(instructions.minusAssign())
+    emitMinusAssign: (isGlobal) =>
+      @code.append(instructions.minusAssign(isGlobal))
       return
 
     emitDac: =>
@@ -285,9 +282,9 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instructions.addNumber())
       return
 
-    emitPreIncNumber: => @code.append(instructions.preIncNumber())
+    emitPreIncNumber: (isGlobal) => @code.append(instructions.preIncNumber(isGlobal))
 
-    emitPostIncNumber: => @code.append(instructions.postIncNumber())
+    emitPostIncNumber: (isGlobal) => @code.append(instructions.postIncNumber(isGlobal))
 
     emitSubtractNumber: =>
       @code.append(instructions.subtractNumber())
@@ -348,7 +345,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     finishScanning: =>
       locals = @code.finish()
       for local in locals
-        @code.append(instructions.releaseObject2(local.offset))
+        @code.append(instructions.releaseObject2(local.offset, local.isContextGlobal))
 
       @code.append(instructions.eoc())
       return
