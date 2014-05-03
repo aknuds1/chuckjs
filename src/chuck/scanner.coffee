@@ -334,7 +334,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     emitArrayInit: (type, count) => @code.append(instructions.arrayInit(type, count))
 
     emitMemSetImm: (offset, value, isGlobal) =>
-      @code.append(instructions.memSetImm(offset, value, true))
+      @code.append(instructions.memSetImm(offset, value, isGlobal))
 
     emitFuncReturn: =>
       @code.append(instructions.funcReturn())

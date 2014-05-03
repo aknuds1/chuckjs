@@ -29,8 +29,8 @@ define("chuck/namespace", ["chuck/logging"], (logging) ->
     addVariable: (name, type, value, isGlobal) =>
       @_scope.addVariable(name, type, @, value, isGlobal)
 
-    addConstant: (name, type, value) =>
-      @_scope.addConstant(name, type, @, value)
+    addConstant: (name, type, value, isGlobal) =>
+      @_scope.addConstant(name, type, @, value, isGlobal)
 
     addValue: (value, name, isGlobal=true) =>
       @_scope.addValue(value, name, isGlobal)

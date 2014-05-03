@@ -594,7 +594,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       context.emitOpAtChuck()
       return
 
-  module.PlusChuckOperator = class
+  module.PlusChuckOperator = class PlusChuckOperator
     constructor: ->
       @name = "PlusChuckOperator"
 
@@ -609,7 +609,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     emit: (context, lhs, rhs) =>
       return context.emitPlusAssign(rhs.value.isContextGlobal)
 
-  module.MinusChuckOperator = class
+  module.MinusChuckOperator = class MinusChuckOperator
     constructor: ->
       @name = "MinusChuckOperator"
 
