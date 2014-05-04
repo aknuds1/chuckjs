@@ -339,6 +339,8 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     emitFuncReturn: =>
       @code.append(instructions.funcReturn())
 
+    emitNegateNumber: -> @code.append(instructions.negateNumber())
+
     evaluateBreaks: =>
       while @_breakStack.length
         instr = @_breakStack.pop()

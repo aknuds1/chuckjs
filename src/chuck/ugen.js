@@ -1,142 +1,153 @@
-define("chuck/ugen", ["chuck/types", "chuck/logging"], function(types, logging) {
+define("chuck/ugen", ["chuck/types", "chuck/logging", "chuck/audioContextService"], function (types, logging,
+  audioContextService) {
   var module = {}
 
-  function UGenChannel() {
-    var self = this
-    self.current = 0
-    self.sources = []
-  }
-
-  function uGenChannelTick(self, now) {
-    var i,
-      ugen,
-      source
-
-    self.current = 0
-    if (self.sources.length === 0) {
-      return self.current
-    }
-
-    // Tick sources
-    ugen = self.sources[0]
-    ugen.tick(now)
-    self.current = ugen.current
-    for (i = 1; i < self.sources.length; ++i) {
-      source = self.sources[i]
-      source.tick(now)
-      self.current += source.current
-    }
-
-    return self.current
-  }
-
-  function uGenChannelAdd(self, source) {
-    logging.debug("UGen channel: Adding source #" + self.sources.length)
-    self.sources.push(source)
-  }
-
-  function uGenChannelRemove(self, source) {
-    var idx = _.find(self.sources, function (src) { return src === source })
-    logging.debug("UGen channel: Removing source #" + idx)
-    self.sources.splice(idx, 1)
-  }
-
-  function uGenChannelStop(self) {
-    self.sources.splice(0, self.sources.length)
-  }
-
-  module.UGen = function UGen(type) {
-    var self = this,
-      i
+  function initializeUGen(self, type) {
     self.type = type
     self.size = self.type.size
     self.pmsg = self.type.ugenPmsg
     self.numIns = self.type.ugenNumIns
     self.numOuts = self.type.ugenNumOuts
-    self._channels = []
-    for (i = 0; i < self.numIns; ++i) {
-      self._channels.push(new UGenChannel())
-    }
-    self._tick = type.ugenTick ? type.ugenTick : function (input) { return input }
     self._now = -1
     self._destList = []
     self._gain = 1
   }
-  module.UGen.prototype.stop = function() {
+
+  module.MultiChannelUGen = function MultiChannelUGen(type) {
+    var i, self = this
+
+    initializeUGen(this, type);
+
+    self._channels = []
+    for (i = 0; i < self.numIns; ++i) {
+      self._channels.push(new module.MonoUGen(type, self))
+    }
+  }
+  module.MultiChannelUGen.prototype.stop = function () {
     var self = this, i
     for (i = 0; i < self._channels.length; ++i) {
-      uGenChannelStop(self._channels[i])
+      self._channels[i]._stop()
     }
-
-    if (self._destList.length === 0) {
-      return
-    }
-
-    self._destList.splice(0, self._destList.length)
   }
-  module.UGen.prototype.tick = function(now) {
+  module.MultiChannelUGen.prototype.tick = function (now) {
     var self = this,
-      sum = 0,
       i
     if (self._now >= now) {
-      return self.current
+      return
     }
 
     self._now = now
 
-    // Tick inputs
-    for (i = 0; i < self._channels.length; ++i){
-      sum += uGenChannelTick(self._channels[i], now)
+    // Tick channels
+    for (i = 0; i < self._channels.length; ++i) {
+      self._channels[i].tick(now)
     }
-    sum /= self._channels.length
+  }
+  module.MultiChannelUGen.prototype.add = function add(src) {
+    var self = this, i, srcUGens
+    srcUGens = src instanceof module.MonoUGen ? [src, src] : src._channels
+    for (i = 0; i < self._channels.length; ++i) {
+      self._channels[i].add(srcUGens[i])
+    }
+  }
+  module.MultiChannelUGen.prototype.remove = function (src) {
+    var self = this, i
+    for (i = 0; i < self._channels.length; ++i) {
+      self._channels[i].remove(src)
+    }
+  }
+  module.MultiChannelUGen.prototype.setGain = function (gain) {
+    var self = this, i
+    for (i = 0; i < self._channels.length; ++i) {
+      self._channels[i].setGain(gain)
+    }
+    return gain
+  }
+
+  module.MonoUGen = function MonoUGen(type, parent) {
+    var self = this
+    initializeUGen(self, type)
+    self.parent = parent
+    self.current = 0
+    self.pan = 1
+    self._tick = type.ugenTick ? type.ugenTick : function (input) {
+      return input
+    }
+    self.sources = []
+  }
+  module.MonoUGen.prototype.tick = function tick(now) {
+    var self = this, i, source
+
+    if (self._now >= now) {
+      return self.current
+    }
+
+    self.current = 0
+    self._now = now
+
+    // Tick sources
+    if (self.sources.length > 0) {
+      for (i = 0; i < self.sources.length; ++i) {
+        source = self.sources[i]
+        source.tick(now)
+        self.current += source.current
+      }
+
+      self.current /= self.sources.length
+    }
 
     // Synthesize
-    self.current = self._tick.call(self, sum) * self._gain
+    self.current = self._tick.call(self, self.current) * self._gain * self.pan
     return self.current
   }
-  module.UGen.prototype.setGain = function(gain) {
+  module.MonoUGen.prototype.setGain = function (gain) {
     var self = this
     self._gain = gain
     return gain
   }
-
-  module.uGenAdd = function uGenAdd(self, src) {
-    var i
-    for (i = 0; i < self._channels.length; ++i) {
-      uGenChannelAdd(self._channels[i], src)
+  module.MonoUGen.prototype.add = function (src) {
+    var self = this, i, srcUGens
+    srcUGens = src instanceof module.MonoUGen ? [src] : src._channels
+    for (i = 0; i < srcUGens.length; ++i) {
+      logging.debug("UGen: Adding source #" + self.sources.length)
+      self.sources.push(srcUGens[i])
+      srcUGens[i]._destList.push(self)
     }
-
-    _uGenAddDest(src, self)
   }
+  module.MonoUGen.prototype.remove = function (src) {
+    var self = this, i, srcUGens
+    srcUGens = src instanceof module.MonoUGen ? [src] : src._channels
+    for (i = 0; i < srcUGens.length; ++i) {
+      var idx = _.find(self.sources, function (s) { return s === srcUGens[i] })
+      logging.debug("UGen: Removing source #" + idx)
+      self.sources.splice(idx, 1)
 
-  module.uGenRemove = function uGenRemove(self, src) {
-    var i
-    for (i = 0; i < self._channels.length; ++i) {
-      uGenChannelRemove(self._channels[i], src)
+      srcUGens[i]._removeDest(self)
     }
-
-    _ugenRemoveDest(src, self)
   }
-
-  function _uGenAddDest(self, dest) {
-    self._destList.push(dest)
-  }
-
-  function _ugenRemoveDest(self, dest) {
-    var idx = _.find(self._destList, function (d) { return d == dest })
+  module.MonoUGen.prototype._removeDest = function (dest) {
+    var self = this, idx
+    idx = _.find(self._destList, function (d) {
+      return d === dest
+    })
     logging.debug("UGen: Removing destination " + idx)
     self._destList.splice(idx, 1)
+  }
+  module.MonoUGen.prototype._stop = function () {
+    var self = this
+    self.sources.splice(0, self.sources.length)
   }
 
   module.Dac = function Dac() {
     var self = this
-    module.UGen.call(self, types.types.Dac)
+    self._node = audioContextService.outputNode
+    module.MultiChannelUGen.call(self, types.types.Dac)
   }
-  module.Dac.prototype = Object.create(module.UGen.prototype)
+  module.Dac.prototype = Object.create(module.MultiChannelUGen.prototype)
   module.Dac.prototype.tick = function (now, frame) {
     var self = this,
       i
-    module.UGen.prototype.tick.call(self, now)
+    module.MultiChannelUGen.prototype.tick.call(self, now)
     for (i = 0; i < frame.length; ++i) {
       frame[i] = self._channels[i].current
     }

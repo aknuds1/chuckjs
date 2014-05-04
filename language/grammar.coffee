@@ -154,7 +154,11 @@ grammar = {
   ],
   UnaryExpression: [
     o('DurExpression'),
-    o('PLUSPLUS UnaryExpression', -> new UnaryExpression(new PrefixPlusPlusOperator(), $2))
+    o('PLUSPLUS UnaryExpression', -> new UnaryExpression(new PrefixPlusPlusOperator(), $2)),
+    o("UnaryOperator UnaryExpression", -> new UnaryExpression($1, $2))
+  ],
+  UnaryOperator: [
+    o("MINUS", -> new UnaryMinusOperator())
   ],
   DurExpression: [
     o('PostfixExpression'),

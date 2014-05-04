@@ -179,5 +179,22 @@ now + 2::second => time later;
         )
       )
     )
+
+    describe("Math.random2f", ->
+      returnedRand = 0.51
+      beforeEach(->
+        spyOn(Math, "random").and.returnValue(returnedRand)
+      )
+
+      it("returns a random float between a lower and upper bound", (done) ->
+        min = 1.0
+        max = 21.0
+        promise = executeCode("<<<Math.random2f(#{min}, #{max})>>>;")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("11.200000 :(float)")
+        )
+      )
+    )
   )
 )

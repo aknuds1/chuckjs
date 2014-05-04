@@ -29,7 +29,7 @@ e.keyOff();
       adsr = dac._channels[0].sources[0]
       expect(adsr.type.name).toBe("ADSR")
       expect(dac._channels[1].sources).toEqual([adsr], "ADSR should be connected to DAC")
-      expect(adsr._channels[0].sources.length).toBe(1, "SinOsc should be connected to ADSR")
+      expect(adsr.sources.length).toBe(1, "SinOsc should be connected to ADSR")
 
       # Verify attack start
       helpers.processAudio(helpers.getSampleInSeconds())

@@ -1,7 +1,6 @@
 define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ugen, logging, typesModule) ->
   module = {}
   {types} = typesModule
-  {uGenAdd, uGenRemove} = ugen
 
   callMethod = (vm) ->
     localDepth = vm.popFromReg()
@@ -39,7 +38,10 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
   module.instantiateObject = (type) ->
     return new Instruction("InstantiateObject", type: type, (vm) ->
       logging.debug("Instantiating object of type #{type.name}")
-      ug = new ugen.UGen(type)
+      if type.ugenNumOuts == 1
+        ug = new ugen.MonoUGen(type)
+      else
+        ug = new ugen.MultiChannelUGen(type)
       vm.addUgen(ug)
       vm.pushToReg(ug)
     )
@@ -149,7 +151,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     dest = vm.popFromReg()
     src = vm.popFromReg()
     logging.debug("UGenLink: Linking node of type #{src.type.name} to node of type #{dest.type.name}")
-    uGenAdd(dest, src)
+    dest.add(src)
     vm.pushToReg(dest)
     return
   )
@@ -158,7 +160,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
     dest = vm.popFromReg()
     src = vm.popFromReg()
     logging.debug("#{@instructionName}: Unlinking node of type #{src.type.name} from node of type #{dest.type.name}")
-    uGenRemove(dest, src)
+    dest.remove(src)
     vm.pushToReg(dest)
     return
   )
@@ -495,6 +497,13 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
       values.unshift(vm.popFromReg())
     logging.debug("#{@instructionName}: Pushing instantiated array to stack", values)
     vm.pushToReg(values)
+  )
+
+  module.negateNumber = -> new Instruction("NegateNumber", {}, (vm) ->
+    logging.debug("#{@instructionName}: Popping number from stack")
+    number = vm.popFromReg()
+    logging.debug("#{@instructionName}: Pushing negated number to stack")
+    vm.pushToReg(-number)
   )
 
   return module

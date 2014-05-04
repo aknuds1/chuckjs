@@ -498,6 +498,18 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @op.emit(context, @exp.value.isContextGlobal)
       return
 
+  module.UnaryMinusOperator = class UnaryMinusOperator
+    constructor: ->
+      @name = "UnaryMinusOperator"
+
+    check: (exp) ->
+      if exp.type == types.int || exp.type == types.float
+        exp.type
+
+    emit: (context) ->
+      logging.debug("#{@name} emit")
+      context.emitNegateNumber()
+
   module.ChuckOperator = class
     constructor: ->
       @name = "ChuckOperator"
@@ -527,7 +539,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         return types.float
 
     emit: (context, lhs, rhs) =>
-      logging.debug("#{@name} scanPass5")
+      logging.debug("#{@name} emit")
       lType = if lhs.castTo? then lhs.castTo else lhs.type
       rType = if rhs.castTo? then rhs.castTo else rhs.type
       # UGen => UGen
@@ -543,13 +555,13 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         if rhs._ckFunc.isMember
           logging.debug("#{@name}: Emitting duplication of 'this' reference on stack")
           context.emitRegDupLast()
-          logging.debug("#{@nodeType}: Emitting instance method #{rhs._ckFunc.name}")
+          logging.debug("#{@name}: Emitting instance method #{rhs._ckFunc.name}")
           context.emitDotMemberFunc(rhs._ckFunc)
-          logging.debug("#{@nodeType} emitting instance method call")
+          logging.debug("#{@name} emitting instance method call")
         else
-          logging.debug("#{@nodeType}: Emitting static method #{rhs._ckFunc.name}")
+          logging.debug("#{@name}: Emitting static method #{rhs._ckFunc.name}")
           context.emitDotStaticFunc(rhs._ckFunc)
-          logging.debug("#{@nodeType} emitting static method call")
+          logging.debug("#{@name} emitting static method call")
         # FIXME
         context.emitRegPushImm(8)
         if rhs._ckFunc.isMember
@@ -560,9 +572,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       else if lType.isOfType(rType)
         isArray = rhs.indices?
         if !isArray
-          logging.debug("ChuckOperator emitting OpAtChuck to assign one object to another")
+          logging.debug("#{@name} emitting OpAtChuck to assign one object to another")
         else
-          logging.debug("ChuckOperator emitting OpAtChuck to assign an object to an array element")
+          logging.debug("#{@name} emitting OpAtChuck to assign an object to an array element")
         return context.emitOpAtChuck(isArray)
 
       return
