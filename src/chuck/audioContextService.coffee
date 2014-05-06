@@ -10,7 +10,7 @@ define("chuck/audioContextService", ["chuck/logging"], (logging) ->
 
     getCurrentTime: => @_audioContext.currentTime * @_audioContext.sampleRate
 
-    prepareForExecution: (ac, dn) =>
+    prepareForExecution: (ac=null, dn=null) =>
       if ac?
         @_audioContext = ac
         if dn?
@@ -27,8 +27,7 @@ define("chuck/audioContextService", ["chuck/logging"], (logging) ->
       # Note that we re-create the audio context for each execution, e.g. in order to have a clean slate for each
       # test
       @_audioContext = new AudioContext()
-      if not @_audioDestination?
-        @_audioDestination = @_audioContext.destination
+      @_audioDestination = @_audioContext.destination
       return
 
     createScriptProcessor: =>

@@ -6,7 +6,7 @@ define("chuck", ["chuck/parserService", "chuck/scanner", "chuck/vm", "chuck/logg
     constructor: (@audioContext, @audioDestination) ->
 
     execute: (sourceCode, args) =>
-      audioContextService.prepareForExecution(@audioContext, @audioDestination)
+      audioContextService.prepareForExecution(@audioContext=null, @audioDestination=null)
 
       ast = parserService.parse(sourceCode)
       byteCode = scanner.scan(ast)
