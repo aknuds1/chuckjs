@@ -3,8 +3,10 @@ define("chuck", ["chuck/parserService", "chuck/scanner", "chuck/vm", "chuck/logg
   module = {}
 
   module.Chuck = class
+    constructor: (@audioContext=null, @audioDestination=null) ->
+
     execute: (sourceCode, args) =>
-      audioContextService.prepareForExecution()
+      audioContextService.prepareForExecution(@audioContext, @audioDestination)
 
       ast = parserService.parse(sourceCode)
       byteCode = scanner.scan(ast)
