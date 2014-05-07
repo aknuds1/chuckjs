@@ -1,5 +1,4 @@
 code = """// impulse to filter to dac
-// impulse to filter to dac
 Impulse i => BiQuad f => dac;
 // set the filter's pole radius
 .99 => f.prad;
