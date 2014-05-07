@@ -52,7 +52,7 @@ module.exports = function (grunt) {
         files: [
           {expand: true, cwd: 'src/lib/', src: ['q.js'], dest: 'lib/'},
           {expand: true, cwd: 'src/chuck/', src: ['ugen.js'], dest: 'lib/chuck/'},
-          {expand: true, cwd: 'src/chuck/libs/', src: ['stk.js'], dest: 'lib/chuck/libs/'}
+          {expand: true, cwd: 'src/chuck/libs/', src: ['stk.js', 'ugens.js'], dest: 'lib/chuck/libs/'}
         ]
       },
       stencil: {

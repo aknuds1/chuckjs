@@ -76,13 +76,15 @@ define("chuck/ugen", ["chuck/types", "chuck/logging", "chuck/audioContextService
     self.sources = []
   }
   module.MonoUGen.prototype.tick = function tick(now) {
-    var self = this, i, source
+    var self = this, i, source, sum
 
     if (self._now >= now) {
       return self.current
     }
 
-    self.current = 0
+    // Don't change self.current until after finishing computations, since other nodes that use our output in the
+    // meantime should use the previously output sample
+    sum = 0
     self._now = now
 
     // Tick sources
@@ -90,14 +92,12 @@ define("chuck/ugen", ["chuck/types", "chuck/logging", "chuck/audioContextService
       for (i = 0; i < self.sources.length; ++i) {
         source = self.sources[i]
         source.tick(now)
-        self.current += source.current
+        sum += source.current
       }
-
-      self.current /= self.sources.length
     }
 
     // Synthesize
-    self.current = self._tick.call(self, self.current) * self._gain * self.pan
+    self.current = self._tick.call(self, sum) * self._gain * self.pan
     return self.current
   }
   module.MonoUGen.prototype.setGain = function (gain) {

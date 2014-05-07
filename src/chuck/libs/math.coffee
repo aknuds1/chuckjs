@@ -17,6 +17,8 @@ define("chuck/libs/math", ["chuck/types"], (typesModule) ->
         new FuncArg("min", float), new FuncArg("max", float)], (min, max) ->
       Math.random() * (max-min) + min
     )], "Math", float)
+    log: new ChuckStaticMethod("log", [new FunctionOverload([
+      new FuncArg("x", float)], (x) -> Math.log(x))], "Math", float)
   types.Math = new ChuckType("Math", Object, namespace: mathNamespace)
 
   return module

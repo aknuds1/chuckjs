@@ -30,6 +30,13 @@ define("chuck/libs/stk", ["chuck/types", "chuck/audioContextService"], function 
 
   function Delay(delay, max) {
     var self = this;
+    if (delay == null) {
+      delay = 0
+    }
+    if (max == null) {
+      max = 4096
+    }
+
     // Writing before reading allows delays from 0 to length-1.
     // If we want to allow a delay of maxDelay, we need a
     // delay-line of length = maxDelay+1.
@@ -83,6 +90,27 @@ define("chuck/libs/stk", ["chuck/types", "chuck/audioContextService"], function 
 
     return self.output;
   };
+  Delay.prototype.setDelay = function (delay) {
+    var self = this
+    if (delay > (self.length-1)) { // The value is too big.
+      // Force delay to maxLength.
+      self.outPoint = self.inPoint + 1
+      self.delay = self.length - 1
+    }
+    else if (delay < 0) {
+      self.outPoint = self.inPoint
+      self.delay = 0
+    }
+    else {
+      self.outPoint = self.inPoint - Math.floor(delay)  // read chases write
+      self.delay = delay
+    }
+
+    while (self.outPoint < 0) {
+      self.outPoint += self.length  // modulo maximum length
+    }
+  }
+  types.Delay = Delay
 
   types.JcReverb = new ChuckType("JCRev", UGen, {
     preConstructor: function () {
@@ -442,6 +470,24 @@ define("chuck/libs/stk", ["chuck/types", "chuck/audioContextService"], function 
       return input * d.value;
     }
   });
+
+  types.Delay = new ChuckType("Delay", UGen, {
+    preConstructor: function () {
+      var d = this.data = {}
+      d.delay = new Delay()
+    },
+    namespace: {
+      delay: new ChuckMethod("delay", [new FunctionOverload([
+          new FuncArg("value", dur)],
+        function (value) {
+          this.data.delay.setDelay(value)
+          return value
+        })], "Delay", dur)
+    },
+    ugenTick: function (input) {
+      return this.data.delay.tick(input)
+    }
+  })
 
   return module;
 });

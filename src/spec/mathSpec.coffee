@@ -196,5 +196,20 @@ now + 2::second => time later;
         )
       )
     )
+
+    describe("Math.log", ->
+      fakeResult = 0.21
+      beforeEach(->
+        spyOn(Math, "log").and.returnValue(fakeResult)
+      )
+
+      it("returns the natural logarithm of the provided value", (done) ->
+        promise = executeCode("<<<Math.log(3.0)>>>;")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("0.210000 :(float)")
+        )
+      )
+    )
   )
 )

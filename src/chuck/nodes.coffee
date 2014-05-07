@@ -458,25 +458,25 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @base = base
       @unit = unit
 
-    scanPass2: =>
-      super()
+    scanPass2: (context) =>
+      super(context)
       logging.debug('DurExpression')
-      @base.scanPass2()
-      @unit.scanPass2()
+      @base.scanPass2(context)
+      @unit.scanPass2(context)
 
-    scanPass3: =>
-      super()
-      @base.scanPass3()
-      @unit.scanPass3()
+    scanPass3: (context) =>
+      super(context)
+      @base.scanPass3(context)
+      @unit.scanPass3(context)
 
-    scanPass4: =>
-      super()
+    scanPass4: (context) =>
+      super(context)
       @type = types.dur
-      @base.scanPass4()
-      @unit.scanPass4()
+      @base.scanPass4(context)
+      @unit.scanPass4(context)
 
     scanPass5: (context) =>
-      super()
+      super(context)
       @base.scanPass5(context)
       @unit.scanPass5(context)
       context.emitTimesNumber()

@@ -1,6 +1,6 @@
 define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "chuck/namespace", "chuck/logging",
-"chuck/libs/math", "chuck/libs/std", "chuck/libs/stk"],
-(nodes, types, instructions, namespaceModule, logging, mathLib, stdLib, stkLib) ->
+"chuck/libs/math", "chuck/libs/std", "chuck/libs/stk", "chuck/libs/ugens"],
+(nodes, types, instructions, namespaceModule, logging, mathLib, stdLib, stkLib, ugensLib) ->
   module = {}
   class ChuckLocal
     constructor: (@size, @offset, @name, @isContextGlobal) ->
@@ -61,7 +61,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     constructor: ->
       @code = new ChuckCode()
       @_globalNamespace = new namespaceModule.Namespace("global")
-      for lib in [types, mathLib, stdLib, stkLib]
+      for lib in [types, mathLib, stdLib, stkLib, ugensLib]
         for own k, type of lib.types
           @_globalNamespace.addType(type)
           typeType = _.extend({}, types.Class)
