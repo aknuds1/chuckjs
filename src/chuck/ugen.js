@@ -153,5 +153,12 @@ define("chuck/ugen", ["chuck/types", "chuck/logging", "chuck/audioContextService
     }
   }
 
+  function Bunghole() {
+    var self = this
+    module.MonoUGen.call(self, types.types.Bunghole)
+  }
+  Bunghole.prototype = Object.create(module.MonoUGen.prototype)
+  module.Bunghole = Bunghole
+
   return module
 })

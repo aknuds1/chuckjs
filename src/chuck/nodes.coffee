@@ -209,6 +209,10 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           @_meta = "value"
           @type = types.Dac
           break
+        when "blackhole"
+          @_meta = "value"
+          @type = types.UGen
+          break
         when "second"
           @type = types.dur
           break
@@ -243,6 +247,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       switch @name
         when "dac"
           context.emitDac()
+          break
+        when "blackhole"
+          context.emitBunghole()
           break
         when "second"
           # Push the value corresponding to a second

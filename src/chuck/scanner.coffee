@@ -218,6 +218,10 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instructions.dac())
       return
 
+    emitBunghole: =>
+      @code.append(instructions.bunghole())
+      return
+
     emitUGenLink: =>
       @code.append(instructions.uGenLink())
       return

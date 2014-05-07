@@ -199,6 +199,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
   constructDac = ->
     @_node = audioContextService.outputNode
   types.Dac = new ChuckType("Dac", types.UGenStereo, preConstructor: constructDac)
+  types.Bunghole = new ChuckType("Bunghole", types.MonoUGen)
   types.void = new ChuckType("void")
   types.Pan2 = new ChuckType("Pan2", types.UGenStereo)
 

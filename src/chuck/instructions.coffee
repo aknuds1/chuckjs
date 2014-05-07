@@ -139,6 +139,11 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
       return
     )
 
+  module.bunghole = -> new Instruction("Bunghole", {}, (vm) ->
+    vm.pushBunghole()
+    return
+  )
+
   module.releaseObject2 = (offset, isGlobal) ->
     return new Instruction("ReleaseObject2", offset: offset, (vm) ->
       vm.removeFromMemory(offset, isGlobal)

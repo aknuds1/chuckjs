@@ -15,6 +15,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
       @isExecuting = false
       @_ugens = []
       @_dac = new ugen.Dac()
+      @_bunghole = new ugen.Bunghole()
       @_wakeTime = undefined
       @_pc = 0
       @_nextPc = 1
@@ -151,6 +152,10 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
       @regStack.push(@_dac)
       return
 
+    pushBunghole: =>
+      @regStack.push(@_bunghole)
+      return
+
     pushNow: =>
       logging.debug("Pushing now (#{@_now}) to stack")
       @regStack.push(@_now)
@@ -231,6 +236,8 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
         frame = [0, 0]
         if !@_shouldStop
           @_dac.tick(@_nowSystem, frame)
+          # Suck samples
+          @_bunghole.tick(@_nowSystem)
         samplesLeft[i] = frame[0] * @_gain
         samplesRight[i] = frame[1] * @_gain
 
