@@ -315,7 +315,7 @@ define("chuck/libs/stk", ["chuck/types", "chuck/audioContextService"], function 
   }
 
   function envelopeKeyOn(enable) {
-    if (!enable) {
+    if (enable != null && !enable) {
       envelopeKeyOff.call(this, 1)
       return 0
     }
@@ -332,7 +332,7 @@ define("chuck/libs/stk", ["chuck/types", "chuck/audioContextService"], function 
   }
 
   function envelopeKeyOff(enable) {
-    if (!enable) {
+    if (enable != null && !enable) {
       envelopeKeyOn.call(this, 1)
       return 0
     }
@@ -360,9 +360,26 @@ define("chuck/libs/stk", ["chuck/types", "chuck/audioContextService"], function 
       self.data.time = self.data.mTarget / (self.data.rate * audioContextService.getSampleRate())
     },
     namespace: {
-      keyOn: new ChuckMethod("keyOn", [new FunctionOverload([new FuncArg("enable", int)], envelopeKeyOn)], "Envelope", int),
-      keyOff: new ChuckMethod("keyOff", [new FunctionOverload([new FuncArg("enable", int)], envelopeKeyOff)], "Envelope", int),
-      time: new ChuckMethod("time", [new FunctionOverload([new FuncArg("time", float)], setEnvelopeTime)], "Envelope", dur)
+      keyOn: new ChuckMethod("keyOn", [
+        new FunctionOverload([new FuncArg("enable", int)], envelopeKeyOn),
+        new FunctionOverload([], envelopeKeyOn)
+      ], "Envelope", int),
+      keyOff: new ChuckMethod("keyOff", [
+        new FunctionOverload([new FuncArg("enable", int)], envelopeKeyOff),
+        new FunctionOverload([], envelopeKeyOff)
+      ], "Envelope", int),
+      time: new ChuckMethod("time", [new FunctionOverload([new FuncArg("time", float)], setEnvelopeTime)], "Envelope",
+        dur),
+      duration: new ChuckMethod("duration", [
+        new FunctionOverload([], function () {
+          var d = this.data
+          return d.time * audioContextService.getSampleRate()
+        }),
+        new FunctionOverload([new FuncArg("duration", dur)], function (duration) {
+          setEnvelopeTime.call(this, duration/audioContextService.getSampleRate())
+          return duration
+        })
+      ], "Envelope", dur)
     },
     ugenTick: function (input) {
       var d = this.data

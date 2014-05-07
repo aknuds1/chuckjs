@@ -1,4 +1,4 @@
-define(["chuck", "spec/helpers", "chuck/logging"], (chuckModule, helpers, logging) ->
+define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
   {executeCode, verify} = helpers
 
   describe('An ADSR UGen', ->

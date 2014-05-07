@@ -97,7 +97,7 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
       lexedLength
 
     stringToken: ->
-      return 0 unless match = /^"(.+)"/.exec(@chunk)
+      return 0 unless match = /^"(.+?)"/.exec(@chunk)
       string = match[1]
       logging.debug("Token is a string: '#{string}', #{string.length}")
       @token('STRING_LIT', string)

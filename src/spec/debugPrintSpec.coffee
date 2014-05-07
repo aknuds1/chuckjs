@@ -12,11 +12,11 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
 
     it("can write a list of expressions", (done) ->
       promise = executeCode("""\
-<<<"1 + 1 is", 1 + 1>>>;
+<<<"1 + 1 is", 1 + 1, "it's true" >>>;
 """)
 
       verify(promise, done, ->
-        expect(console.log).toHaveBeenCalledWith("1 + 1 is 2")
+        expect(console.log).toHaveBeenCalledWith("1 + 1 is 2 it's true")
         return
       )
     )

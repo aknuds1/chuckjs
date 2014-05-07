@@ -100,5 +100,11 @@ define("chuck/libs/ugens", ["chuck/types", "chuck/audioContextService"], functio
     }
   })
 
+  types.Noise = new ChuckType("Noise", UGen, {
+    ugenTick: function () {
+      return -1 + 2*Math.random()
+    }
+  })
+
   return module
 })
