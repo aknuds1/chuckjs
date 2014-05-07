@@ -30,7 +30,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], (ug
       _.extend(@, params)
       @_executeCb = execute
 
-    execute: (vm) =>
+    execute: (vm) ->
       if !@_executeCb
         return
       @_executeCb.call(@, vm)

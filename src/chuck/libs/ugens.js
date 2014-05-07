@@ -63,7 +63,7 @@ define("chuck/libs/ugens", ["chuck/types", "chuck/audioContextService"], functio
           d.prad = value
           biQuadSetReson(d)
           return d.prad
-        })], "Impulse", float),
+        })], "BiQuad", float),
       eqzs: new ChuckMethod("eqzs", [new FunctionOverload([
           new FuncArg("value", float)],
         function (value) {
@@ -76,7 +76,7 @@ define("chuck/libs/ugens", ["chuck/types", "chuck/audioContextService"], functio
           d.b1 = 0.0
           d.b2 = -1.0
           return value
-        })], "Impulse", int),
+        })], "BiQuad", int),
       pfreq: new ChuckMethod("pfreq", [new FunctionOverload([
           new FuncArg("value", float)],
         function (value) {
@@ -84,7 +84,7 @@ define("chuck/libs/ugens", ["chuck/types", "chuck/audioContextService"], functio
           d.pfreq = value
           biQuadSetReson(d)
           return value
-        })], "Impulse", int)
+        })], "BiQuad", int)
     },
     ugenTick: function (input) {
       var d = this.data

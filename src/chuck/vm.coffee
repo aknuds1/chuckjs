@@ -25,7 +25,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
       @_nowSystem = 0
       @_gain = 1
 
-    execute: (byteCode) =>
+    execute: (byteCode) ->
       @_pc = 0
       @isExecuting = true
       @instructions = byteCode
@@ -57,7 +57,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
       @_shouldStop = true
       return
 
-    _compute: (deferred) =>
+    _compute: (deferred) ->
       try
         if @_pc == 0
           logging.debug("VM executing")
@@ -83,59 +83,59 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
         deferred.reject(err)
         throw err
 
-    addUgen: (ugen) =>
+    addUgen: (ugen) ->
       @_ugens.push(ugen)
       return
 
     # Push value to regular stack
-    pushToReg: (value) =>
+    pushToReg: (value) ->
       if !value?
         throw new Error('pushToReg: value is undefined')
       @regStack.push(value)
       return
 
-    pushMemAddrToReg: (offset, isGlobal) =>
+    pushMemAddrToReg: (offset, isGlobal) ->
       value = @_getMemStack(isGlobal)[offset]
       scopeStr = if isGlobal then "global" else "function"
       logging.debug("Pushing memory stack address #{offset} (scope: #{scopeStr}) to regular stack:", value)
       @regStack.push(offset)
 
-    pushToRegFromMem: (offset, isGlobal) =>
+    pushToRegFromMem: (offset, isGlobal) ->
       value =  @_getMemStack(isGlobal)[offset]
       scopeStr = if isGlobal then "global" else "function"
       logging.debug("Pushing memory stack value @#{offset} (scope: #{scopeStr}) to regular stack:", value)
       @regStack.push(value)
 
-    popFromReg: =>
+    popFromReg: ->
       val = @regStack.pop()
       if !val?
         throw new Error("Nothing on the stack")
       return val
 
-    peekReg: (offset) =>
+    peekReg: (offset) ->
       if !offset?
         offset = 0
       return @regStack[@regStack.length-(1+offset)]
 
-    insertIntoMemory: (index, value, isGlobal) =>
+    insertIntoMemory: (index, value, isGlobal) ->
       scopeStr = if isGlobal then "global" else "function"
       logging.debug("Inserting value #{value} (#{typeof value}) into memory stack at index #{index} (scope: #{scopeStr})")
       @_getMemStack(isGlobal)[index] = value
       return
 
-    removeFromMemory: (index, isGlobal) =>
+    removeFromMemory: (index, isGlobal) ->
       logging.debug("Removing element #{index} of memory stack")
       @_getMemStack(isGlobal).splice(index, 1)
       return
 
-    getFromMemory: (index, isGlobal) =>
+    getFromMemory: (index, isGlobal) ->
       memStack = @_getMemStack(isGlobal)
       val = memStack[index]
       scopeStr = if isGlobal then "global" else "function"
       logging.debug("Getting value from memory stack at index #{index} (scope: #{scopeStr}):", val)
       val
 
-    pushToMem: (value, isGlobal=true) =>
+    pushToMem: (value, isGlobal=true) ->
       if !value?
         throw new Error('pushToMem: value is undefined')
       memStack = @_getMemStack(isGlobal)
@@ -145,44 +145,44 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
         logging.debug("Pushing value to function memory stack:", value)
       memStack.push(value)
 
-    popFromMem: (isGlobal) =>
+    popFromMem: (isGlobal) ->
       @_getMemStack(isGlobal).pop()
 
-    pushDac: =>
+    pushDac: ->
       @regStack.push(@_dac)
       return
 
-    pushBunghole: =>
+    pushBunghole: ->
       @regStack.push(@_bunghole)
       return
 
-    pushNow: =>
+    pushNow: ->
       logging.debug("Pushing now (#{@_now}) to stack")
       @regStack.push(@_now)
       return
 
-    pushMe: =>
+    pushMe: ->
       logging.debug("Pushing me to stack:", @_me)
       @regStack.push(@_me)
       return
 
-    suspendUntil: (time) =>
+    suspendUntil: (time) ->
       logging.debug("Suspending VM execution until #{time} (now: #{@_now})")
       @_wakeTime = time
       return
 
-    jumpTo: (jmp) =>
+    jumpTo: (jmp) ->
       @_nextPc = jmp
       return
 
-    enterFunctionScope: =>
+    enterFunctionScope: ->
       logging.debug("Entering new function scope")
       @_funcMemStacks.push([])
-    exitFunctionScope: =>
+    exitFunctionScope: ->
       logging.debug("Exiting current function scope")
       @_funcMemStacks.pop()
 
-    _terminateProcessing: =>
+    _terminateProcessing: ->
       logging.debug("Terminating processing")
       @_dac.stop()
       if @_scriptProcessor?
@@ -192,7 +192,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
 
     ###* Get the memory stack for the requested scope (global/function)
       ###
-    _getMemStack: (isGlobal) =>
+    _getMemStack: (isGlobal) ->
       if !isGlobal?
         throw new Error('isGlobal must be specified')
       if isGlobal
@@ -200,10 +200,10 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
       else
         @_funcMemStacks[@_funcMemStacks.length-1]
 
-    _isRunning: =>
+    _isRunning: ->
       return !@_wakeTime? && !@_shouldStop
 
-    _processAudio: (event, deferred) =>
+    _processAudio: (event, deferred) ->
       # Compute each sample
 
       samplesLeft = event.outputBuffer.getChannelData(0)

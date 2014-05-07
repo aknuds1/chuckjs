@@ -6,9 +6,9 @@ define("chuck/audioContextService", ["chuck/logging"], (logging) ->
     createGainNode: =>
       return @_audioContext.createGainNode()
 
-    getSampleRate: => @_audioContext.sampleRate
+    getSampleRate: -> @_audioContext.sampleRate
 
-    getCurrentTime: => @_audioContext.currentTime * @_audioContext.sampleRate
+    getCurrentTime: -> @_audioContext.currentTime * @_audioContext.sampleRate
 
     prepareForExecution: (ac=null, dn=null) =>
       if ac?
@@ -31,7 +31,7 @@ define("chuck/audioContextService", ["chuck/logging"], (logging) ->
       return
 
     createScriptProcessor: =>
-      @_scriptProcessor = @_audioContext.createScriptProcessor(16384, 0, 2)
+      @_scriptProcessor = @_audioContext.createScriptProcessor(4096, 0, 2)
       @_scriptProcessor.connect(@_audioDestination)
       return @_scriptProcessor
 

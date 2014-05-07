@@ -1,6 +1,30 @@
 define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
   {executeCode, verify} = helpers
 
+  # Properties common to UGens
+  describe("A UGen", ->
+    beforeEach(->
+      helpers.beforeEach()
+      spyOn(console, 'log')
+    )
+    afterEach((done) ->
+      helpers.afterEach(done)
+    )
+
+    it("can be queried for its last output sample", (done) ->
+      promise = executeCode("""Impulse i => dac;
+1 => i.next;
+<<<i.last()>>>;
+1::samp => now;
+<<<i.last()>>>;
+""")
+
+      verify(promise, done, ->
+        expect(console.log.calls.allArgs()).toEqual([["0.000000 :(float)"], ["1.000000 :(float)"]])
+      , helpers.getSampleInSeconds()*2)
+    )
+  )
+
   describe('The UGen', ->
     beforeEach(->
       helpers.beforeEach()

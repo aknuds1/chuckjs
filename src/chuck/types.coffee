@@ -145,6 +145,9 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
     gain: new ChuckMethod("gain", [new FunctionOverload([new FuncArg("value", types.float)], (value) ->
       @setGain(value)
     )], "UGen", types.float)
+    last: new ChuckMethod("last", [new FunctionOverload([], ->
+      @current
+    )], "UGen", types.float)
   types.UGen = new ChuckType("UGen", types.Object, size: 8, numIns: 1, numOuts: 1, preConstructor: null,
   namespace: ugenNamespace, ugenTick: undefined
   (opts) ->
