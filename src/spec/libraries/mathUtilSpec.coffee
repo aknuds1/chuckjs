@@ -18,5 +18,14 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
         )
       )
     )
+
+    describe('Std.fabs', ->
+      it("gives an absolute floating point value", (done) ->
+        promise = executeCode("<<<Std.fabs(-2.1)>>>;")
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("2.100000 :(float)")
+        )
+      )
+    )
   )
 )

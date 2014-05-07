@@ -11,6 +11,10 @@ define("chuck/libs/std", ["chuck/types"], (typesModule) ->
       (value) ->
         Math.pow(2, (value-69)/12) * 440
       )], "Std", float)
+    fabs: new ChuckStaticMethod("fabs", [new FunctionOverload([new FuncArg("value", float)],
+    (value) ->
+      Math.abs(value)
+    )], "Std", float)
   types.Std = new ChuckType("Std", Object, namespace: stdNamespace)
 
   return module

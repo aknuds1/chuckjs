@@ -211,5 +211,20 @@ now + 2::second => time later;
         )
       )
     )
+
+    describe("Math.sin", ->
+      fakeResult = 0.21
+      beforeEach(->
+        spyOn(Math, "sin").and.returnValue(fakeResult)
+      )
+
+      it("returns sine of the provided value", (done) ->
+        promise = executeCode("<<<Math.sin(3.0)>>>;")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("0.210000 :(float)")
+        )
+      )
+    )
   )
 )

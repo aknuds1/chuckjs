@@ -19,6 +19,8 @@ define("chuck/libs/math", ["chuck/types"], (typesModule) ->
     )], "Math", float)
     log: new ChuckStaticMethod("log", [new FunctionOverload([
       new FuncArg("x", float)], (x) -> Math.log(x))], "Math", float)
+    sin: new ChuckStaticMethod("sin", [new FunctionOverload([
+      new FuncArg("x", float)], (x) -> Math.sin(x))], "Math", float)
   types.Math = new ChuckType("Math", Object, namespace: mathNamespace)
 
   return module
