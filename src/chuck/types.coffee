@@ -74,7 +74,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
       @func = func
       @stackDepth = args.length
 
-    apply: (obj) =>
+    apply: (obj) ->
       @func.apply(arguments[0], arguments[1])
 
   class ChuckFunctionBase
