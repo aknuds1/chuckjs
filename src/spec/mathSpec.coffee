@@ -218,7 +218,7 @@ now + 2::second => time later;
         spyOn(Math, "sin").and.returnValue(fakeResult)
       )
 
-      it("returns sine of the provided value", (done) ->
+      it("returns the sine of the provided value", (done) ->
         promise = executeCode("<<<Math.sin(3.0)>>>;")
 
         verify(promise, done, ->

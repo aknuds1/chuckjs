@@ -80,7 +80,6 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
           value = @_globalNamespace.addVariable(type.name, typeType, type)
           @code.allocRegister(value)
 
-
       value = @_globalNamespace.addVariable("dac", dacService.dac.type)
       @code.allocRegister(value)
       value = @_globalNamespace.addVariable("blackhole", dacService.bunghole.type)
@@ -229,11 +228,11 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
       local.ri
 
-    emitPlusAssign: (isGlobal) =>
-      @code.append(instructions.plusAssign(isGlobal))
+    emitPlusAssign: (r1, r2, r3) =>
+      @code.append(instructions.plusAssign(r1, r2, r3))
       return
-    emitMinusAssign: (isGlobal) =>
-      @code.append(instructions.minusAssign(isGlobal))
+    emitMinusAssign: (r1, r2, r3) =>
+      @code.append(instructions.minusAssign(r1, r2, r3))
       return
 
     emitUGenLink: (r1, r2) ->
@@ -258,8 +257,8 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(new Instruction("FuncCallMember", {r1: r1, r2: r2}))
       return
 
-    emitFuncCallStatic: =>
-      @code.append(instructions.funcCallStatic())
+    emitFuncCallStatic: (r1, r2) ->
+      @code.append(new Instruction("FuncCallStatic", {r1: r1, r2: r2}))
       return
 
     emitFuncCall: ->
@@ -270,10 +269,6 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       return
     emitRegPushMem: (offset, isGlobal) =>
       @code.append(instructions.regPushMem(offset, isGlobal))
-      return
-
-    emitRegDupLast: =>
-      @code.append(instructions.regDupLast())
       return
 
     emitDotStaticFunc: (func) ->
@@ -289,8 +284,8 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(new Instruction("TimesNumber", {r1: r1, r2: r2, r3: r3}))
       return
 
-    emitDivideNumber: ->
-      @code.append(instructions.divideNumber())
+    emitDivideNumber: (r1, r2, r3) ->
+      @code.append(instructions.divideNumber(r1, r2, r3))
       return
 
     emitRegPushMe: =>
@@ -301,12 +296,12 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(new Instruction("AddNumber", {r1: r1, r2: r2, r3: r3}))
       return
 
-    emitPreIncNumber: (isGlobal) -> @code.append(instructions.preIncNumber(isGlobal))
+    emitPreIncNumber: (r1, r2) -> @code.append(instructions.preIncNumber(r1, r2))
 
-    emitPostIncNumber: (isGlobal) -> @code.append(instructions.postIncNumber(isGlobal))
+    emitPostIncNumber: (r1, r2) -> @code.append(instructions.postIncNumber(r1, r2))
 
-    emitSubtractNumber: ->
-      @code.append(instructions.subtractNumber())
+    emitSubtractNumber: (r1, r2, r3) ->
+      @code.append(instructions.subtractNumber(r1, r2, r3))
       return
 
     emitTimesNumber: (r1, r2, r3) ->
@@ -356,7 +351,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     emitFuncReturn: ->
       @code.append(instructions.funcReturn())
 
-    emitNegateNumber: -> @code.append(instructions.negateNumber())
+    emitNegateNumber: (r1, r2) -> @code.append(instructions.negateNumber(r1, r2))
 
     evaluateBreaks: =>
       while @_breakStack.length

@@ -25,7 +25,7 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
       )
     )
 
-    describe('PostIncnUmber', ->
+    describe('PostIncNumber', ->
       it('post-increments a number', (done) ->
         promise = executeCode("""\
 0 => int i;

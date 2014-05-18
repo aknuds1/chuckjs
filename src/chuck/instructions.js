@@ -3,7 +3,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
   var types = typesModule.types
 
   var logDebug = function () {
-//    logging.debug.apply(null, arguments)
+    logging.debug.apply(null, arguments)
   }
 
   function callFunction(vm, func, ri, riRet) {
@@ -80,24 +80,20 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     })
   }
 
-  module.plusAssign = function (isGlobal) {
+  module.plusAssign = function (r1, r2, r3) {
     return new Instruction("PlusAssign", {}, function (vm) {
-      var memStackIndex = vm.popFromReg()
-      var rhs = vm.popFromReg()
-      var lhs = vm.getFromMemory(memStackIndex, isGlobal)
+      var lhs = vm.registers[r1]
+      var rhs = vm.registers[r2]
       var result = lhs + rhs
-      vm.insertIntoMemory(memStackIndex, result, isGlobal)
-      vm.pushToReg(result)
+      vm.registers[r3] = result
     })
   }
-  module.minusAssign = function (isGlobal) {
+  module.minusAssign = function (r1, r2, r3) {
     return new Instruction("MinusAssign", {}, function (vm) {
-      var memStackIndex = vm.popFromReg()
-      var rhs = vm.popFromReg()
-      var lhs = vm.getFromMemory(memStackIndex, isGlobal)
+      var lhs = vm.registers[r1]
+      var rhs = vm.registers[r2]
       var result = lhs - rhs
-      vm.insertIntoMemory(memStackIndex, result, isGlobal)
-      vm.pushToReg(result)
+      vm.registers[r3] = result
     })
   }
 
@@ -157,19 +153,6 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
       dest.remove(src)
       vm.pushToReg(dest)
     })
-  }
-
-  module.funcCallStatic = function () {
-    return new Instruction("FuncCallStatic", {}, function (vm) {
-    var localDepth = vm.popFromReg()
-    logDebug("Popped local depth from stack: #{localDepth}")
-    var func = vm.popFromReg()
-//    var stackDepth = func.stackDepth
-    logDebug("Calling static method '#{func.name}'")
-    vm.pushToReg(func)
-    vm.pushToReg(localDepth)
-    callFunction(vm)
-  })
   }
 
   module.funcCall = function () {
@@ -246,19 +229,13 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     })
   }
 
-  module.divideNumber = function () {
+  module.divideNumber = function (r1, r2, r3) {
     return new Instruction("DivideNumber", {}, function (vm) {
-      var rhs = vm.popFromReg()
-      var lhs = vm.popFromReg()
+      var lhs = vm.registers[r1]
+      var rhs = vm.registers[r2]
       var number = lhs / rhs
-      logDebug("DivideNumber (#{lhs}/#{rhs}) resulted in: #{number}")
-      vm.pushToReg(number)
-    })
-  }
-
-  module.regPushNow = function () {
-    return new Instruction("RegPushNow", {}, function (vm) {
-      vm.pushNow()
+      logDebug("DivideNumber (" + lhs + "/" + rhs + ") resulted in: " + number)
+      vm.registers[r3] = number
     })
   }
 
@@ -268,33 +245,29 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     })
   }
 
-  module.preIncNumber = function (isGlobal) {
+  module.preIncNumber = function (r1, r2) {
     return new Instruction("PreIncnUmber", {}, function (vm) {
-      var memStackIndex = vm.popFromReg()
-      var val = vm.getFromMemory(memStackIndex, isGlobal)
+      var val = vm.registers[r1]
       ++val
-      vm.insertIntoMemory(memStackIndex, val, isGlobal)
-      vm.pushToReg(val)
+      vm.registers[r1] = vm.registers[r2] = val
     })
   }
 
-  module.postIncNumber = function (isGlobal) {
+  module.postIncNumber = function (r1, r2) {
     return new Instruction("PostIncnUmber", {}, function (vm) {
-      var memStackIndex = vm.popFromReg()
-      var val = vm.getFromMemory(memStackIndex, isGlobal)
-      vm.pushToReg(val)
-      ++val
-      vm.insertIntoMemory(memStackIndex, val, isGlobal)
+      var val = vm.registers[r1]
+      vm.registers[r2] = val
+      vm.registers[r1] = ++val
     })
   }
 
-  module.subtractNumber = function () {
-    return  new Instruction("SubtractNumber", {}, function (vm) {
-      var rhs = vm.popFromReg()
-      var lhs = vm.popFromReg()
+  module.subtractNumber = function (r1, r2, r3) {
+    return new Instruction("SubtractNumber", {}, function (vm) {
+      var lhs = vm.registers[r1]
+      var rhs = vm.registers[r2]
       var number = lhs - rhs
-      logDebug("#{@instructionName}: Subtracting #{rhs} from #{lhs} resulted in: #{number}")
-      vm.pushToReg(number)
+      logDebug("#{@instructionName}: Subtracting " + rhs + " from " + lhs + " resulted in: " + number)
+      vm.registers[r3] = number
     })
   }
 
@@ -459,12 +432,11 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     })
   }
 
-  module.negateNumber = function () {
+  module.negateNumber = function (r1, r2) {
     return new Instruction("NegateNumber", {}, function (vm) {
-      logDebug("#{@instructionName}: Popping number from stack")
-      var number = vm.popFromReg()
-      logDebug("#{@instructionName}: Pushing negated number to stack")
-      vm.pushToReg(-number)
+      var number = vm.registers[r1]
+      vm.registers[r2] = -number
+      logDebug("#{@instructionName}: Assigning negated number in register " + r1 + " to register " + r2)
     })
   }
 

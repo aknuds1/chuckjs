@@ -79,6 +79,11 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
         logDebug("#{instr.instructionName}: (#{lhs} > #{rhs}) resulted in: #{result}")
         vm.registers[instr.r3] = result
         break
+      when "FuncCallStatic"
+        func = vm.registers[instr.r1]
+        logDebug("Calling static method '#{func.name}'")
+        callFunction(vm, func, instr.r2)
+        break
       else
         instr.execute(vm)
 

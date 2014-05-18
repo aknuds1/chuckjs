@@ -298,7 +298,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     scanPass5: (context) =>
       super()
       logging.debug("#{@nodeType}: Emitting RegPushImm for #{@value}")
-      context.emitLoadConst(@value)
+      @ri = context.emitLoadConst(@value)
 
   module.PrimaryHackExpression = class extends ExpressionBase
     constructor: (expression) ->
@@ -427,16 +427,16 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         @func.scanPass5(context)
 
       if @_ckFunc.isBuiltIn
+        r1 = context.emitLoadConst(@_ckFunc)
         if @_ckFunc.isMember
           logging.debug("#{@nodeType}: Emitting instance method call")
-          r1 = context.emitLoadConst(@_ckFunc)
           # Allocate argument registers
           r2 = context.emitLoadLocal(@func.ri)
           # TODO: arguments
           context.emitFuncCallMember(r1, r2)
         else
           logging.debug("#{@nodeType}: Emitting static method call")
-          context.emitFuncCallStatic()
+          context.emitFuncCallStatic(r1, @args.ri)
       else
         logging.debug("#{@nodeType}: Emitting function call")
         context.emitFuncCall()
@@ -488,7 +488,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       logging.debug("UnaryExpression: Emitting expression")
       @exp.scanPass5(context)
       logging.debug("UnaryExpression: Emitting operator")
-      @op.emit(context, @exp.value.isContextGlobal)
+      @ri = context.allocRegister()
+      @op.emit(context, @exp.ri, @ri, @exp.value.isContextGlobal)
       return
 
   module.UnaryMinusOperator = class UnaryMinusOperator
@@ -499,9 +500,10 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       if exp.type == types.int || exp.type == types.float
         exp.type
 
-    emit: (context) ->
+    emit: (context, r1, r2) ->
       logging.debug("#{@name} emit")
-      context.emitNegateNumber()
+      context.emitNegateNumber(r1, r2)
+      return
 
   module.ChuckOperator = class
     constructor: ->
@@ -561,7 +563,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           # The return value of the function call
           @ri = 0
         else
-          context.emitFuncCallStatic()
+          r1 = context.emitLoadConst(rhs._ckFunc)
+          r2 = context.emitLoadLocal(lhs.ri)
+          context.emitFuncCallStatic(r1, r2)
       # Assignment
       else if lType.isOfType(rType)
         isArray = rhs.indices?
@@ -614,7 +618,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           return rhs.type
 
     emit: (context, lhs, rhs) =>
-      return context.emitPlusAssign(rhs.value.isContextGlobal)
+      isGlobal = rhs.value.isContextGlobal
+      @ri = rhs.ri
+      return context.emitPlusAssign(lhs.ri, rhs.ri, @ri)
 
   module.MinusChuckOperator = class MinusChuckOperator
     constructor: ->
@@ -629,7 +635,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           return rhs.type
 
     emit: (context, lhs, rhs) ->
-      return context.emitMinusAssign(rhs.value.isContextGlobal)
+      isGlobal = rhs.value.isContextGlobal
+      @ri = rhs.ri
+      return context.emitMinusAssign(lhs.ri, rhs.ri, @ri)
 
   class AdditiveSubtractiveOperatorBase
     check: (lhs, rhs) ->
@@ -668,17 +676,17 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: ->
       super("PrefixPlusPlusOperator")
 
-    emit: (context, isGlobal) =>
+    emit: (context, r1, r2, isGlobal) ->
       logging.debug("#{@name} emitting PreIncNumber")
-      context.emitPreIncNumber(isGlobal)
+      context.emitPreIncNumber(r1, r2)
 
   module.PostfixPlusPlusOperator = class extends PlusPlusOperatorBase
     constructor: ->
       super("PostfixPlusPlusOperator")
 
-    emit: (context, isGlobal) =>
+    emit: (context, r1, r2, isGlobal) ->
       logging.debug("#{@name} emitting PostIncNumber")
-      context.emitPostIncNumber(isGlobal)
+      context.emitPostIncNumber(r1, r2)
 
   module.MinusOperator = class extends AdditiveSubtractiveOperatorBase
     constructor: ->
@@ -686,7 +694,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     emit: (context, lhs, rhs) ->
       logging.debug("#{@name} emitting SubtractNumber")
-      context.emitSubtractNumber()
+      @ri = context.allocRegister()
+      context.emitSubtractNumber(lhs.ri, rhs.ri, @ri)
+      return
 
   module.MinusMinusOperator = class
     constructor: ->
@@ -711,14 +721,15 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
   module.TimesOperator = class TimesOperator extends TimesDivideOperatorBase
     constructor: -> @name = "TimesOperator"
 
-    emit: (context, lhs, rhs) =>
+    emit: (context, lhs, rhs) ->
       @ri = context.allocRegister()
       context.emitTimesNumber(lhs.ri, rhs.ri, @ri)
+      return
 
   module.DivideOperator = class DivideOperator extends TimesDivideOperatorBase
     constructor: -> @name = "DivideOperator"
 
-    check: (lhs, rhs, context) =>
+    check: (lhs, rhs, context) ->
       logging.debug("#{@name} scanPass4")
       type = super(lhs, rhs, context)
       if type?
@@ -728,8 +739,10 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         logging.debug("#{@name} scanPass4: Deduced the type to be float")
         return types.float
 
-    emit: (context) =>
-      context.emitDivideNumber()
+    emit: (context, lhs, rhs) ->
+      @ri = context.allocRegister()
+      context.emitDivideNumber(lhs.ri, rhs.ri, @ri)
+      return
 
   class GtLtOperatorBase
     check: (lhs, rhs) =>
@@ -937,7 +950,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass5: (context) =>
       @exp.scanPass5(context)
-      @op.emit(context, @exp.value.isContextGlobal)
+      @ri = context.allocRegister()
+      @op.emit(context, @exp.ri, @ri, @exp.value.isContextGlobal)
 
   module.ArraySub = class extends NodeBase
     constructor: (exp) ->
