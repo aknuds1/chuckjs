@@ -26,24 +26,24 @@ define("chuck/namespace", ["chuck/logging"], (logging) ->
       if climb && @_parent?
         @_parent.findValue(name, climb)
 
-    addVariable: (name, type, value, isGlobal) =>
+    addVariable: (name, type, value, isGlobal) ->
       @_scope.addVariable(name, type, @, value, isGlobal)
 
-    addConstant: (name, type, value, isGlobal) =>
+    addConstant: (name, type, value, isGlobal) ->
       @_scope.addConstant(name, type, @, value, isGlobal)
 
-    addValue: (value, name, isGlobal=true) =>
+    addValue: (value, name, isGlobal=true) ->
       @_scope.addValue(value, name, isGlobal)
 
-    commit: =>
+    commit: ->
       for scope in [@_scope, @_types]
         scope.commit()
       return
 
-    enterScope: =>
+    enterScope: ->
       logging.debug("Namespace entering nested scope")
       @_scope.push()
-    exitScope: =>
+    exitScope: ->
       logging.debug("Namespace exiting nested scope")
       @_scope.pop()
 
@@ -72,13 +72,13 @@ define("chuck/namespace", ["chuck/logging"], (logging) ->
 
       return @_commitMap[name]
 
-    addVariable: (name, type, namespace, value, isGlobal=true) =>
+    addVariable: (name, type, namespace, value, isGlobal=true) ->
       chuckValue = new ChuckValue(type, name, namespace, isGlobal, value)
       logging.debug("Scope: Adding variable #{name} to scope #{@_scopes.length-1}")
       @addValue(chuckValue)
       return chuckValue
 
-    addConstant: (name, type, namespace, value, isGlobal=true) =>
+    addConstant: (name, type, namespace, value, isGlobal=true) ->
       chuckValue = new ChuckValue(type, name, namespace, isGlobal, value, true)
       logging.debug("Scope: Adding constant #{name} to scope #{@_scopes.length-1}")
       @addValue(chuckValue)

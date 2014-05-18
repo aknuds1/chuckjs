@@ -64,14 +64,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass5: (context, opts) =>
       opts = opts || {}
-      shouldPop = if opts.pop? then opts.pop else true
       @_child.scanPass5(context)
-      if @_child.type? && @_child.type.size > 0
-        if shouldPop
-          logging.debug("ExpressionStatement: Emitting PopWord to remove superfluous return value")
-          context.emitPopWord()
-      else
-        logging.debug("ExpressionStatement: Child expression has no return value")
 
   module.BinaryExpression = class extends NodeBase
     constructor: (exp1, operator, exp2) ->
@@ -106,6 +99,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @exp2.scanPass5(context)
       logging.debug("Binary expression #{@operator.name}: Emitting operator")
       @operator.emit(context, @exp1, @exp2)
+      @ri = @operator.ri
       return
 
   # Baseclass for expressions, may represent values or variables
@@ -119,11 +113,11 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       super("ExpressionList")
       @_expressions = [expression]
 
-    prepend: (expression) =>
+    prepend: (expression) ->
       @_expressions.splice(0, 0, expression)
       @
 
-    _scanPass: (pass) =>
+    _scanPass: (pass) ->
       for exp in @_expressions
         exp["scanPass#{pass}"].apply(exp, Array.prototype.slice.call(arguments, 1))
       return
@@ -132,12 +126,14 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     scanPass2: _.partial(@prototype._scanPass, 2)
     scanPass3: _.partial(@prototype._scanPass, 3)
 
-    scanPass4: (context) =>
+    scanPass4: (context) ->
       @_scanPass(4, context)
       @types = (exp.type for exp in @_expressions)
       @type = @types[0]
 
-    scanPass5: _.partial(@prototype._scanPass, 5)
+    scanPass5: (context) ->
+      @_scanPass(5, context)
+      @ri = @_expressions[0].ri
 
     getCount: -> @_expressions.length
 
@@ -147,12 +143,12 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @typeDecl = typeDecl
       @varDecls = varDecls
 
-    scanPass2: (context) =>
+    scanPass2: (context) ->
       @type = context.findType(@typeDecl.type)
       logging.debug("Variable declaration of type #{@type.name}")
       return
 
-    scanPass3: (context) =>
+    scanPass3: (context) ->
       for varDecl in @varDecls
         logging.debug("Adding variable '#{varDecl.name}' of type #{@type.name} to current namespace")
         if varDecl.array?
@@ -161,7 +157,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         varDecl.value = context.addVariable(varDecl.name, @type)
       return
 
-    scanPass4: (context) =>
+    scanPass4: (context) ->
       super()
       for varDecl in @varDecls
         logging.debug("#{@nodeType} Checking variable #{varDecl.name}")
@@ -169,7 +165,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         context.addValue(varDecl.value)
       return
 
-    scanPass5: (context) =>
+    scanPass5: (context) ->
       super()
       for varDecl in @varDecls
         if varDecl.array?
@@ -180,8 +176,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
           logging.debug("#{@nodeType}: Instantiating array", varDecl)
         else
-          logging.debug("#{@nodeType}: Emitting Assignment for value #{varDecl.value}")
-      context.emitAssignment(@type, varDecl)
+          logging.debug("#{@nodeType}: Emitting Assignment for value:", varDecl.value)
+      @ri = context.emitAssignment(@type, varDecl)
 
       return
 
@@ -205,14 +201,14 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     scanPass4: (context) =>
       super()
       switch @name
-        when "dac"
-          @_meta = "value"
-          @type = types.Dac
-          break
-        when "blackhole"
-          @_meta = "value"
-          @type = types.UGen
-          break
+#        when "dac"
+#          @_meta = "value"
+#          @type = types.Dac
+#          break
+#        when "blackhole"
+#          @_meta = "value"
+#          @type = types.UGen
+#          break
         when "second"
           @type = types.dur
           break
@@ -245,44 +241,45 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     scanPass5: (context) =>
       super()
       switch @name
-        when "dac"
-          context.emitDac()
-          break
-        when "blackhole"
-          context.emitBunghole()
-          break
+#        when "dac"
+#          context.emitDac()
+#          break
+#        when "blackhole"
+#          context.emitBunghole()
+#          break
         when "second"
           # Push the value corresponding to a second
-          context.emitRegPushImm(audioContextService.getSampleRate())
+          @ri = context.emitLoadConst(audioContextService.getSampleRate())
           break
         when "ms"
           # Push the value corresponding to a millisecond
-          context.emitRegPushImm(audioContextService.getSampleRate()/1000)
+          @ri = context.emitLoadConst(audioContextService.getSampleRate()/1000)
           break
         when "samp"
           # Push the value corresponding to a sample
-          context.emitRegPushImm(1)
+          @ri = context.emitLoadConst(1)
           break
         when "hour"
           # Push the value corresponding to an hour
-          context.emitRegPushImm(audioContextService.getSampleRate()*60*60)
+          @ri = context.emitLoadConst(audioContextService.getSampleRate()*60*60)
           break
         when "now"
-          context.emitRegPushNow()
           break
         when "me"
           context.emitRegPushMe()
         when "true"
-          context.emitRegPushImm(1)
+          @ri = context.emitLoadConst(1)
         else
-          # Emit symbol
-          scopeStr = if @value.isContextGlobal then "global" else "function"
-          if @_emitVar
-            logging.debug("#{@nodeType}: Emitting RegPushMemAddr (#{@value.offset}) since this is a variable (scope: #{scopeStr})")
-            context.emitRegPushMemAddr(@value.offset, @value.isContextGlobal)
-          else
-            logging.debug("#{@nodeType}: Emitting RegPushMem (#{@value.offset}) since this is a constant (scope: #{scopeStr})")
-            context.emitRegPushMem(@value.offset, @value.isContextGlobal)
+          @ri = @value.ri
+          logging.debug("#{@nodeType}: Variable at register #{@ri}: #{@value.name}")
+#          # Emit symbol
+#          scopeStr = if @value.isContextGlobal then "global" else "function"
+#          if @_emitVar
+#            logging.debug("#{@nodeType}: Emitting RegPushMemAddr (#{@value.offset}) since this is a variable (scope: #{scopeStr})")
+#            context.emitRegPushMemAddr(@value.offset, @value.isContextGlobal)
+#          else
+#            logging.debug("#{@nodeType}: Emitting RegPushMem (#{@value.offset}) since this is a constant (scope: #{scopeStr})")
+#            context.emitRegPushMem(@value.offset, @value.isContextGlobal)
 
       return
 
@@ -297,8 +294,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass5: (context) =>
       super()
-      logging.debug("#{@nodeType}: Emitting RegPushImm(#{@value})")
-      context.emitRegPushImm(@value)
+      logging.debug("#{@nodeType}: Emitting LoadConst(#{@value})")
+      @ri = context.emitLoadConst(@value)
 
   module.PrimaryFloatExpression = class extends ExpressionBase
     constructor: (value) ->
@@ -312,7 +309,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     scanPass5: (context) =>
       super()
       logging.debug("#{@nodeType}: Emitting RegPushImm for #{@value}")
-      context.emitRegPushImm(@value)
+      context.emitLoadConst(@value)
 
   module.PrimaryHackExpression = class extends ExpressionBase
     constructor: (expression) ->
@@ -344,7 +341,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass5: (context) =>
       super()
-      context.emitRegPushImm(@value)
+      context.emitLoadConst(@value)
 
   module.ArrayExpression = class ArrayExpression extends ExpressionBase
     constructor: (base, indices) ->
@@ -432,32 +429,30 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       logging.debug("#{@nodeType} scanPass5")
       super(context)
       if @args?
-        logging.debug("#{@nodeType}: Emitting arguments")
+        logging.debug("#{@nodeType}: Scanning arguments")
         @args.scanPass5(context)
 
       if @_ckFunc.isMember
-        logging.debug("#{@nodeType}: Emitting method instance")
+        logging.debug("#{@nodeType}: Scanning method instance")
         @func.scanPass5(context)
-        logging.debug("#{@nodeType}: Emitting duplication of 'this' reference on stack")
-        context.emitRegDupLast()
 
-      logging.debug("#{@nodeType}: Emitting function #{@_ckFunc.name}")
-      if @_ckFunc.isMember
-        context.emitDotMemberFunc(@_ckFunc)
-      else
-        context.emitDotStaticFunc(@_ckFunc)
-
-      context.emitRegPushImm(context.getCurrentOffset())
       if @_ckFunc.isBuiltIn
         if @_ckFunc.isMember
           logging.debug("#{@nodeType}: Emitting instance method call")
-          context.emitFuncCallMember()
+          r1 = context.emitLoadConst(@_ckFunc)
+          # Allocate argument registers
+          r2 = context.emitLoadLocal(@func.ri)
+          # TODO: arguments
+          context.emitFuncCallMember(r1, r2)
         else
           logging.debug("#{@nodeType}: Emitting static method call")
           context.emitFuncCallStatic()
       else
         logging.debug("#{@nodeType}: Emitting function call")
         context.emitFuncCall()
+
+      # The return value of the function call
+      @ri = 0
 
   module.DurExpression = class extends ExpressionBase
     constructor: (base, unit) ->
@@ -486,7 +481,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       super(context)
       @base.scanPass5(context)
       @unit.scanPass5(context)
-      context.emitTimesNumber()
+      @ri = context.allocRegister()
+      context.emitTimesNumber(@base.ri, @unit.ri, @ri)
 
   module.UnaryExpression = class extends ExpressionBase
     constructor: (operator, exp) ->
@@ -551,28 +547,29 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       rType = if rhs.castTo? then rhs.castTo else rhs.type
       # UGen => UGen
       if lType.isOfType(types.UGen) && rType.isOfType(types.UGen)
-        context.emitUGenLink()
+        context.emitUGenLink(lhs.ri, rhs.ri)
+        @ri = rhs.ri
       # Time advance
       else if lType.isOfType(types.dur) && rType.isOfType(types.Time)
-        context.emitAddNumber()
         if rhs.name == "now"
-          context.emitTimeAdvance()
+          context.emitTimeAdvance(lhs.ri)
       # Function call
       else if rType.isOfType(types.Function)
         if rhs._ckFunc.isMember
-          logging.debug("#{@name}: Emitting duplication of 'this' reference on stack")
-          context.emitRegDupLast()
           logging.debug("#{@name}: Emitting instance method #{rhs._ckFunc.name}")
-          context.emitDotMemberFunc(rhs._ckFunc)
-          logging.debug("#{@name} emitting instance method call")
+          r1 = context.emitDotMemberFunc(rhs._ckFunc, rhs.ri)
         else
           logging.debug("#{@name}: Emitting static method #{rhs._ckFunc.name}")
           context.emitDotStaticFunc(rhs._ckFunc)
           logging.debug("#{@name} emitting static method call")
-        # FIXME
-        context.emitRegPushImm(8)
         if rhs._ckFunc.isMember
-          context.emitFuncCallMember()
+          # Allocate argument registers
+          r2 = context.emitLoadLocal(rhs.ri)
+          context.emitLoadLocal(lhs.ri)
+          logging.debug("#{@name} emitting instance method call")
+          context.emitFuncCallMember(r1, r2)
+          # The return value of the function call
+          @ri = 0
         else
           context.emitFuncCallStatic()
       # Assignment
@@ -582,7 +579,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           logging.debug("#{@name} emitting OpAtChuck to assign one object to another")
         else
           logging.debug("#{@name} emitting OpAtChuck to assign an object to an array element")
-        return context.emitOpAtChuck(isArray)
+        context.emitOpAtChuck(lhs.ri, rhs.ri, isArray)
+        @ri = rhs.ri
 
       return
 
@@ -632,7 +630,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: ->
       @name = "MinusChuckOperator"
 
-    check: (lhs, rhs, context) =>
+    check: (lhs, rhs, context) ->
       if lhs.type == rhs.type
         if typesModule.isPrimitive(lhs.type) || lhs.type == types.String
           if rhs._meta == "variable"
@@ -640,11 +638,11 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
             rhs._emitVar = true
           return rhs.type
 
-    emit: (context, lhs, rhs) =>
+    emit: (context, lhs, rhs) ->
       return context.emitMinusAssign(rhs.value.isContextGlobal)
 
   class AdditiveSubtractiveOperatorBase
-    check: (lhs, rhs) =>
+    check: (lhs, rhs) ->
       if lhs.type == rhs.type
         return lhs.type
       if (lhs.type == types.dur && rhs.type == types.Time) || (lhs.type == types.Time && rhs.type == types.dur)
@@ -659,15 +657,16 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: ->
       @name = "PlusOperator"
 
-    emit: (context, lhs, rhs) =>
-      logging.debug('PlusOperator emitting AddNumber')
-      context.emitAddNumber()
+    emit: (context, lhs, rhs) ->
+      @ri = context.allocRegister()
+      logging.debug("PlusOperator emitting AddNumber for registers #{lhs.ri} and #{rhs.ri} to register #{@ri}")
+      context.emitAddNumber(lhs.ri, rhs.ri, @ri)
 
   PlusPlusOperatorBase = class
     constructor: (name) ->
       @name = name
 
-    check: (exp) =>
+    check: (exp) ->
       exp._emitVar = true
       type = exp.type
       if type == types.int || type == types.float
@@ -695,7 +694,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: ->
       @name = "MinusOperator"
 
-    emit: (context, lhs, rhs) =>
+    emit: (context, lhs, rhs) ->
       logging.debug("#{@name} emitting SubtractNumber")
       context.emitSubtractNumber()
 
@@ -704,7 +703,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @name = "MinusMinusOperator"
 
   class TimesDivideOperatorBase
-    check: (lhs, rhs, context) =>
+    check: (lhs, rhs, context) ->
       lhsType = lhs.type
       rhsType = rhs.type
       if lhs.type == types.int && rhs.type == types.float
@@ -722,8 +721,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
   module.TimesOperator = class TimesOperator extends TimesDivideOperatorBase
     constructor: -> @name = "TimesOperator"
 
-    emit: (context) =>
-      context.emitTimesNumber()
+    emit: (context, lhs, rhs) =>
+      @ri = context.allocRegister()
+      context.emitTimesNumber(lhs.ri, rhs.ri, @ri)
 
   module.DivideOperator = class DivideOperator extends TimesDivideOperatorBase
     constructor: -> @name = "DivideOperator"
@@ -770,35 +770,35 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @condition = cond
       @body = body
 
-    scanPass1: =>
+    scanPass1: ->
       @condition.scanPass1()
       @body.scanPass1()
       return
 
-    scanPass2: (context) =>
+    scanPass2: (context) ->
       @condition.scanPass2(context)
       @body.scanPass2(context)
       return
 
-    scanPass3: (context) =>
+    scanPass3: (context) ->
       @condition.scanPass3(context)
       @body.scanPass3(context)
       return
 
-    scanPass4: (context) =>
+    scanPass4: (context) ->
       logging.debug("WhileStatement: Type checking condition")
       @condition.scanPass4(context)
       logging.debug("WhileStatement: Body")
       @body.scanPass4(context)
       return
 
-    scanPass5: (context) =>
+    scanPass5: (context) ->
       startIndex = context.getNextIndex()
       @condition.scanPass5(context)
       # Push break condition
-      context.emitRegPushImm(false)
+      r2 = context.emitLoadConst(false)
       logging.debug("WhileStatement: Emitting BranchEq")
-      branchEq = context.emitBranchEq()
+      branchEq = context.emitBranchEq(@condition.ri, r2)
       @body.scanPass5(context)
       logging.debug("WhileStatement: Emitting GoTo (instruction number #{startIndex})")
       context.emitGoto(startIndex)
@@ -858,7 +858,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       # The condition
       logging.debug("#{@nodeType}: Emitting the condition")
       @c2.scanPass5(context, pop: false)
-      context.emitRegPushImm(false)
+      context.emitLoadConst(false)
       logging.debug("#{@nodeType}: Emitting BranchEq")
       branchEq = context.emitBranchEq()
       # The body
@@ -927,8 +927,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     scanPass5: (context) =>
       logging.debug("#{@nodeType} scanPass5")
       if !@isStatic
-        logging.debug("#{@nodeType} scanPass5: Emitting base expression")
+        logging.debug("#{@nodeType} scanPass5: Scanning base expression")
         @base.scanPass5(context)
+        @ri = @base.ri
 
       return
 

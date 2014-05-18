@@ -3,6 +3,7 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-shell');
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-stencil')
+  grunt.loadNpmTasks('grunt-contrib-watch')
 
   grunt.initConfig({
     coffee: {
@@ -20,6 +21,7 @@ module.exports = function (grunt) {
           'lib/chuck/types.js': 'src/chuck/types.coffee',
           'lib/chuck/vm.js': 'src/chuck/vm.coffee',
           'lib/chuck/namespace.js': 'src/chuck/namespace.coffee',
+          'lib/chuck//dacService.js': 'src/chuck/dacService.coffee',
           'lib/chuck/libs/math.js': 'src/chuck/libs/math.coffee',
           'lib/chuck/libs/std.js': 'src/chuck/libs/std.coffee'
         }
@@ -50,7 +52,7 @@ module.exports = function (grunt) {
       lib: {
         files: [
           {expand: true, cwd: 'src/lib/', src: ['q.js'], dest: 'lib/'},
-          {expand: true, cwd: 'src/chuck/', src: ['ugen.js', 'instructions'], dest: 'lib/chuck/'},
+          {expand: true, cwd: 'src/chuck/', src: ['ugen.js', 'instructions.js'], dest: 'lib/chuck/'},
           {expand: true, cwd: 'src/chuck/libs/', src: ['stk.js', 'ugens.js'], dest: 'lib/chuck/libs/'}
         ]
       },
@@ -105,7 +107,13 @@ module.exports = function (grunt) {
           }
         ]
       }
-
+    },
+    watch: {
+      files: [
+        'src/**/*.js', 'src/**/*.coffee', 'perftest/src/**/*.coffee', 'pages/**/*.dot.html', 'pages/**/*.coffee',
+        'Gruntfile.js'
+      ],
+      tasks: ['default']
     }
   });
 

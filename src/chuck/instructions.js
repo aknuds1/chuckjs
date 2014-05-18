@@ -6,28 +6,20 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
 //    logging.debug.apply(null, arguments)
   }
 
-  function callMethod(vm) {
-    var localDepth = vm.popFromReg()
-    logDebug("Popped local depth from stack: #{localDepth}")
-    var func = vm.popFromReg()
-    logDebug("Popped function from stack")
+  function callFunction(vm, func, ri, riRet) {
     var stackDepth = func.stackDepth
-    var args = []
-    var i = 0
-    logDebug("Popping #{stackDepth} arguments from stack")
-    while (i++ < stackDepth) {
-      logDebug("Popping argument #{i} from stack")
-      args.unshift(vm.popFromReg())
-    }
+    logDebug("Calling function", func)
+    logDebug("Passing registers " + ri + " to " + ri + stackDepth - 1 + " as arguments")
+    var args = vm.registers.slice(ri, ri+stackDepth)
     var thisObj = undefined
     if (func.isMember) {
       logDebug("Function is a method, passing 'this' to it")
-      thisObj = args.pop()
+      thisObj = args.shift()
     }
     var retVal = func.apply(thisObj, args)
     if (func.retType != types.void) {
-      logDebug("Pushing return value #{retVal} to stack")
-      vm.pushToReg(retVal)
+      logDebug("Assigning return value to register " + riRet + ":", retVal)
+      vm.registers[riRet] = retVal
     }
   }
 
@@ -44,60 +36,40 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     }
     self._executeCb.call(self, vm)
   }
+  module.Instruction = Instruction
 
-  module.instantiateObject = function (type) {
+  module.instantiateObject = function (type, ri) {
     return new Instruction("InstantiateObject", { type: type }, function (vm) {
       logDebug("Instantiating object of type #{type.name}")
       var ug = type.ugenNumOuts == 1 ? new ugen.MonoUGen(type) : new ugen.MultiChannelUGen(type)
       vm.addUgen(ug)
-      vm.pushToReg(ug)
+      vm.registers[ri] = ug
     })
   }
 
-  module.allocWord = function (offset, isGlobal) {
-    return new Instruction("AllocWord", {offset: offset }, function (vm) {
-      // TODO: Might want to make this depend on variable type
-      vm.insertIntoMemory(offset, 0, isGlobal)
-      // Push memory stack index of value
-      var scopeStr = isGlobal ? "global" : "function"
-      logDebug("Pushing memory stack index #{@offset} (scope: #{scopeStr}) to regular stack")
-      vm.pushToReg(offset)
-    })
-  }
-
-  module.popWord = function () {
-    return new Instruction("PopWord", undefined, function (vm) {
-      logDebug("Popping from regular stack")
-      vm.popFromReg()
-    })
-  }
-
-  module.preConstructor = function (type, stackOffset) {
-    return new Instruction("PreConstructor", {type: type, stackOffset: stackOffset }, function (vm) {
+  module.preConstructor = function (type, ri) {
+    return new Instruction("PreConstructor", {type: type}, function (vm) {
       // Duplicate top of stack, which should be object pointer
       logDebug("Calling pre-constructor of #{@type.name}")
-//       Push 'this' reference
-      vm.pushToReg(vm.peekReg())
 //       Signal that this function needs a 'this' reference
       this.type.preConstructor.isMember = true
       this.type.preConstructor.stackDepth = 1
       this.type.preConstructor.retType = types.void
-      vm.pushToReg(this.type.preConstructor)
-      vm.pushToReg(stackOffset)
 
-      callMethod(vm)
+      callFunction(vm, this.type.preConstructor, ri)
     })
   }
 
-  module.assignObject = function (isArray, isGlobal) {
+  module.assignObject = function (isArray, isGlobal, r1, r2) {
     if (isGlobal == null) {isGlobal = true}
     return new Instruction("AssignObject", {}, function (vm) {
-      var memStackIndex = vm.popFromReg()
-      var obj = vm.popFromReg()
       var scopeStr = isGlobal ? "global" : "function"
+      var tgtRegisters = isGlobal ? vm.globalRegisters : vm.registers
+      var obj
       if (!isArray) {
-        logDebug("#{@instructionName}: Assigning object to memory stack index #{memStackIndex} (scope: #{scopeStr}):", obj)
-        vm.insertIntoMemory(memStackIndex, obj, isGlobal)
+        obj = vm.registers[r1]
+        logDebug(this.instructionName + ": Assigning object to register " + r2 + " (scope: " + scopeStr + "):", obj)
+        tgtRegisters[r2] = obj
       }
       else {
         var array = memStackIndex[0]
@@ -105,8 +77,6 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
         logDebug("#{@instructionName}: Assigning object to array, index #{index} (scope: #{scopeStr}):", obj)
         array[index] = obj
       }
-
-      vm.pushToReg(obj)
     })
   }
 
@@ -170,13 +140,12 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
 
   module.eoc = function () {return new Instruction("Eoc") }
 
-  module.uGenLink = function () {
+  module.uGenLink = function (r1, r2) {
     return new Instruction("UGenLink", {}, function (vm) {
-      var dest = vm.popFromReg()
-      var src = vm.popFromReg()
-      logDebug("UGenLink: Linking node of type #{src.type.name} to node of type #{dest.type.name}")
+      var src = vm.registers[r1]
+      var dest = vm.registers[r2]
+      logDebug("UGenLink: Linking node of type " + src.type.name + " to node of type " + dest.type.name)
       dest.add(src)
-      vm.pushToReg(dest)
     })
   }
 
@@ -190,24 +159,6 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     })
   }
 
-  module.regPushImm = function (val) {
-    return new Instruction("RegPushImm", {}, function (vm) {
-      logDebug("RegPushImm: Pushing " + val + " to stack")
-      vm.pushToReg(val)
-    })
-  }
-
-  module.funcCallMember = function () {
-    return new Instruction("FuncCallMember", {}, function (vm) {
-      var localDepth = vm.popFromReg()
-      var func = vm.popFromReg()
-      vm.pushToReg(func)
-      vm.pushToReg(localDepth)
-      logDebug("Calling instance method '#{func.name}'")
-      callMethod(vm)
-    })
-  }
-
   module.funcCallStatic = function () {
     return new Instruction("FuncCallStatic", {}, function (vm) {
     var localDepth = vm.popFromReg()
@@ -217,7 +168,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     logDebug("Calling static method '#{func.name}'")
     vm.pushToReg(func)
     vm.pushToReg(localDepth)
-    callMethod(vm)
+    callFunction(vm)
   })
   }
 
@@ -277,11 +228,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     })
   }
   module.regPushMem = function (offset, isGlobal) {
-    return new Instruction("RegPushMem", {}, function (vm) {
-      var globalStr = isGlobal ? " global" : ""
-      logDebug("#{@instructionName}: Pushing#{globalStr} memory value (@#{offset}) to regular stack")
-      vm.pushToRegFromMem(offset, isGlobal)
-    })
+    return new Instruction("RegPushMem", {offset: offset, isGlobal: isGlobal})
   }
 
   module.regDupLast = function () {
@@ -292,30 +239,10 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     })
   }
 
-  module.dotMemberFunc = function(func) {
-    return  new Instruction("DotMemberFunc", {}, function (vm) {
-      logDebug("#{@instructionName}: Popping instance from stack")
-      vm.popFromReg()
-      // TODO: Get implementation of function from object's vtable
-      logDebug("#{@instructionName}: Pushing instance method to stack:", func)
-      vm.pushToReg(func)
-    })
-  }
-
   module.dotStaticFunc = function (func) {
     return new Instruction("DotStaticFunc", {}, function (vm) {
       logDebug("DotStaticFunc: Pushing static method to stack:", func)
       vm.pushToReg(func)
-    })
-  }
-
-  module.timesNumber = function () {
-    return new Instruction("TimesNumber", {}, function (vm) {
-      var lhs = vm.popFromReg()
-      var rhs = vm.popFromReg()
-      var number = lhs * rhs
-      logDebug("TimesNumber resulted in: #{number}")
-      vm.pushToReg(number)
     })
   }
 
@@ -338,16 +265,6 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
   module.regPushMe = function () {
     return new Instruction("RegPushMe", {}, function (vm) {
       vm.pushMe()
-    })
-  }
-
-  module.addNumber = function () {
-    return new Instruction("AddNumber", {}, function (vm) {
-      var rhs = vm.popFromReg()
-      var lhs = vm.popFromReg()
-      var number = lhs + rhs
-      logDebug("#{@instructionName} resulted in: #{number}")
-      vm.pushToReg(number)
     })
   }
 
@@ -381,16 +298,6 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     })
   }
 
-  module.timesNumber = function () {
-    return new Instruction("TimesNumber", {}, function (vm) {
-      var rhs = vm.popFromReg()
-      var lhs = vm.popFromReg()
-      var number = lhs * rhs
-      logDebug("#{@instructionName}: Multiplying #{lhs} with #{rhs} resulted in: #{number}")
-      vm.pushToReg(number)
-    })
-  }
-
   module.ltNumber = function () {
     return  new Instruction("LtNumber", {}, function (vm) {
       var rhs = vm.popFromReg()
@@ -408,14 +315,6 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
       var result = lhs > rhs
       logDebug("#{@instructionName}: Pushing #{result} to regular stack")
       vm.pushToReg(result)
-    })
-  }
-
-  module.timeAdvance = function () {
-    return new Instruction("TimeAdvance", {}, function (vm) {
-      var time = vm.popFromReg()
-      vm.suspendUntil(time)
-      vm.pushToReg(time)
     })
   }
 
@@ -470,22 +369,6 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
       }
       else {
         console.log(obj + " : (" + type.name + ")")
-      }
-    })
-  }
-
-  module.branchEq = function (jmp) {
-    return new Instruction("BranchEq", {jmp: jmp}, function (vm) {
-      var rhs = vm.popFromReg()
-      var lhs = vm.popFromReg()
-      var result = lhs == rhs
-      logDebug("Comparing #{lhs} to #{rhs}: #{result}")
-      if (result) {
-        logDebug("Jumping to instruction number " + this.jmp)
-        vm.jumpTo(this.jmp)
-      }
-      else {
-        logDebug("Not jumping")
       }
     })
   }

@@ -25,7 +25,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
         memberType = if v instanceof ChuckFunctionBase then types.Function else undefined
         @_namespace.addVariable(k, memberType, v)
 
-    isOfType: (otherType) =>
+    isOfType: (otherType) ->
       if @name == otherType.name
         return true
 
@@ -202,7 +202,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
   constructDac = ->
     @_node = audioContextService.outputNode
   types.Dac = new ChuckType("Dac", types.UGenStereo, preConstructor: constructDac)
-  types.Bunghole = new ChuckType("Bunghole", types.MonoUGen)
+  types.Bunghole = new ChuckType("Bunghole", types.UGen)
   types.void = new ChuckType("void")
   types.Pan2 = new ChuckType("Pan2", types.UGenStereo)
 

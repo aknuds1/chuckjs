@@ -1,9 +1,10 @@
 define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "chuck/namespace", "chuck/logging",
-"chuck/libs/math", "chuck/libs/std", "chuck/libs/stk", "chuck/libs/ugens"],
-(nodes, types, instructions, namespaceModule, logging, mathLib, stdLib, stkLib, ugensLib) ->
+"chuck/libs/math", "chuck/libs/std", "chuck/libs/stk", "chuck/libs/ugens", "chuck/dacService"],
+(nodes, types, instructions, namespaceModule, logging, mathLib, stdLib, stkLib, ugensLib, dacService) ->
   module = {}
+  {Instruction} = instructions
   class ChuckLocal
-    constructor: (@size, @offset, @name, @isContextGlobal) ->
+    constructor: (@size, @ri, @name, @isContextGlobal) ->
 
   class ChuckFrame
     constructor: ->
@@ -14,8 +15,16 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     constructor: ->
       @instructions = []
       @frame = new ChuckFrame()
+      # Current register index
+      @_ri = 0
 
       @pushScope()
+
+    allocRegister: (value) ->
+      ri = ++@_ri
+      if value?
+        value.ri = ri
+      ri
 
     pushScope: =>
       @frame.stack.push(null)
@@ -34,13 +43,14 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @instructions.push(instruction)
       return instruction
 
-    allocateLocal: (type, value, isGlobal) =>
-      local = new ChuckLocal(type.size, @frame.currentOffset, value.name, isGlobal)
-      scopeStr = if @_isGlobal then "global" else "function"
-      logging.debug("Allocating local #{value.name} of type #{type.name} at offset #{local.offset} (scope: #{scopeStr})")
+    allocateLocal: (type, value, isGlobal) ->
+      ri = @allocRegister()
+      local = new ChuckLocal(type.size, ri, value.name, isGlobal)
+      scopeStr = if isGlobal then "global" else "function"
+      logging.debug("Allocating local #{value.name} of type #{type.name} in register #{local.ri} (scope: #{scopeStr})")
       @frame.currentOffset += 1
       @frame.stack.push(local)
-      value.offset = local.offset
+      value.ri = local.ri
       local
 
     finish: =>
@@ -60,13 +70,20 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
   class ScanningContext
     constructor: ->
       @code = new ChuckCode()
+      # Create global variables
       @_globalNamespace = new namespaceModule.Namespace("global")
       for lib in [types, mathLib, stdLib, stkLib, ugensLib]
         for own k, type of lib.types
           @_globalNamespace.addType(type)
           typeType = _.extend({}, types.Class)
           typeType.actualType = type
-          @_globalNamespace.addVariable(type.name, typeType, type)
+          value = @_globalNamespace.addVariable(type.name, typeType, type)
+          @code.allocRegister(value)
+
+      value = @_globalNamespace.addVariable("dac", dacService.dac.type, dacService.dac)
+      @code.allocRegister(value)
+      value = @_globalNamespace.addVariable("blackhole", dacService.bunghole.type, dacService.bunghole)
+      @code.allocRegister(value)
 
       @_globalNamespace.commit()
       @_namespaceStack = [@_globalNamespace]
@@ -148,18 +165,23 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     pushToContStack: (statement) =>
       @_contStack.push(statement)
 
-    instantiateObject: (type) =>
+    instantiateObject: (type, ri) =>
       logging.debug("Emitting instantiation of object of type #{type.name} along with preconstructor")
-      @code.append(instructions.instantiateObject(type))
-      @_emitPreConstructor(type)
+      @code.append(instructions.instantiateObject(type, ri))
+      @_emitPreConstructor(type, ri)
+      return
 
-    allocateLocal: (type, value, emit=true) =>
+    ### Allocate new register. ###
+    allocRegister: -> @code.allocRegister()
+
+    allocateLocal: (type, value) ->
       scopeStr = if @_isGlobal then "global" else "function"
       logging.debug("Allocating local (scope: #{scopeStr})")
       local = @code.allocateLocal(type, value, @_isGlobal)
-      if emit
-        logging.debug("Emitting AllocWord instruction")
-        @code.append(instructions.allocWord(local.offset, @_isGlobal))
+#      if emit
+#        debugger
+#        logging.debug("Emitting AllocWord instruction")
+#        @code.append(instructions.allocWord(local.offset, @_isGlobal))
       local
 
     getNextIndex: => @code.getNextIndex()
@@ -198,14 +220,11 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
           @code.append(instructions.preCtorArrayPost())
 
       isObj = types.isObj(type) || array?
+      local = @allocateLocal(type, value)
       if isObj && !array? && !type.isRef
-        @instantiateObject(type)
+        @instantiateObject(type, local.ri)
 
-      @allocateLocal(type, value)
-      if isObj && !type.isRef
-        logging.debug("Emitting AssignObject")
-        @code.append(instructions.assignObject(false, @_isGlobal))
-      return
+      local.ri
 
     emitPlusAssign: (isGlobal) =>
       @code.append(instructions.plusAssign(isGlobal))
@@ -214,40 +233,33 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instructions.minusAssign(isGlobal))
       return
 
-    emitDac: =>
-      @code.append(instructions.dac())
+    emitUGenLink: (r1, r2) ->
+      @code.append(instructions.uGenLink(r1, r2))
       return
 
-    emitBunghole: =>
-      @code.append(instructions.bunghole())
+    emitUGenUnlink: (r1, r2) ->
+      @code.append(instructions.uGenUnlink(r1, r2))
       return
 
-    emitUGenLink: =>
-      @code.append(instructions.uGenLink())
-      return
+    emitLoadConst: (value) ->
+      r1 = @allocRegister()
+      @code.append(new Instruction("LoadConst", {val: value, r1: r1}))
+      r1
 
-    emitUGenUnlink: =>
-      @code.append(instructions.uGenUnlink())
-      return
+    emitLoadLocal: (r1) ->
+      r2 = @allocRegister()
+      @code.append(new Instruction("LoadLocal", {r1: r1, r2: r2}))
+      r2
 
-    emitPopWord: =>
-      @code.append(instructions.popWord())
-      return
-
-    emitRegPushImm: (value) =>
-      @code.append(instructions.regPushImm(value))
-      return
-
-    emitFuncCallMember: =>
-      # The top of the stack should be the 'this' reference
-      @code.append(instructions.funcCallMember())
+    emitFuncCallMember: (r1, r2) ->
+      @code.append(new Instruction("FuncCallMember", {r1: r1, r2: r2}))
       return
 
     emitFuncCallStatic: =>
       @code.append(instructions.funcCallStatic())
       return
 
-    emitFuncCall: =>
+    emitFuncCall: ->
       @code.append(instructions.funcCall())
 
     emitRegPushMemAddr: (offset, isGlobal) =>
@@ -261,86 +273,84 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instructions.regDupLast())
       return
 
-    emitDotStaticFunc: (func) =>
+    emitDotStaticFunc: (func) ->
       @code.append(instructions.dotStaticFunc(func))
       return
 
-    emitDotMemberFunc: (func) =>
-      @code.append(instructions.dotMemberFunc(func))
+    emitDotMemberFunc: (func, r1) ->
+      r2 = @allocRegister()
+      @code.append(new Instruction("DotMemberFunc", {func: func, r1: r1, r2: r2}))
+      r2
+
+    emitTimesNumber: (r1, r2, r3) ->
+      @code.append(new Instruction("TimesNumber", {r1: r1, r2: r2, r3: r3}))
       return
 
-    emitTimesNumber: =>
-      @code.append(instructions.timesNumber())
-      return
-
-    emitDivideNumber: =>
+    emitDivideNumber: ->
       @code.append(instructions.divideNumber())
-      return
-
-    emitRegPushNow: =>
-      @code.append(instructions.regPushNow())
       return
 
     emitRegPushMe: =>
       @code.append(instructions.regPushMe())
       return
 
-    emitAddNumber: =>
-      @code.append(instructions.addNumber())
+    emitAddNumber: (r1, r2, r3) ->
+      @code.append(new Instruction("AddNumber", {r1: r1, r2: r2, r3: r3}))
       return
 
-    emitPreIncNumber: (isGlobal) => @code.append(instructions.preIncNumber(isGlobal))
+    emitPreIncNumber: (isGlobal) -> @code.append(instructions.preIncNumber(isGlobal))
 
-    emitPostIncNumber: (isGlobal) => @code.append(instructions.postIncNumber(isGlobal))
+    emitPostIncNumber: (isGlobal) -> @code.append(instructions.postIncNumber(isGlobal))
 
-    emitSubtractNumber: =>
+    emitSubtractNumber: ->
       @code.append(instructions.subtractNumber())
       return
 
-    emitTimesNumber: =>
-      @code.append(instructions.timesNumber())
+    emitTimesNumber: (r1, r2, r3) ->
+      @code.append(new Instruction("TimesNumber", {r1: r1, r2: r2, r3: r3}))
 
-    emitLtNumber: =>
+    emitLtNumber: ->
       @code.append(instructions.ltNumber())
       return
 
-    emitGtNumber: =>
+    emitGtNumber: ->
       @code.append(instructions.gtNumber())
       return
 
-    emitTimeAdvance: =>
-      @code.append(instructions.timeAdvance())
+    emitTimeAdvance: (r1) ->
+      logging.debug("Emitting TimeAdvance of register #{r1}")
+      @code.append(new Instruction("TimeAdvance", {r1: r1}))
       return
 
-    emitOpAtChuck: (isArray=false) =>
-      logging.debug("Emitting AssignObject (isArray: #{isArray})")
-      @code.append(instructions.assignObject(isArray, @_isGlobal))
+    emitOpAtChuck: (r1, r2, isArray=false) ->
+      logging.debug("Emitting AssignObject of register #{r1} to #{r2} (isArray: #{isArray})")
+      @code.append(instructions.assignObject(isArray, @_isGlobal, r1, r2))
       return
 
-    emitGack: (types) =>
+    emitGack: (types) ->
       @code.append(instructions.gack(types))
       return
 
-    emitBranchEq: (jmp) =>
-      @code.append(instructions.branchEq(jmp))
+    emitBranchEq: (r1, r2, jmp) ->
+      @code.append(new Instruction("BranchEq", {r1: r1, r2: r2, jmp: jmp}))
 
-    emitGoto: (jmp) =>
+    emitGoto: (jmp) ->
       @code.append(instructions.goto(jmp))
 
-    emitBreak: =>
+    emitBreak: ->
       instr = instructions.goto()
       @code.append(instr)
       @_breakStack.push(instr)
 
-    emitArrayAccess: (type, emitAddr) =>
+    emitArrayAccess: (type, emitAddr) ->
       @code.append(instructions.arrayAccess(type, emitAddr))
 
-    emitArrayInit: (type, count) => @code.append(instructions.arrayInit(type, count))
+    emitArrayInit: (type, count) -> @code.append(instructions.arrayInit(type, count))
 
-    emitMemSetImm: (offset, value, isGlobal) =>
+    emitMemSetImm: (offset, value, isGlobal) ->
       @code.append(instructions.memSetImm(offset, value, isGlobal))
 
-    emitFuncReturn: =>
+    emitFuncReturn: ->
       @code.append(instructions.funcReturn())
 
     emitNegateNumber: -> @code.append(instructions.negateNumber())
@@ -387,12 +397,12 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     getCurrentOffset: => @code.frame.currentOffset
 
-    _emitPreConstructor: (type) =>
+    _emitPreConstructor: (type, ri) =>
       if type.parent?
-        @_emitPreConstructor(type.parent)
+        @_emitPreConstructor(type.parent, ri)
 
       if type.hasConstructor
-        @code.append(instructions.preConstructor(type, @getCurrentOffset()))
+        @code.append(instructions.preConstructor(type, ri))
 
       return
 
@@ -403,6 +413,8 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     constructor: (ast) ->
       @_ast = ast
       @_context = new ScanningContext()
+      # Current register index
+      @_ri = 1
 
     pass1: =>
       @_pass(1)

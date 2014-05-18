@@ -1,7 +1,72 @@
-define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioContextService"],
-(logging, ugen, types, audioContextService) ->
+define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService", "chuck/dacService"],
+(logging, types, audioContextService, dacService) ->
   module = {}
   logDebug = -> #logging.debug.apply(null, arguments)
+
+  callFunction = (vm, func, r2) ->
+    stackDepth = func.stackDepth
+    args = vm.registers.slice(r2, r2 + stackDepth)
+    if func.isMember
+      logDebug("Function is a method, passing 'this' to it")
+      thisObj = args.shift()
+    retVal = func.apply(thisObj, args)
+    if func.retType != types.void
+      logDebug("Registering return value:", retVal)
+      vm.registers[0] = retVal
+    return
+
+  executeInstruction = (vm, instr) ->
+    switch instr.instructionName
+      when "LoadConst"
+        logDebug("LoadConst: Loading constant in register #{instr.r1}:", instr.val)
+        vm.registers[instr.r1] = instr.val
+        break
+      when "LoadLocal"
+        value = vm.registers[instr.r1]
+        logDebug("LoadLocal: Loading local from register #{instr.r1} to register #{instr.r2}:", value)
+        vm.registers[instr.r2] = value
+        break
+      when "FuncCallMember"
+        func = vm.registers[instr.r1]
+        logDebug("Calling instance method '#{func.name}'")
+        callFunction(vm, func, instr.r2)
+        break
+      when "BranchEq"
+        lhs = vm.registers[instr.r1]
+        rhs = vm.registers[instr.r2]
+        result = lhs == rhs
+        logDebug("Comparing #{lhs} to #{rhs}: #{result}")
+        if result
+          logDebug("Jumping to instruction number " + instr.jmp)
+          vm.jumpTo(instr.jmp)
+        else
+          logDebug("Not jumping")
+        break
+      when "DotMemberFunc"
+        # TODO: Get implementation of function from object's vtable
+        logDebug("#{instr.instructionName}: Putting instance method in register #{instr.r2}:", instr.func)
+        vm.registers[instr.r2] = instr.func
+        break
+      when "TimesNumber"
+        lhs = vm.registers[instr.r1]
+        rhs = vm.registers[instr.r2]
+        number = lhs * rhs
+        logDebug("TimesNumber resulted in: #{number}")
+        vm.registers[instr.r3] = number
+        break
+      when "TimeAdvance"
+        time = vm.registers[instr.r1]
+        vm.suspendUntil(vm._now + time)
+        break
+      when "AddNumber"
+        lhs = vm.registers[instr.r1]
+        rhs = vm.registers[instr.r2]
+        number = lhs + rhs
+        logDebug("#{instr.instructionName} (#{lhs} + #{rhs}) resulted in: #{number}")
+        vm.registers[instr.r3] = number
+        break
+      else
+        instr.execute(vm)
 
   compute = (self) ->
     if self._pc == 0
@@ -12,7 +77,7 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
     while self._pc < self.instructions.length && self._isRunning()
       instr = self.instructions[self._pc]
       logDebug("Executing instruction no. #{self._pc}: #{instr.instructionName}")
-      instr.execute(self)
+      executeInstruction(self, instr)
       self._pc = self._nextPc
       ++self._nextPc
 
@@ -35,10 +100,16 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
       @memStack = []
       # Stack holding the stacks of currently called functions
       @_funcMemStacks = []
+      @registers = @globalRegisters = []
+      # FIXME!
+      @globalRegisters[30] = dacService.dac
+      # FIXME!
+      @globalRegisters[31] = dacService.bunghole
+      @_registersStack = [@globalRegisters]
       @isExecuting = false
       @_ugens = []
-      @_dac = new ugen.Dac()
-      @_bunghole = new ugen.Bunghole()
+      @_dac = dacService.dac
+      @_bunghole = dacService.bunghole
       @_wakeTime = undefined
       @_pc = 0
       @_nextPc = 1
@@ -96,23 +167,6 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
       scopeStr = if isGlobal then "global" else "function"
       logDebug("Pushing memory stack address #{offset} (scope: #{scopeStr}) to regular stack:", value)
       @regStack.push(offset)
-
-    pushToRegFromMem: (offset, isGlobal) ->
-      value =  @_getMemStack(isGlobal)[offset]
-      scopeStr = if isGlobal then "global" else "function"
-      logDebug("Pushing memory stack value @#{offset} (scope: #{scopeStr}) to regular stack:", value)
-      @regStack.push(value)
-
-    popFromReg: ->
-      val = @regStack.pop()
-      if !val?
-        throw new Error("Nothing on the stack")
-      return val
-
-    peekReg: (offset) ->
-      if !offset?
-        offset = 0
-      return @regStack[@regStack.length-(1+offset)]
 
     insertIntoMemory: (index, value, isGlobal) ->
       scopeStr = if isGlobal then "global" else "function"
@@ -175,9 +229,13 @@ define("chuck/vm", ["chuck/logging", "chuck/ugen", "chuck/types", "chuck/audioCo
     enterFunctionScope: ->
       logDebug("Entering new function scope")
       @_funcMemStacks.push([])
+      @registers = []
+      @_registersStack.push(@registers)
     exitFunctionScope: ->
       logDebug("Exiting current function scope")
       @_funcMemStacks.pop()
+      @_registersStack.pop()
+      @registers = @_registersStack[@_registersStack.length-1]
 
     _terminateProcessing: ->
       logDebug("Terminating processing")
