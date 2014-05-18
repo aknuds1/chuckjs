@@ -331,7 +331,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass5: (context) =>
       super()
-      context.emitLoadConst(@value)
+      @ri = context.emitLoadConst(@value)
 
   module.ArrayExpression = class ArrayExpression extends ExpressionBase
     constructor: (base, indices) ->
@@ -550,10 +550,6 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         if rhs._ckFunc.isMember
           logging.debug("#{@name}: Emitting instance method #{rhs._ckFunc.name}")
           r1 = context.emitDotMemberFunc(rhs._ckFunc, rhs.ri)
-        else
-          logging.debug("#{@name}: Emitting static method #{rhs._ckFunc.name}")
-          context.emitDotStaticFunc(rhs._ckFunc)
-          logging.debug("#{@name} emitting static method call")
         if rhs._ckFunc.isMember
           # Allocate argument registers
           r2 = context.emitLoadLocal(rhs.ri)
@@ -561,11 +557,12 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           logging.debug("#{@name} emitting instance method call")
           context.emitFuncCallMember(r1, r2)
           # The return value of the function call
-          @ri = 0
         else
           r1 = context.emitLoadConst(rhs._ckFunc)
           r2 = context.emitLoadLocal(lhs.ri)
+          logging.debug("#{@name} emitting static method call")
           context.emitFuncCallStatic(r1, r2)
+        @ri = 0
       # Assignment
       else if lType.isOfType(rType)
         isArray = rhs.indices?
@@ -589,7 +586,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     emit: (context, lhs, rhs) =>
       # UGen => UGen
       if lhs.type.isOfType(types.UGen) && rhs.type.isOfType(types.UGen)
-        context.emitUGenUnlink()
+        context.emitUGenUnlink(lhs.ri, rhs.ri)
 
       return
 

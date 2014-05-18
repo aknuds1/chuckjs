@@ -145,13 +145,12 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     })
   }
 
-  module.uGenUnlink = function () {
+  module.uGenUnlink = function (r1, r2) {
     return new Instruction("UGenUnlink", {}, function (vm) {
-      var dest = vm.popFromReg()
-      var src = vm.popFromReg()
-      logDebug("#{@instructionName}: Unlinking node of type #{src.type.name} from node of type #{dest.type.name}")
+      var src = vm.registers[r1]
+      var dest = vm.registers[r2]
+      logDebug("#{@instructionName}: Unlinking node of type " + src.type.name + " from node of type " + dest.type.name)
       dest.remove(src)
-      vm.pushToReg(dest)
     })
   }
 

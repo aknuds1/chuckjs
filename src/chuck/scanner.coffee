@@ -201,7 +201,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.popScope()
       return
 
-    emitAssignment: (type, varDecl) =>
+    emitAssignment: (type, varDecl) ->
       {value, array} = varDecl
       if array?
         # Emit indices
