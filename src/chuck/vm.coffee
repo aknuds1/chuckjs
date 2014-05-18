@@ -1,7 +1,7 @@
 define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService", "chuck/dacService"],
 (logging, types, audioContextService, dacService) ->
   module = {}
-  logDebug = -> #logging.debug.apply(null, arguments)
+  logDebug = -> logging.debug.apply(null, arguments)
 
   callFunction = (vm, func, r2) ->
     stackDepth = func.stackDepth
@@ -56,14 +56,28 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
         break
       when "TimeAdvance"
         time = vm.registers[instr.r1]
-        vm.suspendUntil(vm._now + time)
+        vm.suspendUntil(vm.globalRegisters[vm._nowRi] + time)
         break
       when "AddNumber"
         lhs = vm.registers[instr.r1]
         rhs = vm.registers[instr.r2]
         number = lhs + rhs
-        logDebug("#{instr.instructionName} (#{lhs} + #{rhs}) resulted in: #{number}")
+        logDebug("#{instr.instructionName}: (#{lhs} + #{rhs}) resulted in: #{number}")
         vm.registers[instr.r3] = number
+        break
+      when "LtNumber"
+        lhs = vm.registers[instr.r1]
+        rhs = vm.registers[instr.r2]
+        result = lhs < rhs
+        logDebug("#{instr.instructionName}: (#{lhs} < #{rhs}) resulted in: #{result}")
+        vm.registers[instr.r3] = result
+        break
+      when "GtNumber"
+        lhs = vm.registers[instr.r1]
+        rhs = vm.registers[instr.r2]
+        result = lhs > rhs
+        logDebug("#{instr.instructionName}: (#{lhs} > #{rhs}) resulted in: #{result}")
+        vm.registers[instr.r3] = result
         break
       else
         instr.execute(vm)
@@ -83,7 +97,7 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
 
     if self._wakeTime? && !self._shouldStop
       sampleRate = audioContextService.getSampleRate()
-      logDebug("Halting VM execution for #{(self._wakeTime - self._now)/sampleRate} second(s)")
+      logDebug("Halting VM execution for #{(self._wakeTime - self.globalRegisters[self._nowRi])/sampleRate} second(s)")
       return true
     else
       logDebug("VM execution has ended after #{self._nowSystem} samples:", self._shouldStop)
@@ -114,7 +128,9 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
       @_pc = 0
       @_nextPc = 1
       @_shouldStop = false
-      @_now = 0
+      # FIXME!
+      @_nowRi = 32
+      @globalRegisters[@_nowRi] = 0
       @_me = new Shred(args)
       @_nowSystem = 0
       @_gain = 1
@@ -199,26 +215,13 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
     popFromMem: (isGlobal) ->
       @_getMemStack(isGlobal).pop()
 
-    pushDac: ->
-      @regStack.push(@_dac)
-      return
-
-    pushBunghole: ->
-      @regStack.push(@_bunghole)
-      return
-
-    pushNow: ->
-      logDebug("Pushing now (#{@_now}) to stack")
-      @regStack.push(@_now)
-      return
-
     pushMe: ->
       logDebug("Pushing me to stack:", @_me)
       @regStack.push(@_me)
       return
 
     suspendUntil: (time) ->
-      logDebug("Suspending VM execution until #{time} (now: #{@_now})")
+      logDebug("Suspending VM execution until #{time} (now: #{@globalRegisters[@_nowRi]})")
       @_wakeTime = time
       return
 
@@ -277,9 +280,9 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
       for i in [0...event.outputBuffer.length]
         # Detect if the VM should be awoken
         if @_wakeTime <= (@_nowSystem + 0.5)
-          @_now = @_wakeTime
+          now = @globalRegisters[@_nowRi] = @_wakeTime
           @_wakeTime = undefined
-          logDebug("Letting VM compute sample, now: #{@_now}")
+          logDebug("Letting VM compute sample, now: #{now}")
           compute(@)
 #            else
 #              logDebug("VM is not yet ready to wake up (#{@_wakeTime}, #{@_nowSystem})")

@@ -111,14 +111,14 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
   module.ExpressionList = class ExpressionList extends ExpressionBase
     constructor: (expression) ->
       super("ExpressionList")
-      @_expressions = [expression]
+      @expressions = [expression]
 
     prepend: (expression) ->
-      @_expressions.splice(0, 0, expression)
+      @expressions.splice(0, 0, expression)
       @
 
     _scanPass: (pass) ->
-      for exp in @_expressions
+      for exp in @expressions
         exp["scanPass#{pass}"].apply(exp, Array.prototype.slice.call(arguments, 1))
       return
 
@@ -128,14 +128,14 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass4: (context) ->
       @_scanPass(4, context)
-      @types = (exp.type for exp in @_expressions)
+      @types = (exp.type for exp in @expressions)
       @type = @types[0]
 
     scanPass5: (context) ->
       @_scanPass(5, context)
-      @ri = @_expressions[0].ri
+      @ri = @expressions[0].ri
 
-    getCount: -> @_expressions.length
+    getCount: -> @expressions.length
 
   module.DeclarationExpression = class extends ExpressionBase
     constructor: (typeDecl, varDecls) ->
@@ -221,9 +221,6 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         when "hour"
           @type = types.dur
           break
-        when "now"
-          @type = types.Time
-          break
         when "true"
           @_meta = "value"
           @type = types.int
@@ -241,12 +238,6 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     scanPass5: (context) =>
       super()
       switch @name
-#        when "dac"
-#          context.emitDac()
-#          break
-#        when "blackhole"
-#          context.emitBunghole()
-#          break
         when "second"
           # Push the value corresponding to a second
           @ri = context.emitLoadConst(audioContextService.getSampleRate())
@@ -262,8 +253,6 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         when "hour"
           # Push the value corresponding to an hour
           @ri = context.emitLoadConst(audioContextService.getSampleRate()*60*60)
-          break
-        when "now"
           break
         when "me"
           context.emitRegPushMe()
@@ -327,7 +316,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       logging.debug("#{@nodeType}: Emitting child expression")
       @expression.scanPass5(context)
       logging.debug("#{@nodeType}: Emitting Gack, types:", (t.name for t in @expression.types))
-      context.emitGack(@expression.types)
+      registers = (e.ri for e in @expression.expressions)
+      context.emitGack(@expression.types, registers)
       return
 
   module.PrimaryStringExpression= class extends ExpressionBase
@@ -419,7 +409,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       funcGroup = @func.value.value
       # Find method overload
       logging.debug("#{@nodeType} scanPass4: Finding function overload")
-      @_ckFunc = funcGroup.findOverload(if @args? then @args._expressions else null)
+      @_ckFunc = funcGroup.findOverload(if @args? then @args.expressions else null)
       @type = funcGroup.retType
       logging.debug("#{@nodeType} scanPass4: Got function overload #{@_ckFunc.name} with return type
  #{@type.name}")
@@ -752,17 +742,19 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: ->
       @name = "LtOperator"
 
-    emit: (context) =>
+    emit: (context, lhs, rhs) =>
       logging.debug("#{@name}: Emitting")
-      context.emitLtNumber()
+      @ri = context.allocRegister()
+      context.emitLtNumber(lhs.ri, rhs.ri, @ri)
 
   module.GtOperator = class extends GtLtOperatorBase
     constructor: ->
       @name = "GtOperator"
 
-    emit: (context) =>
+    emit: (context, lhs, rhs) ->
       logging.debug("#{@name}: Emitting")
-      context.emitGtNumber()
+      @ri = context.allocRegister()
+      context.emitGtNumber(lhs.ri, rhs.ri, @ri)
 
   module.WhileStatement = class extends NodeBase
     constructor: (cond, body) ->

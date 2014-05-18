@@ -80,9 +80,12 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
           value = @_globalNamespace.addVariable(type.name, typeType, type)
           @code.allocRegister(value)
 
-      value = @_globalNamespace.addVariable("dac", dacService.dac.type, dacService.dac)
+
+      value = @_globalNamespace.addVariable("dac", dacService.dac.type)
       @code.allocRegister(value)
-      value = @_globalNamespace.addVariable("blackhole", dacService.bunghole.type, dacService.bunghole)
+      value = @_globalNamespace.addVariable("blackhole", dacService.bunghole.type)
+      @code.allocRegister(value)
+      value = @_globalNamespace.addVariable("now", types.types.Time)
       @code.allocRegister(value)
 
       @_globalNamespace.commit()
@@ -143,20 +146,20 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       # Look globally
       val = @_currentNamespace.findValue(name, true)
 
-    addVariable: (name, type) =>
+    addVariable: (name, type) ->
       @_currentNamespace.addVariable(name, type, null, @_isGlobal)
 
-    addConstant: (name, type, value) =>
+    addConstant: (name, type, value) ->
       scopeStr = if @_isGlobal then "global" else "function"
       logging.debug("Adding constant #{name} (scope: #{scopeStr})")
       @_currentNamespace.addConstant(name, type, value, @_isGlobal)
 
-    addValue: (value, name) =>
+    addValue: (value, name) ->
       scopeStr = if @_isGlobal then "global" else "function"
       logging.debug("Adding value #{name} (scope: #{scopeStr})")
       @_currentNamespace.addValue(value, name, @_isGlobal)
 
-    createValue: (type, name) =>
+    createValue: (type, name) ->
       new namespaceModule.ChuckValue(type, name, @_currentNamespace, @_isGlobal)
 
     pushToBreakStack: (statement) =>
@@ -309,12 +312,12 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     emitTimesNumber: (r1, r2, r3) ->
       @code.append(new Instruction("TimesNumber", {r1: r1, r2: r2, r3: r3}))
 
-    emitLtNumber: ->
-      @code.append(instructions.ltNumber())
+    emitLtNumber: (r1, r2, r3) ->
+      @code.append(new Instruction("LtNumber", {r1: r1, r2: r2, r3: r3}))
       return
 
-    emitGtNumber: ->
-      @code.append(instructions.gtNumber())
+    emitGtNumber: (r1, r2, r3) ->
+      @code.append(new Instruction("GtNumber", {r1: r1, r2: r2, r3: r3}))
       return
 
     emitTimeAdvance: (r1) ->
@@ -327,8 +330,8 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instructions.assignObject(isArray, @_isGlobal, r1, r2))
       return
 
-    emitGack: (types) ->
-      @code.append(instructions.gack(types))
+    emitGack: (types, registers) ->
+      @code.append(instructions.gack(types, registers))
       return
 
     emitBranchEq: (r1, r2, jmp) ->

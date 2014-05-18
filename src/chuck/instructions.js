@@ -298,16 +298,6 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     })
   }
 
-  module.ltNumber = function () {
-    return  new Instruction("LtNumber", {}, function (vm) {
-      var rhs = vm.popFromReg()
-      var lhs = vm.popFromReg()
-      var result = lhs < rhs
-      logDebug("#{@instructionName}: Pushing #{result} to regular stack")
-      vm.pushToReg(result)
-    })
-  }
-
   module.gtNumber = function () {
     return new Instruction("GtNumber", {}, function (vm) {
       var rhs = vm.popFromReg()
@@ -320,18 +310,17 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
 
   function formatFloat(value) { return value.toFixed(6) }
 
-  module.gack = function (types) {
+  module.gack = function (types, registers) {
     return new Instruction("Gack", {}, function (vm) {
       if (types.length === 1) {
-        module.hack(types[0]).execute(vm)
+        module.hack(types[0], registers[0]).execute(vm)
         return
       }
 
-      var values = [], i
-      for (i = 0; i < types.length; ++i) {
-        values.unshift(vm.popFromReg())
-      }
-      var str = ""
+      var values = _.map(registers, function (ri) {
+        return vm.registers[ri]
+      })
+      var str = "", i
       for (i = 0; i < types.length; ++i) {
         var tp = types[i]
         var value = values[i]
@@ -343,15 +332,13 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
         }
       }
 
-      vm.pushToReg(value)
-
       console.log(str.slice(0, str.length - 1))
     })
   }
 
-  module.hack = function (type) {
+  module.hack = function (type, r1) {
     return new Instruction("Hack", {}, function (vm) {
-      var obj = vm.peekReg()
+      var obj = vm.registers[r1]
       logDebug("Printing object of type #{type.name}:", obj)
       if ( _.isArray(obj)) {
         var arrStr = _.str.join(",", obj)
