@@ -86,6 +86,8 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.allocRegister(value)
       value = @_globalNamespace.addVariable("now", types.types.Time)
       @code.allocRegister(value)
+      value = @_globalNamespace.addVariable("me", types.types.shred)
+      @code.allocRegister(value)
 
       @_globalNamespace.commit()
       @_namespaceStack = [@_globalNamespace]
@@ -203,26 +205,28 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     emitAssignment: (type, varDecl) ->
       {value, array} = varDecl
+      local = @allocateLocal(type, value)
       if array?
         # Emit indices
         logging.debug("Emitting array indices")
         array.scanPass5(@)
         logging.debug("Emitting AllocateArray")
-        @code.append(instructions.allocateArray(type))
+        @code.append(instructions.allocateArray(type, array.ri, local.ri))
         elemType = type.arrayType
+
+        typesWithCtors = []
+        addConstructors = (type) ->
+          if type.parent?
+            addConstructors(type.parent)
+          if type.hasConstructor
+            typesWithCtors.push(type)
+
         if types.isObj(elemType)
-          startIndex = @_nextIndex()
-          logging.debug("Emitting PreCtorArrayTop")
-          top = @code.append(instructions.preCtorArrayTop(elemType))
-          @_emitPreConstructor(elemType)
-          logging.debug("Emitting PreCtorArrayBottom")
-          bottom = @code.append(instructions.preCtorArrayBottom(elemType))
-          top.set(@_nextIndex())
-          bottom.set(startIndex)
-          @code.append(instructions.preCtorArrayPost())
+          logging.debug("Emitting PreCtorArray")
+          addConstructors(elemType)
+          @code.append(instructions.preCtorArray(elemType, array.ri, local.ri, typesWithCtors))
 
       isObj = types.isObj(type) || array?
-      local = @allocateLocal(type, value)
       if isObj && !array? && !type.isRef
         @instantiateObject(type, local.ri)
 
@@ -340,10 +344,10 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instr)
       @_breakStack.push(instr)
 
-    emitArrayAccess: (type, emitAddr) ->
-      @code.append(instructions.arrayAccess(type, emitAddr))
+    emitArrayAccess: (type, r1, r2, r3, emitAddr) ->
+      @code.append(instructions.arrayAccess(type, r1, r2, r3, emitAddr))
 
-    emitArrayInit: (type, count) -> @code.append(instructions.arrayInit(type, count))
+    emitArrayInit: (type, registers, ri) -> @code.append(instructions.arrayInit(type, registers, ri))
 
     emitMemSetImm: (offset, value, isGlobal) ->
       @code.append(instructions.memSetImm(offset, value, isGlobal))
@@ -360,10 +364,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       return
 
     finishScanning: =>
-      locals = @code.finish()
-      for local in locals
-        @code.append(instructions.releaseObject2(local.offset, local.isContextGlobal))
-
+      @code.finish()
       @code.append(instructions.eoc())
       return
 

@@ -136,7 +136,8 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
       # FIXME!
       @_nowRi = 32
       @globalRegisters[@_nowRi] = 0
-      @_me = new Shred(args)
+      # FIXME!
+      @_me = @globalRegisters[33] = new Shred(args)
       @_nowSystem = 0
       @_gain = 1
 

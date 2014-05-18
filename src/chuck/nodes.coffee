@@ -171,7 +171,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         if varDecl.array?
           if !varDecl.array.exp?
             logging.debug("#{@nodeType}: Empty array, only allocating object", varDecl)
-            context.allocateLocal(@type, varDecl.value)
+            @ri = context.allocateLocal(@type, varDecl.value).ri
             return
 
           logging.debug("#{@nodeType}: Instantiating array", varDecl)
@@ -198,7 +198,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @name = name
       @_emitVar = false
 
-    scanPass4: (context) =>
+    scanPass4: (context) ->
       super()
       switch @name
 #        when "dac"
@@ -224,9 +224,6 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         when "true"
           @_meta = "value"
           @type = types.int
-        when "me"
-          @_meta = "value"
-          @type = types.shred
         else
           @value = context.findValue(@name)
           if !@value?
@@ -235,7 +232,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           logging.debug("Primary variable of type #{@type.name}")
           @type
 
-    scanPass5: (context) =>
+    scanPass5: (context) ->
       super()
       switch @name
         when "second"
@@ -254,8 +251,6 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           # Push the value corresponding to an hour
           @ri = context.emitLoadConst(audioContextService.getSampleRate()*60*60)
           break
-        when "me"
-          context.emitRegPushMe()
         when "true"
           @ri = context.emitLoadConst(1)
         else
@@ -370,7 +365,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @base.scanPass5(context)
       @indices.scanPass5(context)
       logging.debug("#{@nodeType}: Emitting ArrayAccess (as variable: #{@_emitVar})")
-      context.emitArrayAccess(@type, @_emitVar)
+      @ri = context.allocRegister()
+      context.emitArrayAccess(@type, @base.ri, @indices.ri, @ri, @_emitVar)
       return
 
   module.FuncCallExpression = class extends ExpressionBase
@@ -418,9 +414,6 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     scanPass5: (context) =>
       logging.debug("#{@nodeType} scanPass5")
       super(context)
-      if @args?
-        logging.debug("#{@nodeType}: Scanning arguments")
-        @args.scanPass5(context)
 
       if @_ckFunc.isMember
         logging.debug("#{@nodeType}: Scanning method instance")
@@ -432,11 +425,20 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           logging.debug("#{@nodeType}: Emitting instance method call")
           # Allocate argument registers
           r2 = context.emitLoadLocal(@func.ri)
-          # TODO: arguments
+          if @args?
+            logging.debug("#{@nodeType}: Scanning arguments")
+            @args.scanPass5(context)
           context.emitFuncCallMember(r1, r2)
         else
           logging.debug("#{@nodeType}: Emitting static method call")
-          context.emitFuncCallStatic(r1, @args.ri)
+          if @args?
+            logging.debug("#{@nodeType}: Scanning arguments")
+            @args.scanPass5(context)
+            r2 = @args.ri
+          else
+            r2 = null
+
+          context.emitFuncCallStatic(r1, r2)
       else
         logging.debug("#{@nodeType}: Emitting function call")
         context.emitFuncCall()
@@ -599,7 +601,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       rhs.type
 
     emit: (context, lhs, rhs) ->
-      context.emitOpAtChuck()
+      context.emitOpAtChuck(lhs.ri, rhs.ri)
       return
 
   module.PlusChuckOperator = class PlusChuckOperator
@@ -905,15 +907,15 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @base = base
       @id = id
 
-    scanPass2: =>
+    scanPass2: ->
       @base.scanPass2()
       return
 
-    scanPass3: =>
+    scanPass3: ->
       @base.scanPass3()
       return
 
-    scanPass4: (context) =>
+    scanPass4: (context) ->
       logging.debug("#{@nodeType} scanPass4")
       @base.scanPass4(context)
       @isStatic = @base.type.actualType?
@@ -926,7 +928,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       logging.debug("#{@nodeType} scanPass4: Member type is #{@type.name}")
       @type
 
-    scanPass5: (context) =>
+    scanPass5: (context) ->
       logging.debug("#{@nodeType} scanPass5")
       if !@isStatic
         logging.debug("#{@nodeType} scanPass5: Scanning base expression")
@@ -955,15 +957,17 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       super("ArraySub")
       @exp = exp
 
-    scanPass4: (context) =>
+    scanPass4: (context) ->
       logging.debug("#{@nodeType} scanPass4")
       @exp.scanPass4(context)
 
-    scanPass5: (context) =>
+    scanPass5: (context) ->
       logging.debug("#{@nodeType}: Emitting array indices")
       @exp.scanPass5(context)
+      @expressions = @exp.expressions
+      @ri = @exp.ri
 
-    getCount: => if @exp then @exp.getCount() else 0
+    getCount: -> if @exp then @exp.getCount() else 0
 
   module.PrimaryArrayExpression = class PrimaryArrayExpression extends NodeBase
     constructor: (@exp) ->
@@ -978,7 +982,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       logging.debug("#{@nodeType} scanPass5")
       @exp.scanPass5(context)
 
-      context.emitArrayInit(@exp.type, @exp.getCount())
+      registers = (e.ri for e in @exp.expressions)
+      @ri = context.allocRegister()
+      context.emitArrayInit(@exp.type, registers, @ri)
 
   module.FunctionDefinition = class FunctionDefinition extends NodeBase
     constructor: (@funcDecl, @staticDecl, @typeDecl, @name, @args, @code) ->

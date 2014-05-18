@@ -38,11 +38,15 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
   }
   module.Instruction = Instruction
 
+  function instantiateObject(type, vm) {
+    logDebug("Instantiating object of type " + type.name)
+    var ug = type.ugenNumOuts == 1 ? new ugen.MonoUGen(type) : new ugen.MultiChannelUGen(type)
+    vm.addUgen(ug)
+    return ug
+  }
   module.instantiateObject = function (type, ri) {
     return new Instruction("InstantiateObject", { type: type }, function (vm) {
-      logDebug("Instantiating object of type #{type.name}")
-      var ug = type.ugenNumOuts == 1 ? new ugen.MonoUGen(type) : new ugen.MultiChannelUGen(type)
-      vm.addUgen(ug)
+      var ug = instantiateObject(type, vm)
       vm.registers[ri] = ug
     })
   }
@@ -65,15 +69,14 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     return new Instruction("AssignObject", {}, function (vm) {
       var scopeStr = isGlobal ? "global" : "function"
       var tgtRegisters = isGlobal ? vm.globalRegisters : vm.registers
-      var obj
+      var obj = vm.registers[r1]
       if (!isArray) {
-        obj = vm.registers[r1]
         logDebug(this.instructionName + ": Assigning object to register " + r2 + " (scope: " + scopeStr + "):", obj)
         tgtRegisters[r2] = obj
       }
       else {
-        var array = memStackIndex[0]
-        var index = memStackIndex[1]
+        var array = vm.registers[r2][0]
+        var index = vm.registers[r2][1]
         logDebug("#{@instructionName}: Assigning object to array, index #{index} (scope: #{scopeStr}):", obj)
         array[index] = obj
       }
@@ -97,22 +100,23 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     })
   }
 
-  module.allocateArray = function (type) {
+  module.allocateArray = function (type, r1, r2) {
     return new Instruction("AllocateArray", {}, function (vm) {
-      var sz = vm.popFromReg()
-      logDebug("#{@instructionName}: Allocating array of type #{type.name} and of size #{sz}")
+      var sz = vm.registers[r1]
+      logDebug(this.instructionName + ": Allocating array of type " + type.name + " and of size " + sz +
+        " in register " + r2)
       var array = new Array(sz)
       var i
       for (i = 0; i < sz; ++i) {
         array[i] = 0
       }
-      vm.pushToReg(array)
-
-      if (typesModule.isObj(type.arrayType)) {
-//         Push index
-        logDebug("#{@instructionName}: Pushing index to stack")
-        vm.pushToReg(0)
-      }
+      vm.registers[r2] = array
+//
+//      if (typesModule.isObj(type.arrayType)) {
+////         Push index
+//        logDebug("#{@instructionName}: Pushing index to stack")
+//        vm.pushToReg(0)
+//      }
     })
   }
 
@@ -125,12 +129,6 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
   module.bunghole = function () {
     return new Instruction("Bunghole", {}, function (vm) {
       vm.pushBunghole()
-    })
-  }
-
-  module.releaseObject2 = function (offset, isGlobal) {
-    return new Instruction("ReleaseObject2", {}, function (vm) {
-      vm.removeFromMemory(offset, isGlobal)
     })
   }
 
@@ -154,15 +152,14 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     })
   }
 
-  module.funcCall = function () {
+  module.funcCall = function (r1) {
     return new Instruction("FuncCall", {}, function (vm) {
       // TODO: Get rid of this
-      /*var localDepth = */vm.popFromReg()
-      var func = vm.popFromReg()
+//      var localDepth = vm.popFromReg()
+      var func = vm.registers[r1]
       var stackDepth = func.stackDepth
-      logDebug("#{@instructionName}: Calling function #{func.name}, with stackDepth #{stackDepth}")
+      logDebug(this.instructionName + ": Calling function " + func.name + ", with stackDepth " + stackDepth)
 
-      logDebug("#{@instructionName}: Pushing current instructions to memory stack")
       vm.pushToMem(vm.instructions)
       logDebug("#{@instructionName}: Pushing current instruction counter to memory stack")
       vm.pushToMem(vm._pc + 1)
@@ -339,20 +336,20 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     })
   }
 
-  module.arrayAccess = function (type, emitAddr) {
+  module.arrayAccess = function (type, r1, r2, r3, emitAddr) {
     return new Instruction("ArrayAccess", {}, function (vm) {
       logDebug("#{@instructionName}: Accessing array of type #{type.name}")
-      var idx = vm.popFromReg()
-      var array = vm.popFromReg()
+      var array = vm.registers[r1]
+      var idx = vm.registers[r2]
       var val
       if (!emitAddr) {
         val = array[idx]
         logDebug("Pushing array[#{idx}] (#{val}) to regular stack")
-        vm.pushToReg(val)
+        vm.registers[r3] = val
       }
       else {
         logDebug("Pushing array (#{array}) and index (#{idx}) to regular stack")
-        vm.pushToReg([array, idx])
+        vm.registers[r3] = [array, idx]
       }
     })
   }
@@ -376,22 +373,26 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     self._val = val
   }
 
-  module.preCtorArrayTop = function (type) {
-    return new UnaryOpInstruction("PreCtorArrayTop", {}, function (vm) {
-      var index = vm.peekReg()
-      var array = vm.peekReg(1)
-      if (index >= array.length) {
-        logDebug("#{@instructionName}: Finished instantiating elements")
-        vm.jumpTo(this._val)
+  module.preCtorArray = function (type, r1, r2, typesWithCtors) {
+    return new UnaryOpInstruction("PreCtorArray", {}, function (vm) {
+      var length = vm.registers[r1]
+      var array = vm.registers[r2]
+      var i, obj, j, typeWithCtor
+      logDebug("Instantiating " + length + " array elements of type " + type.name)
+      for (i = 0; i < length; ++i) {
+        obj = instantiateObject(type, vm)
+        for (j = 0; j < typesWithCtors.length; ++j) {
+          typeWithCtor = typesWithCtors[j]
+          logDebug("Calling pre-constructor for type " + typeWithCtor.name)
+          typeWithCtor.preConstructor.call(obj)
+        }
+        array[i] = obj
       }
-      else {
-        logDebug("#{@instructionName}: Instantiating element #{index} of type #{type.name}")
-        module.instantiateObject(type).execute(vm)
-      }
+      logDebug(this.instructionName + ": Finished instantiating elements")
     })
   }
 
-  module.preCtorArrayBottom = function () {
+  module.preCtorArrayBottom = function (r1, r2) {
     return new UnaryOpInstruction("PreCtorArrayBottom", {}, function (vm) {
       logDebug("#{@instructionName}: Popping object and index from stack")
       var obj = vm.popFromReg()
@@ -411,23 +412,14 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     })
   }
 
-  module.preCtorArrayPost = function () {
-    return new Instruction("PreCtorArrayPost", {}, function (vm) {
-      logDebug("#{@instructionName}: Cleaning up, popping index from stack")
-//     Pop index
-      vm.popFromReg()
-    })
-  }
-
-  module.arrayInit = function (type, count) {
+  module.arrayInit = function (type, registers, ri) {
     return new Instruction("ArrayInit", {}, function (vm) {
-      logDebug("#{@instructionName}: Popping #{count} elements from stack")
-      var values = [], i
-      for (i = 0; i < count; ++i) {
-        values.unshift(vm.popFromReg())
-      }
-      logDebug("#{@instructionName}: Pushing instantiated array to stack", values)
-      vm.pushToReg(values)
+      logDebug(this.instructionName + ": Creating an array of " + registers.length + " element(s)")
+      var values = _.map(registers, function (ri) {
+        return vm.registers[ri]
+      })
+      logDebug(this.instructionName + ": Assigning instantiated array to register " + ri + ":", values)
+      vm.registers[ri] = values
     })
   }
 
