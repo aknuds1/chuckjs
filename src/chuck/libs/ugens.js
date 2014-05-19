@@ -24,7 +24,7 @@ define("chuck/libs/ugens", ["chuck/types", "chuck/audioContextService"], functio
     ugenTick: function () {
       var d = this.data
       if (d.next != null) {
-        out = d.next
+        var out = d.next
         d.next = null
         return out
       }

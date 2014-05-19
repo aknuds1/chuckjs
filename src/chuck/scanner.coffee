@@ -1,6 +1,6 @@
 define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "chuck/namespace", "chuck/logging",
-"chuck/libs/math", "chuck/libs/std", "chuck/libs/stk", "chuck/libs/ugens", "chuck/dacService"],
-(nodes, types, instructions, namespaceModule, logging, mathLib, stdLib, stkLib, ugensLib, dacService) ->
+"chuck/libs/math", "chuck/libs/std", "chuck/libs/stk", "chuck/libs/ugens"],
+(nodes, types, instructions, namespaceModule, logging, mathLib, stdLib, stkLib, ugensLib) ->
   module = {}
   {Instruction} = instructions
   class ChuckLocal
@@ -80,9 +80,9 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
           value = @_globalNamespace.addVariable(type.name, typeType, type)
           @code.allocRegister(value)
 
-      value = @_globalNamespace.addVariable("dac", dacService.dac.type)
+      value = @_globalNamespace.addVariable("dac", types.types.Dac)
       @code.allocRegister(value)
-      value = @_globalNamespace.addVariable("blackhole", dacService.bunghole.type)
+      value = @_globalNamespace.addVariable("blackhole", types.types.Bunghole)
       @code.allocRegister(value)
       value = @_globalNamespace.addVariable("now", types.types.Time)
       @code.allocRegister(value)

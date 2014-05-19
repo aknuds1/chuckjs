@@ -1,5 +1,5 @@
-define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService", "chuck/dacService"],
-(logging, types, audioContextService, dacService) ->
+define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService", "chuck/ugen"],
+(logging, types, audioContextService, ugenModule) ->
   module = {}
   logDebug = -> logging.debug.apply(null, arguments)
 
@@ -119,16 +119,16 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
       @memStack = []
       # Stack holding the stacks of currently called functions
       @_funcMemStacks = []
+      @_dac = new ugenModule.Dac()
+      @_bunghole = new ugenModule.Bunghole()
       @registers = @globalRegisters = []
       # FIXME!
-      @globalRegisters[30] = dacService.dac
+      @globalRegisters[30] = @_dac
       # FIXME!
-      @globalRegisters[31] = dacService.bunghole
+      @globalRegisters[31] = @_bunghole
       @_registersStack = [@globalRegisters]
       @isExecuting = false
       @_ugens = []
-      @_dac = dacService.dac
-      @_bunghole = dacService.bunghole
       @_wakeTime = undefined
       @_pc = 0
       @_nextPc = 1

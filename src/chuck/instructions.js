@@ -9,7 +9,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
   function callFunction(vm, func, ri, riRet) {
     var stackDepth = func.stackDepth
     logDebug("Calling function", func)
-    logDebug("Passing registers " + ri + " to " + ri + stackDepth - 1 + " as arguments")
+    logDebug("Passing registers " + ri + " to " + (ri + stackDepth - 1) + " as arguments")
     var args = vm.registers.slice(ri, ri+stackDepth)
     var thisObj = undefined
     if (func.isMember) {
@@ -54,7 +54,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
   module.preConstructor = function (type, ri) {
     return new Instruction("PreConstructor", {type: type}, function (vm) {
       // Duplicate top of stack, which should be object pointer
-      logDebug("Calling pre-constructor of #{@type.name}")
+      logDebug("Calling pre-constructor of " + this.type.name)
 //       Signal that this function needs a 'this' reference
       this.type.preConstructor.isMember = true
       this.type.preConstructor.stackDepth = 1
