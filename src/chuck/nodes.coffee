@@ -62,9 +62,11 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: (exp) ->
       super(exp, "ExpressionStatement")
 
-    scanPass5: (context, opts) =>
+    scanPass5: (context, opts) ->
       opts = opts || {}
       @_child.scanPass5(context)
+      @ri = @_child.ri
+      return
 
   module.BinaryExpression = class extends NodeBase
     constructor: (exp1, operator, exp2) ->
@@ -73,17 +75,17 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @operator = operator
       @exp2 = exp2
 
-    scanPass2: (context) =>
+    scanPass2: (context) ->
       @exp1.scanPass2(context)
       @exp2.scanPass2(context)
       return
 
-    scanPass3: (context) =>
+    scanPass3: (context) ->
       @exp1.scanPass3(context)
       @exp2.scanPass3(context)
       return
 
-    scanPass4: (context) =>
+    scanPass4: (context) ->
       @exp1.scanPass4(context)
       logging.debug("BinaryExpression #{@operator.name}: Type checked LHS, type #{@exp1.type.name}")
       @exp2.scanPass4(context)
@@ -92,7 +94,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       logging.debug("BinaryExpression #{@operator.name}: Type checked operator, type #{@type.name}")
       return
 
-    scanPass5: (context) =>
+    scanPass5: (context) ->
       logging.debug("Binary expression #{@operator.name}: Emitting LHS")
       @exp1.scanPass5(context)
       logging.debug("Binary expression #{@operator.name}: Emitting RHS")
@@ -820,7 +822,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @c3 = c3
       @body = body
 
-    scanPass2: (context) =>
+    scanPass2: (context) ->
       @c1.scanPass2(context)
       @c2.scanPass2(context)
       if @c3?
@@ -828,7 +830,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @body.scanPass2(context)
       return
 
-    scanPass3: (context) =>
+    scanPass3: (context) ->
       logging.debug("#{@nodeType}")
       context.enterScope()
       @c1.scanPass3(context)
@@ -839,7 +841,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       context.exitScope()
       return
 
-    scanPass4: (context) =>
+    scanPass4: (context) ->
       logging.debug("#{@nodeType}")
       context.enterScope()
       logging.debug("#{@nodeType}: Checking the initial")
@@ -854,17 +856,15 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       context.exitScope()
       return
 
-    scanPass5: (context) =>
+    scanPass5: (context) ->
       context.enterCodeScope()
       logging.debug("#{@nodeType}: Emitting the initial")
       @c1.scanPass5(context)
       startIndex = context.getNextIndex()
       # The condition
       logging.debug("#{@nodeType}: Emitting the condition")
-      @c2.scanPass5(context, pop: false)
-      context.emitLoadConst(false)
-      logging.debug("#{@nodeType}: Emitting BranchEq")
-      branchEq = context.emitBranchEq()
+      @c2.scanPass5(context)
+      branchEq = context.emitBranchEq(@c2.ri, context.emitLoadConst(false))
       # The body
       context.enterCodeScope()
       logging.debug("#{@nodeType}: Emitting the body")
@@ -874,7 +874,6 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       if @c3?
         logging.debug("#{@nodeType}: Emitting the post")
         @c3.scanPass5(context)
-        context.emitPopWord()
 
       logging.debug("ForStatement: Emitting GoTo (instruction number #{startIndex})")
       context.emitGoto(startIndex)
@@ -884,9 +883,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         branchEq.jmp = breakJmp
 
       context.evaluateBreaks()
-
       context.exitCodeScope()
-
       return
 
   module.CodeStatement = class extends ParentNodeBase

@@ -242,7 +242,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
   }
 
   module.preIncNumber = function (r1, r2) {
-    return new Instruction("PreIncnUmber", {}, function (vm) {
+    return new Instruction("PreIncNumber", {}, function (vm) {
       var val = vm.registers[r1]
       ++val
       vm.registers[r1] = vm.registers[r2] = val
@@ -250,7 +250,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
   }
 
   module.postIncNumber = function (r1, r2) {
-    return new Instruction("PostIncnUmber", {}, function (vm) {
+    return new Instruction("PostIncNumber", {}, function (vm) {
       var val = vm.registers[r1]
       vm.registers[r2] = val
       vm.registers[r1] = ++val
@@ -308,7 +308,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
   module.hack = function (type, r1) {
     return new Instruction("Hack", {}, function (vm) {
       var obj = vm.registers[r1]
-      logDebug("Printing object of type #{type.name}:", obj)
+      logDebug("Printing object of type " + type.name + ":", obj)
       if ( _.isArray(obj)) {
         var arrStr = _.str.join(",", obj)
         console.log("[" + arrStr + "] :(" + type.name + "[])")

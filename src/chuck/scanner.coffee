@@ -63,7 +63,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
           locals.push(local)
       # Get rid of sentinel
       stack.pop()
-      return locals
+      locals
 
     getNextIndex: => @instructions.length
 
@@ -334,6 +334,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       return
 
     emitBranchEq: (r1, r2, jmp) ->
+      logging.debug("Emitting BranchEq of registers " + r1 + " and " + r2)
       @code.append(new Instruction("BranchEq", {r1: r1, r2: r2, jmp: jmp}))
 
     emitGoto: (jmp) ->
