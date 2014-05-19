@@ -178,14 +178,13 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     ### Allocate new register. ###
     allocRegister: -> @code.allocRegister()
 
-    allocateLocal: (type, value) ->
+    allocateLocal: (type, value, emit=true) ->
       scopeStr = if @_isGlobal then "global" else "function"
       logging.debug("Allocating local (scope: #{scopeStr})")
       local = @code.allocateLocal(type, value, @_isGlobal)
-#      if emit
-#        debugger
-#        logging.debug("Emitting AllocWord instruction")
-#        @code.append(instructions.allocWord(local.offset, @_isGlobal))
+      if emit
+        logging.debug("Emitting AllocWord instruction")
+        @code.append(new Instruction("InitValue", {r1: local.ri}))
       local
 
     getNextIndex: => @code.getNextIndex()

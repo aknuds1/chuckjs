@@ -84,6 +84,9 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
         logDebug("Calling static method '#{func.name}'")
         callFunction(vm, func, instr.r2)
         break
+      when "InitValue"
+        logDebug("Initializing value at register #{instr.r1}")
+        vm.registers[instr.r1] = 0
       else
         instr.execute(vm)
 
