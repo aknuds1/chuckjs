@@ -26,6 +26,11 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
         logDebug("LoadLocal: Loading local from register #{instr.r1} to register #{instr.r2}:", value)
         vm.registers[instr.r2] = value
         break
+      when "LoadGlobal"
+        value = vm.globalRegisters[instr.r1]
+        logDebug("#{instr.instructionName}: Loading global from register #{instr.r1} to register #{instr.r2}:", value)
+        vm.registers[instr.r2] = value
+        break
       when "FuncCallMember"
         func = vm.registers[instr.r1]
         logDebug("Calling instance method '#{func.name}'")

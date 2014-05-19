@@ -124,16 +124,18 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
       toReturn
 
-    enterFunctionScope: =>
+    enterFunctionScope: ->
       ++@_functionLevel
       @_isGlobal = false
       @enterScope()
       return
-    exitFunctionScope: =>
+    exitFunctionScope: ->
       @exitScope()
       --@_functionLevel
       @_isGlobal = @_functionLevel <= 0
       return
+
+    isInFunction: -> @_functionLevel > 0
 
     findType: (typeName) =>
       type = @_currentNamespace.findType(typeName)
@@ -356,6 +358,8 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instructions.funcReturn())
 
     emitNegateNumber: (r1, r2) -> @code.append(instructions.negateNumber(r1, r2))
+
+    emitLoadGlobal: (r1, r2) -> @code.append(new Instruction("LoadGlobal", {r1: r1, r2: r2}))
 
     evaluateBreaks: =>
       while @_breakStack.length

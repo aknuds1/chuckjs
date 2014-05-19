@@ -203,14 +203,6 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     scanPass4: (context) ->
       super()
       switch @name
-#        when "dac"
-#          @_meta = "value"
-#          @type = types.Dac
-#          break
-#        when "blackhole"
-#          @_meta = "value"
-#          @type = types.UGen
-#          break
         when "second"
           @type = types.dur
           break
@@ -256,7 +248,12 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         when "true"
           @ri = context.emitLoadConst(1)
         else
-          @ri = @value.ri
+          if !@value.isContextGlobal || !context.isInFunction()
+            @ri = @value.ri
+          else
+            r1 = @value.ri
+            @ri = r2 = context.allocRegister()
+            context.emitLoadGlobal(r1, r2)
           logging.debug("#{@nodeType}: Variable at register #{@ri}: #{@value.name}")
 #          # Emit symbol
 #          scopeStr = if @value.isContextGlobal then "global" else "function"
