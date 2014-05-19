@@ -152,7 +152,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     })
   }
 
-  module.funcCall = function (r1) {
+  module.funcCall = function (r1, r2) {
     return new Instruction("FuncCall", {}, function (vm) {
       // TODO: Get rid of this
 //      var localDepth = vm.popFromReg()
@@ -160,42 +160,36 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
       var stackDepth = func.stackDepth
       logDebug(this.instructionName + ": Calling function " + func.name + ", with stackDepth " + stackDepth)
 
-      vm.pushToMem(vm.instructions)
-      logDebug("#{@instructionName}: Pushing current instruction counter to memory stack")
-      vm.pushToMem(vm._pc + 1)
+      // Read arguments from enclosing scope
+      var args = [], i
+      for (i = 0; i < stackDepth; ++i) {
+        args[i] = vm.registers[r2+i]
+      }
+
+      logDebug(this.instructionName + ": Pushing current instruction set and instruction counter to instructions stack")
+      vm.instructionsStack.push([vm.instructions, vm._pc+1])
       vm._nextPc = 0
       vm.instructions = func.code.instructions
       vm.enterFunctionScope()
 
-      if (func.needThis) {
-//       Make this the first argument
-        var obj = vm.popFromReg()
-        vm.pushToMem(obj, false)
-        --stackDepth
-      }
-
-      var args = [], i
-      for (i = 0; i < stackDepth; ++i) {
-        var arg = vm.popFromReg()
-        args.unshift(arg)
-      }
+      // Assign arguments to local registers
+      logDebug(this.instructionName + ": Copying " + args.length + " arguments to function registers")
       for (i = 0; i < args.length; ++i) {
-        vm.pushToMem(args[i], false)
+        // The first register is reserved for the return value
+        vm.registers[i+1] = args[i]
       }
     })
   }
 
   module.funcReturn = function () {
     return new Instruction("FuncReturn", {}, function (vm) {
-      logDebug("#{@instructionName}: Returning from function")
+      logDebug(this.instructionName + ": Returning from function")
       vm.exitFunctionScope()
 
-      logDebug("#{@instructionName}: Popping current instructions from memory stack")
-      var pc = vm.popFromMem(true)
-      logDebug("#{@instructionName}: Popping current instruction counter from memory stack")
-      var instructions = vm.popFromMem(true)
-      vm._nextPc = pc
-      vm.instructions = instructions
+      logDebug(this.instructionName + ": Popping current instructions and instruction counter from instructions stack")
+      var instructionsAndPc = vm.instructionsStack.pop()
+      vm.instructions = instructionsAndPc[0]
+      vm._nextPc = instructionsAndPc[1]
     })
   }
 
@@ -351,14 +345,6 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
         logDebug("Pushing array (#{array}) and index (#{idx}) to regular stack")
         vm.registers[r3] = [array, idx]
       }
-    })
-  }
-
-  module.memSetImm = function (offset, value, isGlobal) {
-    return new Instruction("MemSetImm", {}, function (vm) {
-      var scopeStr = isGlobal ? "global" : "function"
-      logDebug("#{@instructionName}: Setting memory at offset #{offset} (scope: #{scopeStr}) to:", value)
-      vm.insertIntoMemory(offset, value, isGlobal)
     })
   }
 

@@ -85,8 +85,13 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
         callFunction(vm, func, instr.r2)
         break
       when "InitValue"
-        logDebug("Initializing value at register #{instr.r1}")
+        logDebug("#{instr.instructionName}: Initializing value at register #{instr.r1}")
         vm.registers[instr.r1] = 0
+        break
+      when "StoreConst"
+        logDebug("#{instr.instructionName}: Storing constant value in register #{instr.r1}:", instr.value)
+        vm.registers[instr.r1] = instr.value
+        break
       else
         instr.execute(vm)
 
@@ -130,6 +135,8 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
       # FIXME!
       @globalRegisters[31] = @_bunghole
       @_registersStack = [@globalRegisters]
+      @instructionsStack = []
+      @instructions = null
       @isExecuting = false
       @_ugens = []
       @_wakeTime = undefined
@@ -148,6 +155,7 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
       @_pc = 0
       @isExecuting = true
       @instructions = byteCode
+      @instructionsStack = []
 
       deferred = Q.defer()
       setTimeout(=>
@@ -210,24 +218,6 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
       scopeStr = if isGlobal then "global" else "function"
       logDebug("Getting value from memory stack at index #{index} (scope: #{scopeStr}):", val)
       val
-
-    pushToMem: (value, isGlobal=true) ->
-      if !value?
-        throw new Error('pushToMem: value is undefined')
-      memStack = @_getMemStack(isGlobal)
-      if isGlobal
-        logDebug("Pushing value to global memory stack:", value)
-      else
-        logDebug("Pushing value to function memory stack:", value)
-      memStack.push(value)
-
-    popFromMem: (isGlobal) ->
-      @_getMemStack(isGlobal).pop()
-
-    pushMe: ->
-      logDebug("Pushing me to stack:", @_me)
-      @regStack.push(@_me)
-      return
 
     suspendUntil: (time) ->
       logDebug("Suspending VM execution until #{time} (now: #{@globalRegisters[@_nowRi]})")

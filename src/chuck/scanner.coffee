@@ -26,11 +26,11 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
         value.ri = ri
       ri
 
-    pushScope: =>
+    pushScope: ->
       @frame.stack.push(null)
       return
 
-    popScope: =>
+    popScope: ->
       while @frame.stack.length > 0 && @frame.stack[@frame.stack.length-1]?
         @frame.stack.pop()
         --@frame.currentOffset
@@ -39,7 +39,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       logging.debug("After popping scope, current stack offset is #{@frame.currentOffset}")
       return
 
-    append: (instruction) =>
+    append: (instruction) ->
       @instructions.push(instruction)
       return instruction
 
@@ -53,7 +53,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       value.ri = local.ri
       local
 
-    finish: =>
+    finish: ->
       stack = @frame.stack
       locals = []
       while stack.length > 0 && stack[stack.length-1]?
@@ -65,7 +65,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       stack.pop()
       locals
 
-    getNextIndex: => @instructions.length
+    getNextIndex: -> @instructions.length
 
   class ScanningContext
     constructor: ->
@@ -264,8 +264,8 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(new Instruction("FuncCallStatic", {r1: r1, r2: r2}))
       return
 
-    emitFuncCall: ->
-      @code.append(instructions.funcCall())
+    emitFuncCall: (r1, r2) ->
+      @code.append(instructions.funcCall(r1, r2))
 
     emitRegPushMemAddr: (offset, isGlobal) =>
       @code.append(instructions.regPushMemAddr(offset, isGlobal))
@@ -349,8 +349,8 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     emitArrayInit: (type, registers, ri) -> @code.append(instructions.arrayInit(type, registers, ri))
 
-    emitMemSetImm: (offset, value, isGlobal) ->
-      @code.append(instructions.memSetImm(offset, value, isGlobal))
+    emitStoreConst: (r1, value) ->
+      @code.append(new Instruction("StoreConst", {r1: r1, value: value}))
 
     emitFuncReturn: ->
       @code.append(instructions.funcReturn())

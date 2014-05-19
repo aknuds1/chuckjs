@@ -421,8 +421,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         logging.debug("#{@nodeType}: Scanning method instance")
         @func.scanPass5(context)
 
+      r1 = context.emitLoadConst(@_ckFunc)
       if @_ckFunc.isBuiltIn
-        r1 = context.emitLoadConst(@_ckFunc)
         if @_ckFunc.isMember
           logging.debug("#{@nodeType}: Emitting instance method call")
           # Allocate argument registers
@@ -442,8 +442,15 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
           context.emitFuncCallStatic(r1, r2)
       else
+        if @args?
+          logging.debug("#{@nodeType}: Scanning arguments")
+          @args.scanPass5(context)
+          r2 = @args.ri
+        else
+          r2 = null
+
         logging.debug("#{@nodeType}: Emitting function call")
-        context.emitFuncCall()
+        context.emitFuncCall(r1, r2)
 
       # The return value of the function call
       @ri = 0
@@ -1030,15 +1037,16 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass5: (context) =>
       logging.debug("#{@nodeType} emitting")
+      logging.debug("#{@nodeType}: Emitting constant corresponding to function")
       local = context.allocateLocal(@_ckFunc.value.type, @_ckFunc.value, false)
-      context.emitMemSetImm(local.offset, @_ckFunc, true)
+      context.emitStoreConst(local.ri, @_ckFunc)
       context.pushCode("#{@_ckFunc.name}( ... )")
       context.enterCodeScope()
+      # Allocate a local for each argument within the function's scope
       for arg, i in @args
         value = arg.varDecl.value
         logging.debug("#{@nodeType} scanPass5: Allocating local variable for parameter #{i} (#{value.name})")
         local = context.allocateLocal(value.type, value, false)
-        value.offset = local.offset
 
       @code.scanPass5(context)
       context.exitCodeScope()
