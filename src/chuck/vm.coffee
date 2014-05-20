@@ -3,7 +3,7 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
   module = {}
   logDebug = -> logging.debug.apply(null, arguments)
 
-  callBuiltInFunction = (vm, func, argRegisters) ->
+  callBuiltInFunction = (vm, func, argRegisters, r3) ->
     args = argRegisters.map((ri) ->
       vm.registers[ri]
     )
@@ -14,7 +14,7 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
     retVal = func.apply(thisObj, args)
     if func.retType != types.void
       logDebug("Registering return value:", retVal)
-      vm.registers[0] = retVal
+      vm.registers[r3] = retVal
     return
 
   executeInstruction = (vm, instr) ->
@@ -36,7 +36,7 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
       when "FuncCallMember"
         func = vm.registers[instr.r1]
         logDebug("Calling instance method '#{func.name}'")
-        callBuiltInFunction(vm, func, instr.argRegisters)
+        callBuiltInFunction(vm, func, instr.argRegisters, instr.r3)
         break
       when "BranchEq"
         lhs = vm.registers[instr.r1]
@@ -89,7 +89,7 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
       when "FuncCallStatic"
         func = vm.registers[instr.r1]
         logDebug("Calling static method '#{func.name}'")
-        callBuiltInFunction(vm, func, instr.argRegisters)
+        callBuiltInFunction(vm, func, instr.argRegisters, instr.r3)
         break
       when "InitValue"
         logDebug("#{instr.instructionName}: Initializing value at register #{instr.r1}")

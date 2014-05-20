@@ -258,16 +258,16 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(new Instruction("LoadLocal", {r1: r1, r2: r2}))
       r2
 
-    emitFuncCallMember: (r1, argRegisters) ->
-      @code.append(new Instruction("FuncCallMember", {r1: r1, argRegisters: argRegisters}))
+    emitFuncCallMember: (r1, argRegisters, r3) ->
+      @code.append(new Instruction("FuncCallMember", {r1: r1, argRegisters: argRegisters, r3: r3}))
       return
 
-    emitFuncCallStatic: (r1, argRegisters) ->
-      @code.append(new Instruction("FuncCallStatic", {r1: r1, argRegisters: argRegisters}))
+    emitFuncCallStatic: (r1, argRegisters, r3) ->
+      @code.append(new Instruction("FuncCallStatic", {r1: r1, argRegisters: argRegisters, r3: r3}))
       return
 
-    emitFuncCall: (r1, argRegisters) ->
-      @code.append(instructions.funcCall(r1, argRegisters))
+    emitFuncCall: (r1, argRegisters, r3) ->
+      @code.append(instructions.funcCall(r1, argRegisters, r3))
 
     emitRegPushMemAddr: (offset, isGlobal) =>
       @code.append(instructions.regPushMemAddr(offset, isGlobal))

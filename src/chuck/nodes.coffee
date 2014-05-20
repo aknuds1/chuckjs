@@ -374,28 +374,28 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @func = base
       @args = args
 
-    scanPass1: =>
+    scanPass1: ->
       logging.debug("#{@nodeType}: scanPass1")
       super()
       @func.scanPass1()
       if @args?
         @args.scanPass1()
 
-    scanPass2: =>
+    scanPass2: ->
       logging.debug("#{@nodeType}: scanPass2")
       super()
       @func.scanPass2()
       if @args?
         @args.scanPass2()
 
-    scanPass3: =>
+    scanPass3: ->
       logging.debug("#{@nodeType}: scanPass3")
       super()
       @func.scanPass3()
       if @args?
         @args.scanPass3()
 
-    scanPass4: (context) =>
+    scanPass4: (context) ->
       super(context)
       logging.debug("#{@nodeType} scanPass4: Checking type of @func")
       @func.scanPass4(context)
@@ -410,7 +410,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
  #{@type.name}")
       @type
 
-    scanPass5: (context) =>
+    scanPass5: (context) ->
       logging.debug("#{@nodeType} scanPass5")
       super(context)
 
@@ -428,21 +428,20 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         argRegisters = []
 
       r1 = context.emitLoadConst(@_ckFunc)
+      # The return value of the function call
+      @ri = context.allocRegister()
       if @_ckFunc.isBuiltIn
         if @_ckFunc.isMember
           logging.debug("#{@nodeType}: Emitting instance method call")
           # Allocate argument registers
           argRegisters.unshift(context.emitLoadLocal(@func.ri))
-          context.emitFuncCallMember(r1, argRegisters)
+          context.emitFuncCallMember(r1, argRegisters, @ri)
         else
           logging.debug("#{@nodeType}: Emitting static method call")
-          context.emitFuncCallStatic(r1, argRegisters)
+          context.emitFuncCallStatic(r1, argRegisters, @ri)
       else
         logging.debug("#{@nodeType}: Emitting function call")
-        context.emitFuncCall(r1, argRegisters)
-
-      # The return value of the function call
-      @ri = 0
+        context.emitFuncCall(r1, argRegisters, @ri)
 
   module.DurExpression = class extends ExpressionBase
     constructor: (base, unit) ->
@@ -547,6 +546,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           context.emitTimeAdvance(lhs.ri)
       # Function call
       else if rType.isOfType(types.Function)
+        @ri = context.allocRegister()
         if rhs._ckFunc.isMember
           logging.debug("#{@name}: Emitting instance method #{rhs._ckFunc.name}")
           r1 = context.emitDotMemberFunc(rhs._ckFunc, rhs.ri)
@@ -558,11 +558,10 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           # Add 'this' argument
           argRegisters.unshift(context.emitLoadLocal(rhs.ri))
           logging.debug("#{@name} emitting instance method call")
-          context.emitFuncCallMember(r1, argRegisters)
+          context.emitFuncCallMember(r1, argRegisters, @ri)
         else
           logging.debug("#{@name} emitting static method call")
-          context.emitFuncCallStatic(r1, argRegisters)
-        @ri = 0
+          context.emitFuncCallStatic(r1, argRegisters, @ri)
       # Assignment
       else if lType.isOfType(rType)
         isArray = rhs.indices?
@@ -594,7 +593,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: ->
       @name = "AtChuckOperator"
 
-    check: (lhs, rhs, context) ->
+    check: (lhs, rhs) ->
       rhs._emitVar = true
       rhs.type
 
@@ -606,7 +605,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: ->
       @name = "PlusChuckOperator"
 
-    check: (lhs, rhs) =>
+    check: (lhs, rhs) ->
       if (lhs.type == rhs.type) || (lhs.type == types.int && rhs.type == types.float)
         if typesModule.isPrimitive(lhs.type) || lhs.type == types.String
           if rhs._meta == "variable"
@@ -614,16 +613,15 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
             rhs._emitVar = true
           return rhs.type
 
-    emit: (context, lhs, rhs) =>
-      isGlobal = rhs.value.isContextGlobal
+    emit: (context, lhs, rhs) ->
       @ri = rhs.ri
-      return context.emitPlusAssign(lhs.ri, rhs.ri, @ri)
+      return context.emitPlusAssign(rhs.ri, lhs.ri, @ri)
 
   module.MinusChuckOperator = class MinusChuckOperator
     constructor: ->
       @name = "MinusChuckOperator"
 
-    check: (lhs, rhs, context) ->
+    check: (lhs, rhs) ->
       if lhs.type == rhs.type
         if typesModule.isPrimitive(lhs.type) || lhs.type == types.String
           if rhs._meta == "variable"
@@ -632,9 +630,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           return rhs.type
 
     emit: (context, lhs, rhs) ->
-      isGlobal = rhs.value.isContextGlobal
       @ri = rhs.ri
-      return context.emitMinusAssign(lhs.ri, rhs.ri, @ri)
+      return context.emitMinusAssign(rhs.ri, lhs.ri, @ri)
 
   class AdditiveSubtractiveOperatorBase
     check: (lhs, rhs) ->
@@ -673,7 +670,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: ->
       super("PrefixPlusPlusOperator")
 
-    emit: (context, r1, r2, isGlobal) ->
+    emit: (context, r1, r2) ->
       logging.debug("#{@name} emitting PreIncNumber")
       context.emitPreIncNumber(r1, r2)
 
@@ -681,7 +678,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: ->
       super("PostfixPlusPlusOperator")
 
-    emit: (context, r1, r2, isGlobal) ->
+    emit: (context, r1, r2) ->
       logging.debug("#{@name} emitting PostIncNumber")
       context.emitPostIncNumber(r1, r2)
 

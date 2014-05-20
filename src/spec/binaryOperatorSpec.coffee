@@ -94,5 +94,29 @@ sin =< dac;
         )
       )
     )
+
+    describe("MinusChuck", ->
+      it("can subtract from a variable and assign the result back", (done) ->
+        promise = executeCode("""2 => int x;
+1 -=> x;
+<<<x>>>;
+""")
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("1 :(int)")
+        )
+      )
+    )
+
+    describe("PlusChuck", ->
+      it("can add to a variable and assign the result back", (done) ->
+        promise = executeCode("""0 => int x;
+1 +=> x;
+<<<x>>>;
+""")
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("1 :(int)")
+        )
+      )
+    )
   )
 )

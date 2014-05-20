@@ -96,6 +96,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
       var lhs = vm.registers[r1]
       var rhs = vm.registers[r2]
       var result = lhs - rhs
+      logDebug(this.instructionName + ": Subtracting " + lhs + " with " + rhs + " and assigning result in " + result)
       vm.registers[r3] = result
     })
   }
