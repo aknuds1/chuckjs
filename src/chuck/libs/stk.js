@@ -432,7 +432,7 @@ define("chuck/libs/stk", ["chuck/types", "chuck/audioContextService", "chuck/log
           d.releaseRate = computeRate(sustainLevel, release)
           d.sustainLevel = sustainLevel
 //          logging.debug("Having set ADSR parameters, at attack state: " + d.attackRate + ", " +  d.decayRate + ", " +
-            sustainLevel + ", " + d.releaseRate)
+//            sustainLevel + ", " + d.releaseRate)
         })], "ADSR", void_),
       keyOn: new ChuckMethod("keyOn", [new FunctionOverload([], function () {
         var d = this.data;
