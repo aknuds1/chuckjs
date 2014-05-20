@@ -160,6 +160,16 @@ now + 2::second => time later;
           expect(console.log).toHaveBeenCalledWith("8.000000 :(float)")
         )
       )
+
+      it('can accept expressions', (done) ->
+        promise = executeCode("""\
+<<<Math.pow(2*3, 1*2)>>>;
+""")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("36.000000 :(float)")
+        )
+      )
     )
 
     describe("Math.random2", ->

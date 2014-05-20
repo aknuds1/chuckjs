@@ -3,12 +3,14 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
   module = {}
   logDebug = -> logging.debug.apply(null, arguments)
 
-  callFunction = (vm, func, r2) ->
-    stackDepth = func.stackDepth
-    args = vm.registers.slice(r2, r2 + stackDepth)
+  callBuiltInFunction = (vm, func, argRegisters) ->
+    args = argRegisters.map((ri) ->
+      vm.registers[ri]
+    )
     if func.isMember
       logDebug("Function is a method, passing 'this' to it")
       thisObj = args.shift()
+    logDebug("Calling function with arguments corresponding to registers #{argRegisters}:", args)
     retVal = func.apply(thisObj, args)
     if func.retType != types.void
       logDebug("Registering return value:", retVal)
@@ -34,7 +36,7 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
       when "FuncCallMember"
         func = vm.registers[instr.r1]
         logDebug("Calling instance method '#{func.name}'")
-        callFunction(vm, func, instr.r2)
+        callBuiltInFunction(vm, func, instr.argRegisters)
         break
       when "BranchEq"
         lhs = vm.registers[instr.r1]
@@ -87,7 +89,7 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
       when "FuncCallStatic"
         func = vm.registers[instr.r1]
         logDebug("Calling static method '#{func.name}'")
-        callFunction(vm, func, instr.r2)
+        callBuiltInFunction(vm, func, instr.argRegisters)
         break
       when "InitValue"
         logDebug("#{instr.instructionName}: Initializing value at register #{instr.r1}")

@@ -291,7 +291,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass5: (context) =>
       super()
-      logging.debug("#{@nodeType}: Emitting RegPushImm for #{@value}")
+      logging.debug("#{@nodeType}: Emitting LoadConst for #{@value}")
       @ri = context.emitLoadConst(@value)
 
   module.PrimaryHackExpression = class extends ExpressionBase
@@ -418,36 +418,28 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         logging.debug("#{@nodeType}: Scanning method instance")
         @func.scanPass5(context)
 
+      if @args?
+        logging.debug("#{@nodeType}: Scanning arguments")
+        @args.scanPass5(context)
+        argRegisters = @args.expressions.map((exp) ->
+          exp.ri
+        )
+      else
+        argRegisters = []
+
       r1 = context.emitLoadConst(@_ckFunc)
       if @_ckFunc.isBuiltIn
         if @_ckFunc.isMember
           logging.debug("#{@nodeType}: Emitting instance method call")
           # Allocate argument registers
-          r2 = context.emitLoadLocal(@func.ri)
-          if @args?
-            logging.debug("#{@nodeType}: Scanning arguments")
-            @args.scanPass5(context)
-          context.emitFuncCallMember(r1, r2)
+          argRegisters.unshift(context.emitLoadLocal(@func.ri))
+          context.emitFuncCallMember(r1, argRegisters)
         else
           logging.debug("#{@nodeType}: Emitting static method call")
-          if @args?
-            logging.debug("#{@nodeType}: Scanning arguments")
-            @args.scanPass5(context)
-            r2 = @args.ri
-          else
-            r2 = null
-
-          context.emitFuncCallStatic(r1, r2)
+          context.emitFuncCallStatic(r1, argRegisters)
       else
-        if @args?
-          logging.debug("#{@nodeType}: Scanning arguments")
-          @args.scanPass5(context)
-          r2 = @args.ri
-        else
-          r2 = null
-
         logging.debug("#{@nodeType}: Emitting function call")
-        context.emitFuncCall(r1, r2)
+        context.emitFuncCall(r1, argRegisters)
 
       # The return value of the function call
       @ri = 0
@@ -558,18 +550,18 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         if rhs._ckFunc.isMember
           logging.debug("#{@name}: Emitting instance method #{rhs._ckFunc.name}")
           r1 = context.emitDotMemberFunc(rhs._ckFunc, rhs.ri)
-        if rhs._ckFunc.isMember
-          # Allocate argument registers
-          r2 = context.emitLoadLocal(rhs.ri)
-          context.emitLoadLocal(lhs.ri)
-          logging.debug("#{@name} emitting instance method call")
-          context.emitFuncCallMember(r1, r2)
-          # The return value of the function call
         else
+          logging.debug("#{@name}: Emitting function #{rhs._ckFunc.name}")
           r1 = context.emitLoadConst(rhs._ckFunc)
-          r2 = context.emitLoadLocal(lhs.ri)
+        argRegisters = [context.emitLoadLocal(lhs.ri)]
+        if rhs._ckFunc.isMember
+          # Add 'this' argument
+          argRegisters.unshift(context.emitLoadLocal(rhs.ri))
+          logging.debug("#{@name} emitting instance method call")
+          context.emitFuncCallMember(r1, argRegisters)
+        else
           logging.debug("#{@name} emitting static method call")
-          context.emitFuncCallStatic(r1, r2)
+          context.emitFuncCallStatic(r1, argRegisters)
         @ri = 0
       # Assignment
       else if lType.isOfType(rType)

@@ -21,6 +21,26 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
         )
       )
 
+      it("can call a static method with a complex expression", (done) ->
+        promise = executeCode("""\
+<<<45*2 => Std.mtof>>>;
+""")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("1479.977691 :(float)")
+        )
+      )
+
+      it("can call an instance method with a complex expression", (done) ->
+        promise = executeCode("""Step s;
+<<<0.5*2 => s.next>>>;
+""")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("1.000000 :(float)")
+        )
+      )
+
       it("can assign ints to floats", (done) ->
         promise = executeCode("""\
 880 => float f;

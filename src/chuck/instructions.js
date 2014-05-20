@@ -152,19 +152,16 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     })
   }
 
-  module.funcCall = function (r1, r2) {
+  module.funcCall = function (r1, argRegisters) {
     return new Instruction("FuncCall", {}, function (vm) {
-      // TODO: Get rid of this
-//      var localDepth = vm.popFromReg()
-      var func = vm.registers[r1]
+      var func = vm.registers[r1], i
       var stackDepth = func.stackDepth
       logDebug(this.instructionName + ": Calling function " + func.name + ", with stackDepth " + stackDepth)
 
       // Read arguments from enclosing scope
-      var args = [], i
-      for (i = 0; i < stackDepth; ++i) {
-        args[i] = vm.registers[r2+i]
-      }
+      var args = argRegisters.map(function (ri) {
+        return vm.registers[ri]
+      })
 
       logDebug(this.instructionName + ": Pushing current instruction set and instruction counter to instructions stack")
       vm.instructionsStack.push([vm.instructions, vm._pc+1])

@@ -1,5 +1,6 @@
 // STK library
-define("chuck/libs/stk", ["chuck/types", "chuck/audioContextService"], function (typesModule, audioContextService) {
+define("chuck/libs/stk", ["chuck/types", "chuck/audioContextService", "chuck/logging"], function (
+  typesModule, audioContextService, logging) {
   var ChuckType = typesModule.ChuckType,
     ChuckMethod = typesModule.ChuckMethod,
     FuncArg = typesModule.FuncArg,
@@ -430,7 +431,8 @@ define("chuck/libs/stk", ["chuck/types", "chuck/audioContextService"], function 
           d.decayRate = computeRate(1 - sustainLevel, decay)
           d.releaseRate = computeRate(sustainLevel, release)
           d.sustainLevel = sustainLevel
-//         logging.debug("Having set ADSR parameters, at attack state: #{d.attackRate}, #{d.decayRate}, #{d.sustainLevel}, #{d.releaseRate}")
+//          logging.debug("Having set ADSR parameters, at attack state: " + d.attackRate + ", " +  d.decayRate + ", " +
+            sustainLevel + ", " + d.releaseRate)
         })], "ADSR", void_),
       keyOn: new ChuckMethod("keyOn", [new FunctionOverload([], function () {
         var d = this.data;
@@ -452,7 +454,7 @@ define("chuck/libs/stk", ["chuck/types", "chuck/audioContextService"], function 
       switch (d.state) {
         case "attack":
           d.value += d.rate;
-          //        logging.debug("Attack state: value set to #{d.value}")
+//          logging.debug("Attack state: value set to #{d.value}")
           if (d.value >= d.target) {
             d.value = d.target
             d.rate = d.decayRate
@@ -464,26 +466,26 @@ define("chuck/libs/stk", ["chuck/types", "chuck/audioContextService"], function 
         case "decay":
           d.value -= d.decayRate;
 
-          //        logging.debug("Decay state: value set to #{d.value}")
+//          logging.debug("Decay state: value set to #{d.value}")
           if (d.value <= d.sustainLevel) {
             d.value = d.sustainLevel
             d.rate = 0;
             d.state = "sustain";
-            //           logging.debug("Transitioned to sustain state, value: #{d.value}")
+//            logging.debug("Transitioned to sustain state, value: #{d.value}")
           }
           break;
         case "release":
           d.value -= d.rate;
-          //        logging.debug("Release state: value set to #{d.value}")
+//          logging.debug("Release state: value set to #{d.value}")
           if (d.value <= 0) {
             d.value = 0;
             d.state = "done";
-            //          logging.debug("Transitioned to done state, value: #{d.value}")
+//            logging.debug("Transitioned to done state, value: #{d.value}")
           }
           break;
       }
 
-//    logging.debug("State At end")
+//      logging.debug("State At end")
       return input * d.value;
     }
   });
