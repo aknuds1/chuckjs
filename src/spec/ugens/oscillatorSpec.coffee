@@ -105,6 +105,21 @@ Step s => dac;
           expect(console.log).toHaveBeenCalledWith("0.057695 :(float)")
         , 1)
       )
+
+      it("can sync its frequency to its input", (done) ->
+        promise = executeCode("""Step m => SinOsc c => dac;
+440 => c.freq;
+1 => m.next;
+2::samp => now;
+<<<c.last()>>>;
+<<<c.freq()>>>;
+""")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("0.000131 :(float)")
+          expect(console.log).toHaveBeenCalledWith("1.000000 :(float)")
+        , 1)
+      )
     )
   )
 )

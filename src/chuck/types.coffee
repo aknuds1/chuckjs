@@ -162,9 +162,14 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
       @width = 0.5
       @phase = 0
   oscNamespace =
-    freq: new ChuckMethod("freq", [new FunctionOverload([new FuncArg("value", types.float)], (value) ->
-      @setFrequency(value)
-    )], "Osc", types.float)
+    freq: new ChuckMethod("freq", [
+      new FunctionOverload([], ->
+        @data.freq
+      )
+      new FunctionOverload([new FuncArg("value", types.float)], (value) ->
+        @setFrequency(value)
+      )
+    ], "Osc", types.float)
     sync: new ChuckMethod("sync", [
       new FunctionOverload([], ->
         @data.sync
@@ -186,12 +191,23 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
   namespace: oscNamespace)
 
   tickSinOsc = (input) ->
+    computeNum = (d, freq) ->
+      d.num = freq/audioContextService.getSampleRate()
+      # Bound it
+      if d.num >= 1
+        d.num -= Math.floor(d.num)
+      else if d.num <= -1
+        d.num += Math.floor(d.num)
+
     d = @data
     if @sources.length > 0
-      if d.sync == 2
+      if d.sync == 0
+        d.freq = input
+        computeNum(d, d.freq)
+      else if d.sync == 2
         # FM synthesis
         freq = d.freq + input
-        d.num = (1/audioContextService.getSampleRate())*freq
+        computeNum(d, freq)
 
     out = Math.sin(@data.phase * TwoPi)
     d.phase += d.num
