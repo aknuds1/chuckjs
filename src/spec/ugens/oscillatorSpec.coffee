@@ -91,6 +91,20 @@ Step s => dac;
           expect(console.log.calls.allArgs()).toEqual([["0 :(int)"], ["0 :(int)"]])
         )
       )
+
+      it("can be frequency modulated by an input", (done) ->
+        promise = executeCode("""Step m => SinOsc c => dac;
+440 => c.freq;
+2 => c.sync;
+1 => m.next;
+2::samp => now;
+<<<c.last()>>>;
+""")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("0.057695 :(float)")
+        , 1)
+      )
     )
   )
 )

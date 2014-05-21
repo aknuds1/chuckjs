@@ -178,19 +178,27 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
   constructOsc = ->
     @data = new OscData()
     @setFrequency = (value) ->
+      @data.freq = value
       @data.num = (1/audioContextService.getSampleRate()) * value
       return value
     @setFrequency(220)
   types.Osc = new ChuckType("Osc", types.UGen, numIns: 1, numOuts: 1, preConstructor: constructOsc,
   namespace: oscNamespace)
 
-  tickSinOsc = ->
+  tickSinOsc = (input) ->
+    d = @data
+    if @sources.length > 0
+      if d.sync == 2
+        # FM synthesis
+        freq = d.freq + input
+        d.num = (1/audioContextService.getSampleRate())*freq
+
     out = Math.sin(@data.phase * TwoPi)
-    @data.phase += @data.num
-    if @data.phase > 1
-      @data.phase -= 1
-    else if @data.phase < 0
-      @data.phase += 1
+    d.phase += d.num
+    if d.phase > 1
+      d.phase -= 1
+    else if d.phase < 0
+      d.phase += 1
     out
   types.SinOsc = new ChuckType("SinOsc", types.Osc, preConstructor: undefined, ugenTick: tickSinOsc)
   types.UGenStereo = new ChuckType("Ugen_Stereo", types.UGen, numIns: 2, numOuts: 2, preConstructor: undefined,
