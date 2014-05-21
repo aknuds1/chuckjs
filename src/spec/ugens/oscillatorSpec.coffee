@@ -47,5 +47,50 @@ Step s => dac;
         verify(promise, done, null, 1)
       )
     )
+
+    describe("of the SinOsc kind", ->
+      it("has a sync property that defaults to 0", (done) ->
+        promise = executeCode("""SinOsc sin;
+<<<sin.sync()>>>;
+""")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("0 :(int)")
+        )
+      )
+
+      it("has a sync property that can be set", (done) ->
+        promise = executeCode("""SinOsc sin;
+<<<1 => sin.sync>>>;
+<<<sin.sync()>>>;
+""")
+
+        verify(promise, done, ->
+          expect(console.log.calls.allArgs()).toEqual([["1 :(int)"], ["1 :(int)"]])
+        )
+      )
+
+      it("doesn't accept a sync value lower than 0", (done) ->
+        promise = executeCode("""SinOsc sin;
+<<<-1 => sin.sync>>>;
+<<<sin.sync()>>>;
+""")
+
+        verify(promise, done, ->
+          expect(console.log.calls.allArgs()).toEqual([["0 :(int)"], ["0 :(int)"]])
+        )
+      )
+
+      it("doesn't accept a sync value higher than 2", (done) ->
+        promise = executeCode("""SinOsc sin;
+<<<3 => sin.sync>>>;
+<<<sin.sync()>>>;
+""")
+
+        verify(promise, done, ->
+          expect(console.log.calls.allArgs()).toEqual([["0 :(int)"], ["0 :(int)"]])
+        )
+      )
+    )
   )
 )

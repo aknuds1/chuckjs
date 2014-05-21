@@ -3,7 +3,7 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
   var types = typesModule.types
 
   var logDebug = function () {
-    logging.debug.apply(null, arguments)
+//    logging.debug.apply(null, arguments)
   }
 
   function callFunction(vm, func, ri, riRet) {

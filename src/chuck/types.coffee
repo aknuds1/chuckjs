@@ -165,6 +165,16 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
     freq: new ChuckMethod("freq", [new FunctionOverload([new FuncArg("value", types.float)], (value) ->
       @setFrequency(value)
     )], "Osc", types.float)
+    sync: new ChuckMethod("sync", [
+      new FunctionOverload([], ->
+        @data.sync
+      ),
+      new FunctionOverload([new FuncArg("value", types.int)], (value) ->
+        if value < 0 || value > 2
+          value = 0
+        @data.sync = value
+      )
+    ], "Osc", types.int)
   constructOsc = ->
     @data = new OscData()
     @setFrequency = (value) ->

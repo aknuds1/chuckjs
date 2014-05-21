@@ -1,7 +1,7 @@
 define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService", "chuck/ugen"],
 (logging, types, audioContextService, ugenModule) ->
   module = {}
-  logDebug = -> logging.debug.apply(null, arguments)
+  logDebug = -> #logging.debug.apply(null, arguments)
 
   callBuiltInFunction = (vm, func, argRegisters, r3) ->
     args = argRegisters.map((ri) ->
