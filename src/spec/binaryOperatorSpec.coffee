@@ -119,7 +119,27 @@ sin =< dac;
       )
     )
 
-    describe("LeOperator", ->
+    describe('LessThan', ->
+      it("can detect that a float is less than an int", (done) ->
+        promise = executeCode("<<<0.9 < 1>>>;")
+
+        verify(promise, done,->
+          expect(console.log).toHaveBeenCalledWith("true :(int)")
+        )
+      )
+    )
+
+    describe('GreaterThan', ->
+      it("can detect that a float is greater than an int", (done) ->
+        promise = executeCode("<<<1.1 > 1>>>;")
+
+        verify(promise, done,->
+          expect(console.log).toHaveBeenCalledWith("true :(int)")
+        )
+      )
+    )
+
+    describe("LessThanOrEqual", ->
       it("can detect that a constant is less than another", (done) ->
         promise = executeCode("<<<0 <= 1>>>;")
 
@@ -145,7 +165,7 @@ sin =< dac;
       )
     )
 
-    describe("GeOperator", ->
+    describe("GreaterThanOrEqual", ->
       it("can detect that a constant is greater than another", (done) ->
         promise = executeCode("<<<1 >= 0>>>;")
 

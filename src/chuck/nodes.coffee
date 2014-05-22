@@ -749,6 +749,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         return lhs.type
       if lhs.type == types.Time && rhs.type == types.Time
         return types.int
+      if (lhs.type == types.int && rhs.type == types.float) || (lhs.type == types.float && rhs.type == types.int)
+        return types.int
 
   module.LtOperator = class extends GtLtOperatorBase
     constructor: ->
