@@ -252,6 +252,8 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
     'while'
     'for'
     'break'
+    'if'
+    'else'
   ]
 
   ALIAS_MAP = {

@@ -338,6 +338,10 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       logging.debug("Emitting BranchEq of registers " + r1 + " and " + r2)
       @code.append(new Instruction("BranchEq", {r1: r1, r2: r2, jmp: jmp}))
 
+    emitBranchIfFalse: (r1) ->
+      logging.debug("Emitting BranchIfFalse of register #{r1}")
+      @code.append(new Instruction("BranchIfFalse", {r1: r1}))
+
     emitGoto: (jmp) ->
       @code.append(instructions.goto(jmp))
 

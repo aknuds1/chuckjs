@@ -218,6 +218,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         when "true"
           @_meta = "value"
           @type = types.int
+        when "false"
+          @_meta = "value"
+          @type = types.int
         else
           @value = context.findValue(@name)
           if !@value?
@@ -247,6 +250,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           break
         when "true"
           @ri = context.emitLoadConst(1)
+        when "false"
+          @ri = context.emitLoadConst(0)
         else
           if !@value.isContextGlobal || !context.isInFunction()
             @ri = @value.ri
@@ -889,6 +894,51 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
     scanPass5: (context) ->
       context.emitBreak()
+      return
+
+  module.IfStatement = class IfStatement extends NodeBase
+    constructor: (@condition, @body) ->
+      super('IfStatement')
+
+    scanPass2: (context) ->
+      @condition.scanPass2(context)
+      context.enterScope()
+      @body.scanPass2(context)
+      context.exitScope()
+      return
+
+    scanPass3: (context) ->
+      logging.debug("#{@nodeType}: scanPass3")
+      @condition.scanPass3(context)
+      context.enterScope()
+      @body.scanPass3(context)
+      context.exitScope()
+      return
+
+    scanPass4: (context) ->
+      logging.debug("#{@nodeType}: scanPass4")
+      logging.debug("#{@nodeType}: Checking the condition")
+      @condition.scanPass4(context)
+      context.enterScope()
+      logging.debug("#{@nodeType}: Checking the body")
+      @body.scanPass4(context)
+      context.exitScope()
+      return
+
+    scanPass5: (context) ->
+      # The condition
+      logging.debug("#{@nodeType}: Emitting the condition")
+      @condition.scanPass5(context)
+      branchIfFalse = context.emitBranchIfFalse(@condition.ri)
+      # The body
+      context.enterCodeScope()
+      logging.debug("#{@nodeType}: Emitting the body")
+      @body.scanPass5(context)
+      context.exitCodeScope()
+
+      jmp = context.getNextIndex()
+      logging.debug("#{@nodeType}: Configuring BranchIfFalse instruction to jump to instruction number #{jmp}")
+      branchIfFalse.jmp = jmp
       return
 
   module.DotMemberExpression = class extends NodeBase
