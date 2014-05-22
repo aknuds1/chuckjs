@@ -59,6 +59,7 @@ grammar = {
   Statement: [
     o('ExpressionStatement'),
     o('LoopStatement'),
+    o('SelectionStatement'),
     o('JumpStatement')
     o('CodeSegment'),
   ],
@@ -192,6 +193,9 @@ grammar = {
   ],
   JumpStatement: [
     o('BREAK SEMICOLON', -> new BreakStatement())
+  ],
+  SelectionStatement: [
+    o('IF LPAREN Expression RPAREN Statement', -> new IfStatement($3, $5))
   ],
   IdDot: [
     o('ID', -> [$1])

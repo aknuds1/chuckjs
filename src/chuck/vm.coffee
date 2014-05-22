@@ -49,6 +49,15 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
         else
           logDebug("Not jumping")
         break
+      when "BranchIfFalse"
+        logDebug("#{instr.instructionName}: Checking if the value in register #{instr.r1} is false")
+        value = vm.registers[instr.r1]
+        if !value
+          logDebug("Jumping to instruction number #{instr.jmp}")
+          vm.jumpTo(instr.jmp)
+        else
+          logDebug("Not jumping")
+        break
       when "DotMemberFunc"
         # TODO: Get implementation of function from object's vtable
         logDebug("#{instr.instructionName}: Putting instance method in register #{instr.r2}:", instr.func)
