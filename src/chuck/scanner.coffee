@@ -320,6 +320,14 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(new Instruction("GtNumber", {r1: r1, r2: r2, r3: r3}))
       return
 
+    emitLeNumber: (r1, r2, r3) ->
+      @code.append(new Instruction("LeNumber", {r1: r1, r2: r2, r3: r3}))
+      return
+
+    emitGeNumber: (r1, r2, r3) ->
+      @code.append(new Instruction("GeNumber", {r1: r1, r2: r2, r3: r3}))
+      return
+
     emitTimeAdvance: (r1) ->
       logging.debug("Emitting TimeAdvance of register #{r1}")
       @code.append(new Instruction("TimeAdvance", {r1: r1}))

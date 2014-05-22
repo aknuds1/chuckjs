@@ -242,8 +242,10 @@ define("chuck/lexer", ["chuck/helpers", "chuck/logging"], (helpers, logging) ->
     '-': 'MINUS'
     '\\*': 'TIMES'
     '\\/': 'DIVIDE'
-    '<': 'LT'
+    '<=': 'LE'
+    '>=': 'GE'
     '>': 'GT'
+    '<': 'LT'
     '\\[': 'LBRACK'
     '\\]': 'RBRACK'
 

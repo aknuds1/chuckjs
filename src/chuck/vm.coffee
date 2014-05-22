@@ -95,6 +95,21 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
         logDebug("#{instr.instructionName}: (#{lhs} > #{rhs}) resulted in: #{result}")
         vm.registers[instr.r3] = result
         break
+      when "LeNumber"
+        lhs = vm.registers[instr.r1]
+        rhs = vm.registers[instr.r2]
+        result = lhs <= rhs
+        logDebug("#{instr.instructionName}: (#{lhs} <= #{rhs}) resulted in: #{result}")
+        vm.registers[instr.r3] = result
+        break
+      when "GeNumber"
+        lhs = vm.registers[instr.r1]
+        rhs = vm.registers[instr.r2]
+        result = lhs >= rhs
+        logDebug("#{instr.instructionName}: (#{lhs} >= #{rhs}) resulted in: #{result}")
+        vm.registers[instr.r3] = result
+        break
+
       when "FuncCallStatic"
         func = vm.registers[instr.r1]
         logDebug("Calling static method '#{func.name}'")

@@ -132,7 +132,9 @@ grammar = {
   RelationalExpression: [
     o('ShiftExpression'),
     o('RelationalExpression LT ShiftExpression', -> new BinaryExpression($1, new LtOperator(), $3)),
-    o('RelationalExpression GT ShiftExpression', -> new BinaryExpression($1, new GtOperator(), $3))
+    o('RelationalExpression GT ShiftExpression', -> new BinaryExpression($1, new GtOperator(), $3)),
+    o('RelationalExpression LE ShiftExpression', -> new BinaryExpression($1, new LeOperator(), $3)),
+    o('RelationalExpression GE ShiftExpression', -> new BinaryExpression($1, new GeOperator(), $3))
   ],
   ShiftExpression: [
     o('AdditiveExpression')

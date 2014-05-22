@@ -118,5 +118,57 @@ sin =< dac;
         )
       )
     )
+
+    describe("LeOperator", ->
+      it("can detect that a constant is less than another", (done) ->
+        promise = executeCode("<<<0 <= 1>>>;")
+
+        verify(promise, done,->
+          expect(console.log).toHaveBeenCalledWith("true :(int)")
+        )
+      )
+
+      it("can detect that a constant is equal to another", (done) ->
+        promise = executeCode("<<<0 <= 0>>>;")
+
+        verify(promise, done,->
+          expect(console.log).toHaveBeenCalledWith("true :(int)")
+        )
+      )
+
+      it("can detect that a constant is greater than another", (done) ->
+        promise = executeCode("<<<1 <= 0>>>;")
+
+        verify(promise, done,->
+          expect(console.log).toHaveBeenCalledWith("false :(int)")
+        )
+      )
+    )
+
+    describe("GeOperator", ->
+      it("can detect that a constant is greater than another", (done) ->
+        promise = executeCode("<<<1 >= 0>>>;")
+
+        verify(promise, done,->
+          expect(console.log).toHaveBeenCalledWith("true :(int)")
+        )
+      )
+
+      it("can detect that a constant is equal to another", (done) ->
+        promise = executeCode("<<<0 >= 0>>>;")
+
+        verify(promise, done,->
+          expect(console.log).toHaveBeenCalledWith("true :(int)")
+        )
+      )
+
+      it("can detect that a constant is less than another", (done) ->
+        promise = executeCode("<<<0 >= 1>>>;")
+
+        verify(promise, done,->
+          expect(console.log).toHaveBeenCalledWith("false :(int)")
+        )
+      )
+    )
   )
 )

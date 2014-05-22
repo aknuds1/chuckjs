@@ -768,6 +768,24 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @ri = context.allocRegister()
       context.emitGtNumber(lhs.ri, rhs.ri, @ri)
 
+  module.LeOperator = class LeOperator extends GtLtOperatorBase
+    constructor: ->
+      @name = "LeOperator"
+
+    emit: (context, lhs, rhs) ->
+      logging.debug("#{@name}: Emitting")
+      @ri = context.allocRegister()
+      context.emitLeNumber(lhs.ri, rhs.ri, @ri)
+
+  module.GeOperator = class GeOperator extends GtLtOperatorBase
+    constructor: ->
+      @name = "GeOperator"
+
+    emit: (context, lhs, rhs) ->
+      logging.debug("#{@name}: Emitting")
+      @ri = context.allocRegister()
+      context.emitGeNumber(lhs.ri, rhs.ri, @ri)
+
   module.WhileStatement = class extends NodeBase
     constructor: (cond, body) ->
       super("WhileStatement")
