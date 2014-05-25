@@ -41,6 +41,14 @@ define(["chuck", "spec/helpers"], (chuckModule, helpers) ->
         )
       )
 
+      it('can call a static method with several arguments', (done) ->
+        promise = executeCode("<<<(2, 2) => Math.pow>>>;")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("4.000000 :(float)")
+        )
+      )
+
       it("can assign ints to floats", (done) ->
         promise = executeCode("""\
 880 => float f;
