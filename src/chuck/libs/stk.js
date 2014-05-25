@@ -93,7 +93,7 @@ define("chuck/libs/stk", ["chuck/types", "chuck/audioContextService", "chuck/log
   };
   Delay.prototype.setDelay = function (delay) {
     var self = this
-    if (delay > (self.length-1)) { // The value is too big.
+    if (delay > (self.length - 1)) { // The value is too big.
       // Force delay to maxLength.
       self.outPoint = self.inPoint + 1
       self.delay = self.length - 1
@@ -377,7 +377,7 @@ define("chuck/libs/stk", ["chuck/types", "chuck/audioContextService", "chuck/log
           return d.time * audioContextService.getSampleRate()
         }),
         new FunctionOverload([new FuncArg("duration", dur)], function (duration) {
-          setEnvelopeTime.call(this, duration/audioContextService.getSampleRate())
+          setEnvelopeTime.call(this, duration / audioContextService.getSampleRate())
           return duration
         })
       ], "Envelope", dur)
@@ -508,5 +508,108 @@ define("chuck/libs/stk", ["chuck/types", "chuck/audioContextService", "chuck/log
     }
   })
 
-  return module;
-});
+  types.NRev = new ChuckType("NRev", UGen, {
+    preConstructor: function () {
+      var lengths = [1433, 1601, 1867, 2053, 2251, 2399, 347, 113, 37, 59, 53, 43, 37, 29, 19],
+        i,
+        delay,
+        sampleRate = audioContextService.getSampleRate(),
+        scaler = sampleRate / 25641.0,
+        d,
+        t60 = 4
+
+      d = this.data = {
+        mix: 0.3,
+        allpassDelays: [],
+        combDelays: [],
+        combCoefficient: [],
+        allpassCoefficient: 0.7,
+        lastOutput: [0, 0],
+        lowpassState: 0
+      }
+
+      for (i = 0; i < 15; i++) {
+        delay = Math.floor(scaler * lengths[i])
+        if ((delay & 1) == 0) {
+          delay++
+        }
+        while (!isPrime(delay)) {
+          delay += 2
+        }
+        lengths[i] = delay
+      }
+
+      for (i = 0; i < 6; i++) {
+        d.combDelays.push(new Delay(lengths[i], lengths[i]))
+        d.combCoefficient.push(Math.pow(10.0, (-3 * lengths[i] / (t60 * sampleRate))))
+      }
+
+      for (i = 0; i < 8; i++) {
+        d.allpassDelays[i] = new Delay(lengths[i + 6], lengths[i + 6])
+      }
+
+      d.combDelays.forEach(function (delay) {
+        delay.clear()
+      })
+      d.allpassDelays.forEach(function (delay) {
+        delay.clear()
+      })
+    },
+    namespace: {
+      mix: new ChuckMethod("mix", [new FunctionOverload([
+          new FuncArg("value", float)],
+        function (value) {
+          this.data.mix = value;
+          return this.data.mix;
+        })], "NRev", float)
+    },
+    ugenTick: function (input) {
+      var self = this,
+        d = self.data,
+        i,
+        temp, temp0, temp1, temp2, temp3
+
+      temp0 = 0.0;
+      for (i = 0; i < 6; i++) {
+        temp = input + (d.combCoefficient[i] * d.combDelays[i].output)
+        temp0 += d.combDelays[i].tick(temp)
+      }
+
+      for (i = 0; i < 3; i++) {
+        temp = d.allpassDelays[i].output
+        temp1 = d.allpassCoefficient * temp
+        temp1 += temp0
+        d.allpassDelays[i].tick(temp1)
+        temp0 = -(d.allpassCoefficient * temp1) + temp
+      }
+
+      // One-pole lowpass filter.
+      d.lowpassState = 0.7 * d.lowpassState + 0.3 * temp0
+      temp = d.allpassDelays[3].output
+      temp1 = d.allpassCoefficient * temp
+      temp1 += d.lowpassState
+      d.allpassDelays[3].tick(temp1)
+      temp1 = -(d.allpassCoefficient * temp1) + temp
+
+      temp = d.allpassDelays[4].output
+      temp2 = d.allpassCoefficient * temp
+      temp2 += temp1
+      d.allpassDelays[4].tick(temp2)
+      d.lastOutput[0] = d.mix * (-(d.allpassCoefficient * temp2) + temp)
+
+      temp = d.allpassDelays[5].output
+      temp3 = d.allpassCoefficient * temp
+      temp3 += temp1
+      d.allpassDelays[5].tick(temp3)
+      d.lastOutput[1] = d.mix * (-(d.allpassCoefficient * temp3) + temp)
+
+      temp = (1.0 - d.mix) * input
+      d.lastOutput[0] += temp
+      d.lastOutput[1] += temp
+
+      return (d.lastOutput[0] + d.lastOutput[1]) * 0.5
+    }
+  })
+
+  return module
+})

@@ -8,8 +8,8 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
       vm.registers[ri]
     )
     if func.isMember
-      logDebug("Function is a method, passing 'this' to it")
       thisObj = args.shift()
+      logDebug("Function is a method, passing 'this' to it:", thisObj)
     logDebug("Calling function with arguments corresponding to registers #{argRegisters}:", args)
     retVal = func.apply(thisObj, args)
     if func.retType != types.void
@@ -162,9 +162,9 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
       @_bunghole = new ugenModule.Bunghole()
       @registers = @globalRegisters = []
       # FIXME!
-      @globalRegisters[30] = @_dac
+      @globalRegisters[31] = @_dac
       # FIXME!
-      @globalRegisters[31] = @_bunghole
+      @globalRegisters[32] = @_bunghole
       @_registersStack = [@globalRegisters]
       @instructionsStack = []
       @instructions = null
@@ -175,10 +175,10 @@ define("chuck/vm", ["chuck/logging", "chuck/types", "chuck/audioContextService",
       @_nextPc = 1
       @_shouldStop = false
       # FIXME!
-      @_nowRi = 32
+      @_nowRi = 33
       @globalRegisters[@_nowRi] = 0
       # FIXME!
-      @_me = @globalRegisters[33] = new Shred(args)
+      @_me = @globalRegisters[34] = new Shred(args)
       @_nowSystem = 0
       @_gain = 1
 

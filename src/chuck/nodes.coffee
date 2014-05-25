@@ -443,9 +443,10 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @ri = context.allocRegister()
       if @_ckFunc.isBuiltIn
         if @_ckFunc.isMember
-          logging.debug("#{@nodeType}: Emitting instance method call")
           # Allocate argument registers
+          logging.debug("#{@nodeType}: Emitting loading of instance")
           argRegisters.unshift(context.emitLoadLocal(@func.ri))
+          logging.debug("#{@nodeType}: Emitting instance method call")
           context.emitFuncCallMember(r1, argRegisters, @ri)
         else
           logging.debug("#{@nodeType}: Emitting static method call")

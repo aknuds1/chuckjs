@@ -13,8 +13,8 @@ define("chuck/instructions", ["chuck/ugen", "chuck/logging", "chuck/types"], fun
     var args = vm.registers.slice(ri, ri+stackDepth)
     var thisObj = undefined
     if (func.isMember) {
-      logDebug("Function is a method, passing 'this' to it")
       thisObj = args.shift()
+      logDebug("Function is a method, passing 'this' to it:", thisObj)
     }
     var retVal = func.apply(thisObj, args)
     if (func.retType != types.void) {

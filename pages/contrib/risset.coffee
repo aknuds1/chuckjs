@@ -1,4 +1,4 @@
-code = """fun void makeTable(float root, float partials[], float amps[], ADSR env, JCRev rev, Pan2 pan)
+code = """fun void makeTable(float root, float partials[], float amps[], ADSR env, NRev rev, Pan2 pan)
 {
   SinOsc s[partials.size()];
 
@@ -14,7 +14,7 @@ code = """fun void makeTable(float root, float partials[], float amps[], ADSR en
 
 fun void risset(float delta, float root, float partials[], float amps[], float duration)
 {
-    ADSR env => JCRev rev => Pan2 pan => dac;
+    ADSR env => NRev rev => Pan2 pan => dac;
     ( 3::second, 100::ms, .5, 3::second ) => env.set;
 
     makeTable(root, partials, amps, env, rev, pan);
