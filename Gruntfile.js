@@ -86,8 +86,7 @@ module.exports = function (grunt) {
         },
         files: {
           'examples/example1.html': ['pages/example1.dot.html'],
-          'examples/example2.html': ['pages/example2.dot.html'],
-          'examples/risset.html': ['pages/risset.dot.html']
+          'examples/example2.html': ['pages/example2.dot.html']
         }
       },
       basic: {
@@ -101,6 +100,14 @@ module.exports = function (grunt) {
             expand: true,
             cwd: 'pages',
             src: 'basic/**/*.dot.html',
+            dest: 'examples/',
+            ext: '.html',
+            filter: 'isFile'
+          },
+          {
+            expand: true,
+            cwd: 'pages',
+            src: 'contrib/**/*.dot.html',
             dest: 'examples/',
             ext: '.html',
             filter: 'isFile'
