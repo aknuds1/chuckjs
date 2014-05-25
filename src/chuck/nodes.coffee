@@ -7,37 +7,37 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: (nodeType) ->
       @nodeType = nodeType
 
-    scanPass1: =>
+    scanPass1: ->
 
-    scanPass2: =>
+    scanPass2: ->
 
-    scanPass3: =>
+    scanPass3: ->
 
-    scanPass4: =>
+    scanPass4: ->
 
-    scanPass5: =>
+    scanPass5: ->
 
   class ParentNodeBase
     constructor: (child, nodeType) ->
       @_child = child
       @nodeType = nodeType
 
-    scanPass1: (context) =>
+    scanPass1: (context) ->
       @_scanPass(1, context)
 
-    scanPass2: (context) =>
+    scanPass2: (context) ->
         @_scanPass(2, context)
 
-    scanPass3: (context) =>
+    scanPass3: (context) ->
       @_scanPass(3, context)
 
-    scanPass4: (context) =>
+    scanPass4: (context) ->
       @_scanPass(4, context)
 
-    scanPass5: (context) =>
+    scanPass5: (context) ->
       @_scanPass(5, context)
 
-    _scanPass: (pass, context) =>
+    _scanPass: (pass, context) ->
       if !@_child
         return
 
@@ -46,7 +46,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       else
         return @_child["scanPass#{pass}"](context)
 
-    _scanArray: (array, pass, context) =>
+    _scanArray: (array, pass, context) ->
       for c in array
         if _.isArray(c)
           @_scanArray(c, pass, context)
@@ -148,12 +148,16 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     scanPass2: (context) ->
       @type = context.findType(@typeDecl.type)
       logging.debug("Variable declaration of type #{@type.name}")
+      for varDecl in @varDecls
+        if varDecl.array?
+          varDecl.array.scanPass2(context)
       return
 
     scanPass3: (context) ->
       for varDecl in @varDecls
         logging.debug("Adding variable '#{varDecl.name}' of type #{@type.name} to current namespace")
         if varDecl.array?
+          varDecl.array.scanPass3(context)
           @type = typesModule.createArrayType(@type, varDecl.array.getCount())
           logging.debug("Variable is an array, giving it array type", @type)
         varDecl.value = context.addVariable(varDecl.name, @type)
@@ -163,6 +167,8 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       super()
       for varDecl in @varDecls
         logging.debug("#{@nodeType} Checking variable #{varDecl.name}")
+        if varDecl.array?
+          varDecl.array.scanPass4(context)
         varDecl.value.isDeclChecked = true
         context.addValue(varDecl.value)
       return
@@ -280,7 +286,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       super()
       @type = types.int
 
-    scanPass5: (context) =>
+    scanPass5: (context) ->
       super()
       logging.debug("#{@nodeType}: Emitting LoadConst(#{@value})")
       @ri = context.emitLoadConst(@value)
@@ -290,11 +296,11 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       super("PrimaryFloatExpression", "value")
       @value = parseFloat(value)
 
-    scanPass4: =>
+    scanPass4: ->
       super()
       @type = types.float
 
-    scanPass5: (context) =>
+    scanPass5: (context) ->
       super()
       logging.debug("#{@nodeType}: Emitting LoadConst for #{@value}")
       @ri = context.emitLoadConst(@value)
@@ -304,13 +310,13 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       super("PrimaryHackExpression", "value")
       @expression = expression
 
-    scanPass4: (context) =>
+    scanPass4: (context) ->
       super(context)
       logging.debug("#{@nodeType} scanPass4: Checking child expression")
       @expression.scanPass4(context)
       return
 
-    scanPass5: (context) =>
+    scanPass5: (context) ->
       super()
       logging.debug("#{@nodeType}: Emitting child expression")
       @expression.scanPass5(context)
@@ -324,11 +330,11 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       super("PrimaryStringExpression", "value")
       @value = value
 
-    scanPass4: =>
+    scanPass4: ->
       super()
       @type = types.String
 
-    scanPass5: (context) =>
+    scanPass5: (context) ->
       super()
       @ri = context.emitLoadConst(@value)
 
@@ -338,22 +344,22 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @base = base
       @indices = indices
 
-    scanPass1: =>
+    scanPass1: ->
       super()
       @base.scanPass1()
       @indices.scanPass1()
 
-    scanPass2: =>
+    scanPass2: ->
       super()
       @base.scanPass2()
       @indices.scanPass2()
 
-    scanPass3: =>
+    scanPass3: ->
       super()
       @base.scanPass3()
       @indices.scanPass3()
 
-    scanPass4: (context) =>
+    scanPass4: (context) ->
       super(context)
       logging.debug("#{@nodeType} scanPass4: Base")
       baseType = @base.scanPass4(context)
@@ -363,7 +369,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       logging.debug("#{@nodeType} scanPass4: Type determined to be #{@type.name}")
       @type
 
-    scanPass5: (context) =>
+    scanPass5: (context) ->
       logging.debug("#{@nodeType} emitting")
       super(context)
       @base.scanPass5(context)
@@ -454,24 +460,24 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @base = base
       @unit = unit
 
-    scanPass2: (context) =>
+    scanPass2: (context) ->
       super(context)
       logging.debug('DurExpression')
       @base.scanPass2(context)
       @unit.scanPass2(context)
 
-    scanPass3: (context) =>
+    scanPass3: (context) ->
       super(context)
       @base.scanPass3(context)
       @unit.scanPass3(context)
 
-    scanPass4: (context) =>
+    scanPass4: (context) ->
       super(context)
       @type = types.dur
       @base.scanPass4(context)
       @unit.scanPass4(context)
 
-    scanPass5: (context) =>
+    scanPass5: (context) ->
       super(context)
       @base.scanPass5(context)
       @unit.scanPass5(context)
@@ -483,12 +489,12 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @op = operator
       @exp = exp
 
-    scanPass4: (context) =>
+    scanPass4: (context) ->
       if @exp?
         @exp.scanPass4(context)
       @type = @op.check(@exp)
 
-    scanPass5: (context) =>
+    scanPass5: (context) ->
       logging.debug("UnaryExpression: Emitting expression")
       @exp.scanPass5(context)
       logging.debug("UnaryExpression: Emitting operator")
@@ -513,7 +519,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: ->
       @name = "ChuckOperator"
 
-    check: (lhs, rhs, context) =>
+    check: (lhs, rhs, context) ->
       if lhs.type == rhs.type
         if typesModule.isPrimitive(lhs.type) || lhs.type == types.String
           if rhs._meta == "variable"
@@ -528,8 +534,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         rhs.scanPass4(context)
         # Find method overload
         funcGroup = rhs.value.value
-        # TODO: Make lhs into an ExpressionList
-        rhs._ckFunc = funcGroup.findOverload([lhs])
+        # TODO: Always make lhs into an ExpressionList
+        expressions = if lhs.expressions then lhs.expressions else [lhs]
+        rhs._ckFunc = funcGroup.findOverload(expressions)
         @type = funcGroup.retType
         logging.debug("#{@name} check: Got function overload #{rhs._ckFunc.name} with return type #{@type.name}")
         return @type
@@ -537,7 +544,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         lhs.castTo = rhs.type
         return types.float
 
-    emit: (context, lhs, rhs) =>
+    emit: (context, lhs, rhs) ->
       logging.debug("#{@name} emit")
       lType = if lhs.castTo? then lhs.castTo else lhs.type
       rType = if rhs.castTo? then rhs.castTo else rhs.type
@@ -583,11 +590,11 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: ->
       @name = "UnchuckOperator"
 
-    check: (lhs, rhs, context) =>
+    check: (lhs, rhs, context) ->
       if lhs.type.isOfType(types.UGen) && rhs.type.isOfType(types.UGen)
         return rhs.type
 
-    emit: (context, lhs, rhs) =>
+    emit: (context, lhs, rhs) ->
       # UGen => UGen
       if lhs.type.isOfType(types.UGen) && rhs.type.isOfType(types.UGen)
         context.emitUGenUnlink(lhs.ri, rhs.ri)
@@ -744,7 +751,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       return
 
   class GtLtOperatorBase
-    check: (lhs, rhs) =>
+    check: (lhs, rhs) ->
       if lhs.type == rhs.type
         return lhs.type
       if lhs.type == types.Time && rhs.type == types.Time
@@ -756,7 +763,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: ->
       @name = "LtOperator"
 
-    emit: (context, lhs, rhs) =>
+    emit: (context, lhs, rhs) ->
       logging.debug("#{@name}: Emitting")
       @ri = context.allocRegister()
       context.emitLtNumber(lhs.ri, rhs.ri, @ri)
@@ -1003,11 +1010,11 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       @exp = base
       @op = operator
 
-    scanPass4: (context) =>
+    scanPass4: (context) ->
       @exp.scanPass4(context)
       @type = @op.check(@exp)
 
-    scanPass5: (context) =>
+    scanPass5: (context) ->
       @exp.scanPass5(context)
       @ri = context.allocRegister()
       @op.emit(context, @exp.ri, @ri, @exp.value.isContextGlobal)
@@ -1017,13 +1024,30 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       super("ArraySub")
       @exp = exp
 
+    scanPass1: (context) ->
+      logging.debug("#{@nodeType} scanPass1")
+      if @exp?
+        @exp.scanPass1(context)
+
+    scanPass2: (context) ->
+      logging.debug("#{@nodeType} scanPass2")
+      if @exp?
+        @exp.scanPass2(context)
+
+    scanPass3: (context) ->
+      logging.debug("#{@nodeType} scanPass3")
+      if @exp?
+        @exp.scanPass3(context)
+
     scanPass4: (context) ->
       logging.debug("#{@nodeType} scanPass4")
-      @exp.scanPass4(context)
+      if @exp?
+        @exp.scanPass4(context)
 
     scanPass5: (context) ->
       logging.debug("#{@nodeType}: Emitting array indices")
-      @exp.scanPass5(context)
+      if @exp?
+        @exp.scanPass5(context)
       @expressions = @exp.expressions
       @ri = @exp.ri
 
@@ -1033,12 +1057,12 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
     constructor: (@exp) ->
       super("PrimaryArrayExpression")
 
-    scanPass4: (context) =>
+    scanPass4: (context) ->
       logging.debug("#{@nodeType} scanPass4")
       type = @exp.scanPass4(context)
-      @type = new typesModule.ChuckType(type.name, typesModule["@array"])
+      @type = new typesModule.createArrayType(type)
 
-    scanPass5: (context) =>
+    scanPass5: (context) ->
       logging.debug("#{@nodeType} scanPass5")
       @exp.scanPass5(context)
 
@@ -1063,24 +1087,26 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
 
       return
 
-    scanPass3: (context) =>
+    scanPass3: (context) ->
       logging.debug("#{@nodeType} scanPass3")
-      func = context.addFunction(@)
-      @_ckFunc = func
 
       context.enterFunctionScope()
 
       for arg, i in @args
         logging.debug("#{@nodeType}: Creating value for argument #{i} (#{arg.varDecl.name})")
+        if arg.varDecl.array?
+          logging.debug("#{@nodeType}: Argument is of array type")
+          arg.type = new typesModule.createArrayType(arg.type)
+
         value = context.createValue(arg.type, arg.varDecl.name)
-        value.offset = func.stackDepth
         arg.varDecl.value = value
 
       @code.scanPass3(context)
       context.exitFunctionScope()
+      @_ckFunc = context.addFunction(@)
       return
 
-    scanPass4: (context) =>
+    scanPass4: (context) ->
       logging.debug("#{@nodeType} scanPass4")
       context.enterFunctionScope()
       for arg, i in @args
@@ -1091,7 +1117,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
       context.exitFunctionScope()
       return
 
-    scanPass5: (context) =>
+    scanPass5: (context) ->
       logging.debug("#{@nodeType} emitting")
       logging.debug("#{@nodeType}: Emitting constant corresponding to function")
       local = context.allocateLocal(@_ckFunc.value.type, @_ckFunc.value, false)

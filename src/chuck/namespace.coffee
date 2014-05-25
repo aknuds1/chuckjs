@@ -8,18 +8,18 @@ define("chuck/namespace", ["chuck/logging"], (logging) ->
       @_types = new Scope()
       @_parent = parent
 
-    addType: (type) =>
+    addType: (type) ->
       @_types.addType(type)
       return
 
-    findType: (name) =>
+    findType: (name) ->
       type = @_types.findType(name)
       if type?
         return type
 
       return if @_parent then @_parent.findType(name) else undefined
 
-    findValue: (name, climb = false) =>
+    findValue: (name, climb = false) ->
       val = @_scope.findValue(name, climb)
       if val?
         return val
@@ -84,7 +84,7 @@ define("chuck/namespace", ["chuck/logging"], (logging) ->
       @addValue(chuckValue)
       return chuckValue
 
-    findValue: (name, climb) =>
+    findValue: (name, climb) ->
       if !climb
         lastScope = @_scopes[@_scopes.length-1]
         value = lastScope[name]
@@ -93,24 +93,25 @@ define("chuck/namespace", ["chuck/logging"], (logging) ->
 
         if lastScope == @_scopes[0] then @_commitMap[name] else null
       else
-        for scope in @_scopes.reverse()
+        for i in [@_scopes.length-1..0]
+          scope = @_scopes[i]
           value = scope[name]
           if value?
             return value
 
         @_commitMap[name]
 
-    addType: (type) =>
+    addType: (type) ->
       @addValue(type)
 
-    commit: =>
+    commit: ->
       scope = @_scopes[0]
       for own k, v of @_commitMap
         scope[k] = v
 
       @_commitMap = []
 
-    addValue: (value, name=null) =>
+    addValue: (value, name=null) ->
       name = if name? then name else value.name
       lastScope = @_scopes[@_scopes.length-1]
       if @_scopes[0] != lastScope

@@ -101,7 +101,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     ###*
     Replace code object while storing the old one on the stack.
     ###
-    pushCode: (name) =>
+    pushCode: (name) ->
       @enterFunctionScope()
       logging.debug("Pushing code object")
       @_codeStack.push(@code)
@@ -112,7 +112,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     ###*
     Restore code object at the top of the stack.
     ###
-    popCode: =>
+    popCode: ->
       logging.debug("Popping code object")
       toReturn = @code
       @code = @_codeStack.pop()
@@ -137,11 +137,11 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     isInFunction: -> @_functionLevel > 0
 
-    findType: (typeName) =>
+    findType: (typeName) ->
       type = @_currentNamespace.findType(typeName)
       return type
 
-    findValue: (name, climb=false) =>
+    findValue: (name, climb=false) ->
       # Look locally first
       val = @_currentNamespace.findValue(name, climb)
       if val?
@@ -159,19 +159,21 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     addValue: (value, name) ->
       scopeStr = if @_isGlobal then "global" else "function"
+      if !name?
+        name = value.name
       logging.debug("Adding value #{name} (scope: #{scopeStr})")
       @_currentNamespace.addValue(value, name, @_isGlobal)
 
     createValue: (type, name) ->
       new namespaceModule.ChuckValue(type, name, @_currentNamespace, @_isGlobal)
 
-    pushToBreakStack: (statement) =>
+    pushToBreakStack: (statement) ->
       @_breakStack.push(statement)
 
-    pushToContStack: (statement) =>
+    pushToContStack: (statement) ->
       @_contStack.push(statement)
 
-    instantiateObject: (type, ri) =>
+    instantiateObject: (type, ri) ->
       logging.debug("Emitting instantiation of object of type #{type.name} along with preconstructor")
       @code.append(instructions.instantiateObject(type, ri))
       @_emitPreConstructor(type, ri)
@@ -189,17 +191,17 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
         @code.append(new Instruction("InitValue", {r1: local.ri}))
       local
 
-    getNextIndex: => @code.getNextIndex()
+    getNextIndex: -> @code.getNextIndex()
 
-    enterScope: => @_currentNamespace.enterScope()
-    exitScope: => @_currentNamespace.exitScope()
+    enterScope: -> @_currentNamespace.enterScope()
+    exitScope: -> @_currentNamespace.exitScope()
 
-    enterCodeScope: =>
+    enterCodeScope: ->
       logging.debug("Entering nested code scope")
       @code.pushScope()
       return
 
-    exitCodeScope: =>
+    exitCodeScope: ->
       logging.debug("Exiting nested code scope")
       @code.popScope()
       return
@@ -233,10 +235,10 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
       local.ri
 
-    emitPlusAssign: (r1, r2, r3) =>
+    emitPlusAssign: (r1, r2, r3) ->
       @code.append(instructions.plusAssign(r1, r2, r3))
       return
-    emitMinusAssign: (r1, r2, r3) =>
+    emitMinusAssign: (r1, r2, r3) ->
       @code.append(instructions.minusAssign(r1, r2, r3))
       return
 
@@ -269,10 +271,10 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
     emitFuncCall: (r1, argRegisters, r3) ->
       @code.append(instructions.funcCall(r1, argRegisters, r3))
 
-    emitRegPushMemAddr: (offset, isGlobal) =>
+    emitRegPushMemAddr: (offset, isGlobal) ->
       @code.append(instructions.regPushMemAddr(offset, isGlobal))
       return
-    emitRegPushMem: (offset, isGlobal) =>
+    emitRegPushMem: (offset, isGlobal) ->
       @code.append(instructions.regPushMem(offset, isGlobal))
       return
 
@@ -293,7 +295,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       @code.append(instructions.divideNumber(r1, r2, r3))
       return
 
-    emitRegPushMe: =>
+    emitRegPushMe: ->
       @code.append(instructions.regPushMe())
       return
 
@@ -373,18 +375,18 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
     emitLoadGlobal: (r1, r2) -> @code.append(new Instruction("LoadGlobal", {r1: r1, r2: r2}))
 
-    evaluateBreaks: =>
+    evaluateBreaks: ->
       while @_breakStack.length
         instr = @_breakStack.pop()
         instr.jmp = @_nextIndex()
       return
 
-    finishScanning: =>
+    finishScanning: ->
       @code.finish()
       @code.append(instructions.eoc())
       return
 
-    addFunction: (funcDef) =>
+    addFunction: (funcDef) ->
       value = @findValue(funcDef.name)
       if value?
         funcGroup = value.value
@@ -398,10 +400,10 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
         funcGroup.value = @addConstant(funcGroup.name, type, funcGroup)
 
       name = "#{funcDef.name}@#{funcGroup.getNumberOfOverloads()}@#{@_currentNamespace.name || ''}"
-      logging.debug("Adding function #{name}")
+      logging.debug("Adding function overload #{name}")
       args = []
       for arg in funcDef.args
-        funcArg = new types.FuncArg(arg.varDecl.name, types.types[arg.typeDecl.type])
+        funcArg = new types.FuncArg(arg.varDecl.name, arg.type)
         logging.debug("Adding function argument #{funcArg.name} of type #{funcArg.type.name}")
         args.push(funcArg)
       func = new types.FunctionOverload(args, null, false, name)
@@ -410,9 +412,9 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
       func
 
-    getCurrentOffset: => @code.frame.currentOffset
+    getCurrentOffset: -> @code.frame.currentOffset
 
-    _emitPreConstructor: (type, ri) =>
+    _emitPreConstructor: (type, ri) ->
       if type.parent?
         @_emitPreConstructor(type.parent, ri)
 
@@ -421,7 +423,7 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
 
       return
 
-    _nextIndex: =>
+    _nextIndex: ->
       return @code.instructions.length
 
   class Scanner
@@ -431,24 +433,24 @@ define("chuck/scanner", ["chuck/nodes", "chuck/types", "chuck/instructions", "ch
       # Current register index
       @_ri = 1
 
-    pass1: =>
+    pass1: ->
       @_pass(1)
 
-    pass2: =>
+    pass2: ->
       @_pass(2)
 
-    pass3: =>
+    pass3: ->
       @_pass(3)
 
-    pass4: =>
+    pass4: ->
       @_pass(4)
 
-    pass5: =>
+    pass5: ->
       @_pass(5)
       @_context.finishScanning()
       @byteCode = @_context.code.instructions
 
-    _pass: (num) =>
+    _pass: (num) ->
       program = @_ast
       program["scanPass#{num}"](@_context)
 

@@ -108,7 +108,7 @@ define("chuck/types", ["chuck/audioContextService", "chuck/namespace", "chuck/lo
           continue
 
         if !_.every(mthd.arguments, (a, index) ->
-          a.type == args[index].type || (a.type == types.float && args[index].type == types.int))
+          a.type.isOfType(args[index].type) || (a.type == types.float && args[index].type == types.int))
           continue
 
         # logging.debug("#{@nodeType} scanPass4: Found matching overload with #{args.length} argument(s)")

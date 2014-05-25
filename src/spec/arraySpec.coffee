@@ -66,6 +66,19 @@ int arr[2];
       )
     )
 
+    describe("instantiated by chucking", (done) ->
+      it("can be queried for its size", (done) ->
+        promise = executeCode("""\
+[0, 0] @=> int arr[];
+<<<arr.size()>>>;
+""")
+
+        verify(promise, done, ->
+          expect(console.log).toHaveBeenCalledWith("2 :(int)")
+        )
+      )
+    )
+
     describe("of UGens", ->
       it("has elements which can be connected to destinations", (done) ->
         promise = executeCode("""\

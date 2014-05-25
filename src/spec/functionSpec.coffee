@@ -95,5 +95,20 @@ fun void func()
         expect(console.log).toHaveBeenCalledWith("1 : (time)")
       , 1)
     )
+
+    it("can accept an array argument", (done) ->
+      promise = executeCode("""fun void func(int a[])
+{
+    <<<a.size()>>>;
+}
+
+[0, 0] @=> int arr[];
+func(arr);
+""")
+
+      verify(promise, done, ->
+        expect(console.log).toHaveBeenCalledWith("2 :(int)")
+      )
+    )
   )
 )
