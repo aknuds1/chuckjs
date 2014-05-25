@@ -86,7 +86,8 @@ module.exports = function (grunt) {
         },
         files: {
           'examples/example1.html': ['pages/example1.dot.html'],
-          'examples/example2.html': ['pages/example2.dot.html']
+          'examples/example2.html': ['pages/example2.dot.html'],
+          'examples/risset.html': ['pages/risset.dot.html']
         }
       },
       basic: {
