@@ -558,6 +558,7 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
           context.emitTimeAdvance(lhs.ri)
       # Function call
       else if rType.isOfType(types.Function)
+        # Allocate return value register
         @ri = context.allocRegister()
         if rhs._ckFunc.isMember
           logging.debug("#{@name}: Emitting instance method #{rhs._ckFunc.name}")
@@ -565,7 +566,9 @@ define("chuck/nodes", ["chuck/types", "chuck/logging", "chuck/audioContextServic
         else
           logging.debug("#{@name}: Emitting function #{rhs._ckFunc.name}")
           r1 = context.emitLoadConst(rhs._ckFunc)
-        argRegisters = [context.emitLoadLocal(lhs.ri)]
+        # TODO: Always make lhs into an ExpressionList
+        expressions = if lhs.expressions then lhs.expressions else [lhs]
+        argRegisters = (context.emitLoadLocal(e.ri) for e in expressions)
         if rhs._ckFunc.isMember
           # Add 'this' argument
           argRegisters.unshift(context.emitLoadLocal(rhs.ri))
