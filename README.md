@@ -13,6 +13,12 @@ language, just enough to be able to execute the
 To see (or perhaps more importantly, hear) ChucKJS in practice, please visit our
 [ChucK Demos](http://chuckdemos.com) site, which aggregates and lets you play back language demos.
 
+## Current Status as of 9.13.2014
+Focus has shifted to an attempt to automatically port ChucK to JavaScript, using the
+[Emscripten](http://emscripten.org) tool. See my
+[ChucK fork (branch 'emscripten')](https://github.com/aknuds1/chuck/tree/emscripten) if you'd like to
+follow its progress, or perhaps even contribute.
+
 ## Build
 
 In order to build ChucKJS, you'll need an installation of [Node](http://nodejs.org/) along with
