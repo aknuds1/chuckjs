@@ -1,5 +1,7 @@
 # ChucKJS
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/aknuds1/chuckjs.svg)](https://greenkeeper.io/)
+
 JavaScript ([CoffeeScript](http://coffeescript.org/)) parser for the [ChucK](http://chuck.cs.princeton.edu/)
 music programming language, for execution within browsers supporting the Web Audio API (e.g. Chrome, Firefox).
 
