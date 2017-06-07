@@ -11,7 +11,7 @@
   "devDependencies": {
     "grunt": "~1.0.1",
     "grunt-shell": "~2.1.0",
-    "shelljs": "~0.7.7",
+    "shelljs": "~0.7.8",
     "grunt-contrib-coffee": "~1.0.0",
     "karma-script-launcher": "~1.0.0",
     "karma-chrome-launcher": "~2.1.1",
