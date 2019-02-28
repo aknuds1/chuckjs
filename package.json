@@ -22,7 +22,7 @@
     "requirejs": "~2.3.3",
     "karma-requirejs": "~1.1.0",
     "karma-phantomjs-launcher": "~1.0.4",
-    "karma": "~1.7.0",
+    "karma": "~4.0.1",
     "karma-growler-reporter": "0.0.2",
     "jison": "~0.4.13",
     "almond": "~0.3.3",
