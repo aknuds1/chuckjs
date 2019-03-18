@@ -12,7 +12,7 @@
     "grunt": "~1.0.1",
     "grunt-shell": "~2.1.0",
     "shelljs": "~0.7.7",
-    "grunt-contrib-coffee": "~1.0.0",
+    "grunt-contrib-coffee": "~2.1.0",
     "karma-script-launcher": "~1.0.0",
     "karma-chrome-launcher": "~2.1.1",
     "karma-html2js-preprocessor": "~1.1.0",
