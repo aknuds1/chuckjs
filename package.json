@@ -14,7 +14,7 @@
     "shelljs": "~0.7.7",
     "grunt-contrib-coffee": "~1.0.0",
     "karma-script-launcher": "~1.0.0",
-    "karma-chrome-launcher": "~2.1.1",
+    "karma-chrome-launcher": "~3.0.0",
     "karma-html2js-preprocessor": "~1.1.0",
     "karma-firefox-launcher": "~1.0.1",
     "karma-jasmine": "~1.1.0",
