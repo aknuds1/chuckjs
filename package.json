@@ -17,7 +17,7 @@
     "karma-chrome-launcher": "~2.1.1",
     "karma-html2js-preprocessor": "~1.1.0",
     "karma-firefox-launcher": "~1.0.1",
-    "karma-jasmine": "~1.1.0",
+    "karma-jasmine": "~3.3.0",
     "karma-coffee-preprocessor": "~1.0.1",
     "requirejs": "~2.3.3",
     "karma-requirejs": "~1.1.0",
